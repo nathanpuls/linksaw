@@ -12,7 +12,7 @@ function saveText() {
     var textData = {
       text: textInput,
       // Set the expiration time to 2 minutes in the future
-      expirationTime: new Date().getTime() + 2 * 60 * 1000,
+      //expirationTime: new Date().getTime() + 2 * 60 * 1000,
     };
 
     // Push the data to generate a unique key (using the generated ID)
@@ -20,16 +20,16 @@ function saveText() {
     textRef.set(textData).then(() => {
       console.log("Text successfully saved to Firebase:", textInput);
       // Optionally, start a timer for 2 minutes to automatically delete the text
-      setTimeout(() => {
-        textRef
-          .remove()
-          .then(() => {
-            console.log("Text expired and removed from Firebase");
-          })
-          .catch((error) => {
-            console.error("Error removing expired text from Firebase:", error);
-          });
-      }, 2 * 60 * 1000);
+      // setTimeout(() => {
+      //   textRef
+      //     .remove()
+      //     .then(() => {
+      //       console.log("Text expired and removed from Firebase");
+      //     })
+      //     .catch((error) => {
+      //       console.error("Error removing expired text from Firebase:", error);
+      //     });
+      // }, 2 * 60 * 1000);
       //document.getElementById('textInput').value = '';
       var shareCodeDiv = document.getElementById("shareCode");
       shareCodeDiv.innerText = `Your code is: ${textID}`;
@@ -78,7 +78,7 @@ function retrieveText() {
       var textData = snapshot.val();
       if (textData) {
         // Check if the text has expired
-        if (new Date().getTime() < textData.expirationTime) {
+        //if (new Date().getTime() < textData.expirationTime) {
           // Display the retrieved text in a div with id 'retrievedText'
           var retrievedText = document.getElementById("retrievedText");
           retrievedText.innerText = textData.text;
@@ -90,7 +90,7 @@ function retrieveText() {
           // Make URLs clickable after updating the content
           makeUrlsClickable();
           
-        } else {
+         {
           console.log("Text has expired and cannot be retrieved.");
         }
       } else {

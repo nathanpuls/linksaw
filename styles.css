@@ -18,7 +18,7 @@ body {
     padding: 10px;
     font-size: 16px;
     width: 265px;
-    height: 30px;
+    
     
     border-radius: 5px;
     border: 1px solid var(--border);
@@ -50,6 +50,10 @@ body {
   }
   h1 {
     margin-bottom: 0px;
+    margin-top: 70px;
+  }
+  p {
+    font-size: 16px;
   }
 
   #resetBtn {
@@ -71,6 +75,7 @@ a {
     font-size: 16px;
     margin-bottom: 10px;
     
+    
   }
  
   #form {
@@ -82,5 +87,6 @@ a {
     height: 0;
     margin: 0;
   }
+
   
   
