@@ -1,0 +1,86 @@
+:root {
+    --main: #ffd88a;
+    --white: white;
+    --border: black;
+    
+
+  
+    
+  }
+
+body {
+    
+    font-family: Poppins;
+    text-align: center;
+   
+}
+#textInput {
+    padding: 10px;
+    font-size: 16px;
+    width: 265px;
+    height: 30px;
+    
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    transition: border-color 0.3s; /* Add a transition for smoother change */
+    /*height: 35px; /* Set the height of the input field */
+    margin-top: 0px;
+    
+  }
+  #textInput:focus {
+    /*border: 2px solid var(--duck);*/
+    outline: none; /* Optional: remove the default focus outline */
+    border-width: 1px; /* Ensure the border width stays the same on focus */
+  }
+  .btn {
+    padding: 10px 15px;
+    
+    font-size: 16px;
+    border: 1px solid var(--border);
+    background-color: var(--white);
+    color: black;
+    border-radius: 5px;
+    cursor: pointer;
+    opacity: 1;
+    margin-right: 7px;
+    font-weight: 600;
+  }
+  .tag {
+    font-size: 14px;
+  }
+  h1 {
+    margin-bottom: 0px;
+  }
+
+  #resetBtn {
+    margin-top: 50px;
+    margin-bottom: 20px; /* Add a margin to the bottom for additional spacing */
+    margin-right: 20px; /* Add a margin to the right for additional spacing */
+}
+
+a {
+    text-decoration: underline;
+    background-color: none; /*rgba(251, 204, 92, 0.7);*/
+    text-decoration-color: var(--main);
+    
+    color: black;
+    display: block;
+    margin-top: 10px;
+    text-decoration-thickness: 3px; /* Adjusting underline thickness */
+    text-underline-offset: 5px; /* Adjusting underline offset */
+    font-size: 16px;
+    margin-bottom: 10px;
+    
+  }
+ 
+  #form {
+    transition: opacity 0.5s ease-out, height 0.5s ease-out, margin 0.5s ease-out;
+  }
+  
+  .formHidden {
+    opacity: 0;
+    height: 0;
+    margin: 0;
+  }
+  
+  
