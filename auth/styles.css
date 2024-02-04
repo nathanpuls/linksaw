@@ -1,0 +1,48 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    display: flex;
+    flex-direction: column; /* Set the flex direction to column */
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+
+.button {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-color: none;
+    border: none;
+    letter-spacing: 0.02857em;
+    margin: 8px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.sign-in {
+    background-color: #4285f4;
+    color: #fff;
+}
+
+.sign-out {
+    background-color: #000000;
+    color: #fff;
+}
+
+.sign-in:hover,
+.sign-out:hover {
+    background-color: #1c1c1c;
+}
+#photo {
+    border-radius: 5px;
+}
+* {
+    margin: 10px;
+}

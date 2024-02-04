@@ -1,0 +1,126 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column; /* Set the flex direction to column */
+    align-items: center;
+    /* justify-content: center; */
+    
+    font-size: 0.8rem;
+}
+.label {
+    font-size: 16px;
+    font-weight: normal;
+}
+#path {
+    margin: 0;
+}
+#titleDiv {
+    padding-top: 50px;
+    
+}
+button {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-color: none;
+    background-color: #ffffff;
+    color: #000000;
+    border: 1px solid black;
+    letter-spacing: 0.02857em;
+    margin: 0px;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    width: 100px;
+    
+    
+    
+}
+#pathInput {
+    width: 200px;
+}
+#copyButton {
+    margin-top: 50px;
+    border: none;
+    color: #ccc;
+}
+#note {
+    display: flex;
+    flex-direction: column;
+}
+form {
+    /* background-color: gray; */
+    margin: 0px;
+}
+input, textarea {
+    font-family: 'Roboto', sans-serif;
+    border-radius: 5px;
+    border: 1px solid black;
+    font-size: 16px;
+    height: 29px;
+    padding: 5px 10px;
+    width: 250px;
+    margin-right: 0px;
+    margin-bottom: 5px;
+}
+input:focus, textarea:focus {
+    outline: none;
+}
+textarea {
+    height: 100px;
+    margin: 0;
+    margin-bottom: 5px;
+}
+
+.sign-in {
+    background-color: #4285f4;
+    color: #fff;
+}
+
+.sign-out {
+    background-color: #000000;
+    color: #fff;
+}
+
+.sign-in:hover,
+.sign-out:hover {
+    background-color: #1c1c1c;
+}
+#photo {
+    border-radius: 5px;
+}
+* {
+    margin: 10px;
+}
+div {
+    max-width: 1200px;
+}
+#back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 10px;
+}
+a {
+    text-decoration: underline;
+    color: blue;
+}
+a:visited {
+    color: black;
+    text-decoration: underline;
+}
+#title {
+    margin: 0;
+    margin-bottom: 5px;
+}
+#go {
+    text-align: center;
+    letter-spacing: normal;
+    width: 50px;
+    padding: 10px;
+}

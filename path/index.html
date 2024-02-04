@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realtime Collaborative Editing</title>
+
+    <!-- Include Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.6/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.6/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.6/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.6/firebase-analytics.js"></script>
+
+    <!-- Add your Firebase configuration -->
+    <script src="firebase-config.js"></script>
+
+    <!-- Include your script for real-time collaboration -->
+    <script src="realtime-editor.js"></script>
+</head>
+<body>
+    <textarea id="editor" placeholder="Start typing..."></textarea>
+</body>
+</html>

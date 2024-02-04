@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="[NEW INTEGRITY VALUE]" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+    <title>Linksaw</title>
+    <link rel="stylesheet" href="css.css">
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <a href="/note">
+        <p id="back"><i class="fas fa-arrow-left"></i></p>
+    </a>
+
+    <!-- Div to display content -->
+    <h3 id="titleDiv"></h3>
+    <div id="contentDiv"></div>
+    <button id="copyButton" onclick="copyContent()">Copy</button>
+
+
+    <script>
+
+        // Your Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+            authDomain: "linkshare-eb70b.firebaseapp.com",
+            databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+            projectId: "linkshare-eb70b",
+            storageBucket: "linkshare-eb70b.appspot.com",
+            messagingSenderId: "284502085616",
+            appId: "1:284502085616:web:3f24e3fb844320eef85735",
+            measurementId: "G-VQ0J98LXYT"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Function to get URL parameter by name
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Function to display content based on 'title' parameter
+        function displayContent() {
+            console.log('Page loaded');
+
+            const titleValue = getUrlParameter('title');
+
+            if (titleValue) {
+                const database = firebase.database();
+                const contentRef = database.ref('note');
+
+                // Search for matching writes in the database (case-insensitive)
+                contentRef.orderByChild('title')
+                    .startAt(titleValue.toLowerCase())
+                    .endAt(titleValue.toLowerCase() + '\uf8ff')
+                    .once('value')
+                    .then((snapshot) => {
+                        const data = snapshot.val();
+                        console.log('Snapshot data:', data);
+
+                        if (data) {
+                            const entries = Object.entries(data);
+                            console.log('Entries:', entries);
+
+                            // Display the content if a match is found
+                            if (entries.length > 0) {
+                                const contentDiv = document.getElementById('contentDiv');
+                                const titleDiv = document.getElementById('titleDiv');
+                                const entry = entries[0][1]; // Choose the first entry for simplicity
+                                contentDiv.textContent = entry.content;
+                                titleDiv.textContent = entry.title;
+                                console.log('Content found:', entry.content);
+
+                                // Replace links with clickable HTML links
+                                makeLinksClickable('contentDiv');
+                            } else {
+                                // Handle the case where no match is found
+                                console.log('No matching content found for title:', titleValue);
+                            }
+                        } else {
+                            // Handle the case where data is null
+                            console.log('No data found for title:', titleValue);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error retrieving data:', error);
+                    });
+            }
+        }
+
+        // Call the displayContent function on page load
+        window.onload = displayContent;
+
+        function makeLinksClickable(containerId) {
+            var container = document.getElementById(containerId);
+            if (container) {
+                var text = container.innerHTML;
+
+                // Regular expression to find links in text
+                var linkRegex = /(\b(?:https?|ftp):\/\/[^\s\u00A0"]+[\w\/])/g;
+                text = text.replace(linkRegex, '<a href="$1" target="_blank">$1</a>');
+
+                // Set the modified HTML back to the container
+                container.innerHTML = text;
+            }
+        }
+        function copyContent() {
+        // Get the content of the element with ID "contentDiv"
+        var contentToCopy = document.getElementById('contentDiv').innerText;
+
+        // Create a temporary textarea element to copy the content to the clipboard
+        var tempTextarea = document.createElement('textarea');
+        tempTextarea.value = contentToCopy;
+
+        // Append the textarea to the document
+        document.body.appendChild(tempTextarea);
+
+        // Select the content of the textarea
+        tempTextarea.select();
+        tempTextarea.setSelectionRange(0, 99999); // For mobile devices
+
+        // Copy the selected content to the clipboard
+        document.execCommand('copy');
+
+        // Remove the temporary textarea from the document
+        document.body.removeChild(tempTextarea);
+
+        // Change button text to "Copied!"
+        var copyButton = document.getElementById('copyButton');
+        copyButton.innerText = 'Copied!';
+
+        // After 1 second, change button text back to "Copy"
+        setTimeout(function () {
+            copyButton.innerText = 'Copy';
+        }, 1000);
+    }
+    </script>
+</body>
+</html>
