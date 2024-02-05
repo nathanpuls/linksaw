@@ -7,6 +7,15 @@
   
     
   }
+  .logo {
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.8rem;
+    text-decoration: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 10px;
+}
 
 body {
     

@@ -134,3 +134,14 @@ a:visited {
     width: 50px;
     padding: 10px;
 }
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Style your links as needed */
+li a {
+    text-decoration: none;
+    color: #333; /* Change color as needed */
+}
