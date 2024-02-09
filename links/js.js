@@ -83,7 +83,8 @@ var firebaseConfig = {
   
   function addLink() {
     var url = document.getElementById('url').value;
-    var name = document.getElementById('name').value;
+    let name = document.getElementById('name').value;
+    name = name.replace(/[^\w\s]/gi, '').replace(/\s/g, '');
     
 
   
