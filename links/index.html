@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Links</title>
+  <link rel="stylesheet" href="../styles.css">
+  <!-- Add Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
+  <script src="../auth/google-signin.js"></script>
+  <style>
+    #username {
+      margin-left: -8px;
+    }
+  </style>
+</head>
+<body>
+  
+    <header class="sticky-header">
+    <div class="brand">Linksaw</div>
+    <button class="header-button" onclick="window.location.href='/dashboard.html'">Menu</button>
+
+</header>
+
+  <h2>Links</h2>
+  
+  <div class="row">
+    <label for="url">URL</label>
+    <input type="text" id="url" placeholder="">
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="">
+    <button onclick="addLink()">Add Link</button>
+  </div>
+  <br>
+  <p>Linksaw.com/  <span id="username"></span>/</p>
+  <br>
+  <ul id="linksList"></ul>
+
+  <!-- <br>
+  <button onclick="window.location.href='/dashboard.html'">Dash</button>
+  <br>
+  <br>
+
+  <button onclick="signOut()">Sign out</button> -->
+<script src="js.js"></script>
+
+</body>
+</html>

@@ -1,33 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
-    
-    
-    <title>Linksaw</title>
-    <link rel="stylesheet" href="css.css">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Google Authentication</title>
+    <!-- Include Firebase SDK (version 8) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <script src="./auth/firebase-config.js"></script>
+    <script src="./auth/google-signin.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
     
 </head>
 <body>
-    <br>
-    <a href="/" class="logo">
-        Linksaw
-    </a>
-   
-    <h3>Tools</h3>
 
-    <ul>
-        <li><a href="/sharetext/">Share text - between devices</a></li>
-        <li><a href="https://note.linksaw.com/">Note - Save and search notes</a></li>
-        
-        <!-- Add more list items as needed -->
-    </ul>
+<script>
     
 
-       </body>
+    // Initialize Google Sign-In
+    const googleAuthProvider = new firebase.auth.GoogleAuthProvider();
+
+    
+</script>
+
+<div class="column">
+    <h1>Linksaw</h1>
+    <p>Custom shortlinks based on your Google username</p>
+    
+    
+    <!-- HTML buttons to trigger sign in and sign out -->
+    <button class="button sign-in" onclick="signInWithGoogle()">Sign In with Google</button>
+</div>
+
+
+
+</body>
 </html>

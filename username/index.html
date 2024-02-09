@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Username Edit</title>
+  <!-- Add Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
+</head>
+<body>
+
+  <h1>Username Edit</h1>
+
+  <!-- Display the current user's username if available -->
+  <p id="currentUsername"></p>
+
+  <label for="newUsername">Enter New Username:</label>
+  <input type="text" id="newUsername" placeholder="New username">
+
+  <button onclick="changeUsername()">Change Username</button>
+
+  <script>
+    // Replace with your Firebase project config
+    var firebaseConfig = {
+      apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+      authDomain: "linkshare-eb70b.firebaseapp.com",
+      databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+      projectId: "linkshare-eb70b",
+      storageBucket: "linkshare-eb70b.appspot.com",
+      messagingSenderId: "284502085616",
+      appId: "1:284502085616:web:3f24e3fb844320eef85735",
+      measurementId: "G-VQ0J98LXYT"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    var database = firebase.database();
+    
+    // Add an authentication state observer
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        // User is signed in.
+        var userRef = database.ref('users/' + user.uid);
+        userRef.once('value')
+          .then(function(snapshot) {
+            var userData = snapshot.val();
+            if (userData && userData.username) {
+              document.getElementById('currentUsername').innerText = "Current Username: " + userData.username;
+            }
+          })
+          .catch(function(error) {
+            console.error('Error fetching user data:', error);
+          });
+      } else {
+        // No user is signed in.
+        console.log('No user signed in.');
+      }
+    });
+
+    function changeUsername() {
+      var newUsername = document.getElementById('newUsername').value;
+
+      // Check if the new username is not empty
+      if (!newUsername.trim()) {
+        alert('Please enter a valid new username.');
+        return;
+      }
+
+      // Get the current user
+      var currentUser = firebase.auth().currentUser;
+
+      // Check if the user is signed in
+      if (currentUser) {
+        // Update the username in the database
+        database.ref('users/' + currentUser.uid).update({ username: newUsername })
+          .then(function() {
+            alert('Username changed successfully!');
+            // Update the displayed username
+            document.getElementById('currentUsername').innerText = "Current Username: " + newUsername;
+          })
+          .catch(function(error) {
+            alert('Error changing username: ' + error.message);
+          });
+      } else {
+        alert('No user signed in.');
+      }
+    }
+  </script>
+
+</body>
+</html>

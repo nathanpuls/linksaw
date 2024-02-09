@@ -1,0 +1,80 @@
+// Replace with your Firebase project config
+var firebaseConfig = {
+    apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+    authDomain: "linkshare-eb70b.firebaseapp.com",
+    databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+    projectId: "linkshare-eb70b",
+    storageBucket: "linkshare-eb70b.appspot.com",
+    messagingSenderId: "284502085616",
+    appId: "1:284502085616:web:3f24e3fb844320eef85735",
+    measurementId: "G-VQ0J98LXYT"
+  };
+  
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  var database = firebase.database();
+  
+  // Function to extract username from email
+  function getUsernameFromEmail(email) {
+    return email.split('@')[0];
+  }
+  
+// Function to copy link to clipboard
+function copyLink(username, linkName) {
+    var fullLink = `https://linksaw.com/${username}/${linkName}`;
+    navigator.clipboard.writeText(fullLink)
+      .then(function() {
+        alert('Link copied to clipboard!');
+      })
+      .catch(function(error) {
+        console.error('Error copying link to clipboard:', error);
+      });
+  }
+  
+  
+  // Function to load links from the database
+  function loadLinks(userId, username) {
+    var linksList = document.getElementById('linksList');
+  
+    // Clear the existing list
+    linksList.innerHTML = '';
+  
+    // Load links from the database
+    var linksRef = database.ref('links/' + userId);
+    linksRef.once('value')
+      .then(function(snapshot) {
+        snapshot.forEach(function(childSnapshot) {
+          var linkKey = childSnapshot.key;
+          var linkData = childSnapshot.val();
+  
+          // Create list item for each link
+          var listItem = document.createElement('li');
+          listItem.innerHTML = `<strong>${linkData.name}:</strong> 
+            <a href="${username}/${linkData.url}" target="_blank">${linkData.url}</a>
+            <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')">Edit</button>
+            <button onclick="deleteLink('${userId}', '${linkKey}')">Delete</button>
+            <button onclick="copyLink('${username}', '${linkData.name}')">Copy</button>`;
+          linksList.appendChild(listItem);
+        });
+      })
+      .catch(function(error) {
+        console.error('Error loading links:', error);
+      });
+  }
+  
+  // ... (other functions and code)
+  
+  // Firebase authentication state observer
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      // User is signed in
+      var username = getUsernameFromEmail(user.email);
+      document.getElementById('username').innerText = username;
+      loadLinks(user.uid, username);
+    } else {
+      // No user signed in
+      document.getElementById('username').innerText = '';
+      document.getElementById('linksList').innerHTML = 'Please sign in to view your links.';
+    }
+  });
+  

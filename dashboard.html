@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu</title>
+    <style>
+        #username {
+            margin-left: 0px; /* Adjust this value to control the spacing */
+        }
+    </style>
+</head>
+<body>
+    <script src="/header.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+<script src="./auth/firebase-config.js"></script>
+<script src="./auth/google-signin.js"></script>
+<link rel="stylesheet" href="styles.css">
+
+<script>
+    // Check if the user is authenticated
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            // User is signed in, display dashboard content
+            console.log('User is signed in:', user);
+
+            // Fetch additional user data including the username
+            const userRef = firebase.database().ref('users/' + user.uid);
+            userRef.once('value')
+                .then((snapshot) => {
+                    const userData = snapshot.val();
+                    if (userData) {
+                        // Display user information
+                        document.getElementById('displayName').textContent = userData.displayName;
+                        document.getElementById('email').textContent = userData.email;
+                        document.getElementById('photo').src = user.photoURL;
+                        document.getElementById('username').textContent = userData.username;
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error fetching user data:', error);
+                });
+
+        } else {
+            // User is signed out, redirect to the login page
+            window.location.href = 'index.html';
+        }
+    });
+
+    // Function to delete the current user's account and redirect to the homepage
+    function deleteAccount() {
+    var user = firebase.auth().currentUser;
+
+    // Ask for confirmation before deleting the account
+    var confirmation = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+
+    if (confirmation) {
+        // Get the user ID
+        var userId = user.uid;
+
+        // Remove user data from the database
+        var userRef = firebase.database().ref('users/' + userId);
+        userRef.remove()
+            .then(function () {
+                console.log("User data removed from the database");
+
+                // Delete the user account
+                user.delete()
+                    .then(function () {
+                        // User deleted successfully
+                        console.log("User deleted successfully");
+                        window.location.href = 'index.html'; // Redirect to homepage
+                    })
+                    .catch(function (error) {
+                        console.error("Error deleting user:", error);
+                        // Handle error, display a message to the user, etc.
+                    });
+            })
+            .catch(function (error) {
+                console.error("Error removing user data from the database:", error);
+                // Handle error, display a message to the user, etc.
+            });
+    }
+}
+
+</script>
+
+<!-- Dashboard content -->
+<h2>Menu</h2>
+<img id="photo" width="60" height="60" alt="Profile Image">
+
+<p><span id="displayName"></span></p>
+<p><span id="email"></span></p>
+<p><span>@</span><span id="username"></span></p>
+<br>
+
+  <button onclick="window.location.href='/links'">Links</button>
+
+  
+
+
+<br><br>
+<button class="button delete-account" onclick="deleteAccount()">Delete Account</button>
+<br><br>
+<button class="button sign-out" onclick="signOut()">Sign Out</button>
+<br><br>
+
+</body>
+</html>
