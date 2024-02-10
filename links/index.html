@@ -34,20 +34,21 @@
         class="header-button"
         onclick="window.location.href='/dashboard.html'"
       >
-        Menu
+      <i class="fa-solid fa-bars"></i>
       </button>
     </header>
 
-    <div class="row">
-      <label for="url"></label>
-      <input type="text" id="url" placeholder="URL" autofocus />
-
-      <label for="name"></label>
-      <input type="text" id="name" placeholder="Name" />
-      <button onclick="addLink()">+</button>
+    <div class="column">
+      <div class="row">
+        <label for="url"></label>
+        <input type="text" id="url" placeholder="Paste URL" autofocus />
+        <label for="name"></label>
+        <input type="text" id="name" placeholder="Enter Name" />
+        <!-- <button onclick="addLink()">+</button> -->
+      </div>
     </div>
-
-    <ul id="linksList"></ul>
+<br>
+    <ul id="linksList" class="column"></ul>
 
     <script src="js.js"></script>
     <script src="action-box.js"></script>

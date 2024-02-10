@@ -80,9 +80,9 @@ if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith
           var listItem = document.createElement('li');
     listItem.innerHTML = `<strong>${linkData.name}</strong> 
         <a href="${url}" target="_blank" class="smalltext">${truncatedUrl}</a>
-        <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')" class="font-awesome"><i class="fas fa-edit"></i></button>
-        <button onclick="deleteLink('${userId}', '${linkKey}')" class="font-awesome"><i class="fas fa-trash-alt"></i></button>
-        <button onclick="copyLink('${username}', '${linkData.name}')" class="font-awesome"><i class="fas fa-copy"></i></button>`;
+        <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')" class="font-awesome"><i class="fa-solid fa-pen"></i></button>
+        <button onclick="deleteLink('${userId}', '${linkKey}')" class="font-awesome"><i class="fa-solid fa-trash"></i></i></button>
+        <button onclick="copyLink('${username}', '${linkData.name}')" class="font-awesome"><i class="fa-regular fa-copy"></i></button>`;
     linksList.appendChild(listItem);
         });
       })
