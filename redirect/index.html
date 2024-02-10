@@ -23,7 +23,9 @@
   }
 
   // Extract username and link name from the URL parameters
-  var username = getParameterByName('username');
+  let username = getParameterByName('username');
+  username = username.replace(/[^a-zA-Z0-9]/g, '');
+
   var linkname = getParameterByName('linkname');
 
   console.log('Username:', username, 'Linkname:', linkname);
