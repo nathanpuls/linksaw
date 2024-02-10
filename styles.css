@@ -7,6 +7,10 @@
   --black: black;
   --primary-color: var(--dark-orange);
 }
+html {
+    font-size: 24px; /* Set the base font size to 16 pixels */
+
+}
 
 /*dark orange #ff8c00*/
 
@@ -27,6 +31,7 @@
 body {
   margin: 10px;
   margin-top: 90px;
+  
 }
 h1,
 h2,
