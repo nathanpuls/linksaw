@@ -58,7 +58,7 @@ button,
   /* border: 1px solid var(--dark); */
   border: none;
   cursor: pointer;
-  font-size: 24px;
+  font-size: 28px;
   /*height: 32px;*/
 }
 div {
@@ -96,7 +96,7 @@ input {
     border-radius: 0; /* Remove border-radius if not needed */
     width: 200px;
     text-indent: 2px;
-    margin-left: -20px;
+    margin-left: 10px;
   }
   
   /* Add any other styles you want */
@@ -227,6 +227,6 @@ label {
   }
   .sign-in {
     border: 1px solid #ccc;
-    
+    font-size: 1rem;
     padding: 4px 25px;
   }
