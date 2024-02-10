@@ -24,10 +24,12 @@ var firebaseConfig = {
   // Function to copy link to clipboard
   function copyLink(username, linkName) {
     
-    var fullLink = `https://linksaw.com/${username}/${linkName}`;
+    var fullLink = `https://${username}.linksaw.com/${linkName}`;
     navigator.clipboard.writeText(fullLink)
       .then(function () {
-        alert('Link copied to clipboard: ' + fullLink);
+        // alert('Link copied to clipboard: ' + fullLink);
+        showAlert('Copied ' + fullLink);
+
       })
       .catch(function (error) {
         console.error('Error copying link to clipboard:', error);
@@ -65,26 +67,41 @@ var firebaseConfig = {
           var linkKey = childSnapshot.key;
           var linkData = childSnapshot.val();
           var username = linkData.username;
+          var truncatedUrl = linkData.url.length > 15 ? linkData.url.slice(0, 15) + '...' : linkData.url;
+console.log(truncatedUrl);
+let url = linkData.url;
+if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('www')) {
+            // If not, add http:// to the beginning
+            url = 'http://' + url;
+          }
+          
   
           // Create list item for each link
           var listItem = document.createElement('li');
-          listItem.innerHTML = `<strong>${linkData.name}:</strong> 
-            <a href="${linkData.url}" target="_blank">${linkData.url}</a>
-            <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')">Edit</button>
-            <button onclick="deleteLink('${userId}', '${linkKey}')">Delete</button>
-            <button onclick="copyLink('${username}', '${linkData.name}')">Copy</button>`;
-          linksList.appendChild(listItem);
+    listItem.innerHTML = `<strong>${linkData.name}</strong> 
+        <a href="${url}" target="_blank" class="smalltext">${truncatedUrl}</a>
+        <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')" class="font-awesome"><i class="fas fa-edit"></i></button>
+        <button onclick="deleteLink('${userId}', '${linkKey}')" class="font-awesome"><i class="fas fa-trash-alt"></i></button>
+        <button onclick="copyLink('${username}', '${linkData.name}')" class="font-awesome"><i class="fas fa-copy"></i></button>`;
+    linksList.appendChild(listItem);
         });
       })
       .catch(function (error) {
         console.error('Error loading links:', error);
       });
   }
-  
+  function handleKeyDown(event) {
+    if (event.key === 'Enter') {
+        addLink();
+        document.getElementById('url').focus();
+
+    }
+}
   function addLink() {
     var url = document.getElementById('url').value;
     let name = document.getElementById('name').value;
     name = name.replace(/[^\w\s]/gi, '').replace(/\s/g, '');
+    name = name.toLowerCase();
     
 
   
@@ -121,10 +138,14 @@ var firebaseConfig = {
       alert('No user signed in.');
     }
   }
+  document.getElementById('url').addEventListener('keydown', handleKeyDown);
+document.getElementById('name').addEventListener('keydown', handleKeyDown);
   
   function editLink(userId, linkKey, currentUrl, currentName) {
     var newUrl = prompt('Enter the new URL:', currentUrl);
     var newName = prompt('Enter the new Name:', currentName);
+    newName = newName.replace(/[^\w\s]/gi, '').replace(/\s/g, '');
+    newName = newName.toLowerCase();
   
     // Check if the user entered a new URL and Name
     if (newUrl !== null && newName !== null) {
@@ -145,20 +166,20 @@ var firebaseConfig = {
   }
   
   function deleteLink(userId, linkKey) {
-    // Confirm if the user wants to delete the link
-    if (confirm('Are you sure you want to delete this link?')) {
-      // Delete the link from the database
-      database.ref('links/' + userId + '/' + linkKey).remove()
-        .then(function () {
-          //alert('Link deleted successfully!');
-          // Reload the links
-          loadLinks(userId);
-        })
-        .catch(function (error) {
-          alert('Error deleting link: ' + error.message);
-        });
-    }
+    // Delete the link from the database
+    database.ref('links/' + userId + '/' + linkKey).remove()
+      .then(function () {
+        // Reload the links
+        loadLinks(userId);
+      })
+      .catch(function (error) {
+        console.error('Error deleting link: ' + error.message);
+      });
   }
+  
+
+  
+  
   
   firebase.auth().onAuthStateChanged(function (user) {
     if (user) {
@@ -189,4 +210,16 @@ var firebaseConfig = {
     return email.split('@')[0];
   }
 
-  
+  function showAlert(message) {
+    var alertDiv = document.createElement('div');
+    alertDiv.className = 'alert';
+    alertDiv.textContent = message;
+    document.body.appendChild(alertDiv);
+
+    // Set a timeout to remove the alert after 2000 milliseconds (2 seconds)
+    setTimeout(function () {
+        alertDiv.remove();
+    }, 3000);
+}
+
+

@@ -25,7 +25,7 @@
 }
 
 body {
-  margin: 20px;
+  margin: 10px;
   margin-top: 90px;
 }
 h1,
@@ -52,7 +52,7 @@ button,
 }
 div {
   margin: 0px;
-  display: flex;
+  /* display: flex; */
   gap: 3px;
 }
 a {
@@ -82,8 +82,10 @@ input {
   font-size: 16px;
   font-weight: 400;
   border-radius: 5px;
+  width: 120px;
   /*height: 25px;*/
   text-indent: 2px;
+  margin-left: -20px;
 
   /* Add any other styles you want */
 }
@@ -140,3 +142,67 @@ label {
 .header-button {
   margin-right: 20px;
 }
+.row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* .row label, .row input {
+    flex: 1;
+    margin: 5px;
+} */
+.smalltext {
+    font-size: 16px;
+}
+.font-awesome {
+    border: none;
+    margin: 0;
+    color: #000000;
+    padding: 0;
+}
+
+.alert {
+    position: fixed;
+    font-size: 16px;
+    font-weight: 400;
+    color: black;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    
+  }
+  
+  .alert.show {
+    display: block;
+    border: #ccc;
+    animation: fadeOut 3s forwards;
+  }
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  .action-box {
+    position: fixed;
+    font-size: 16px;
+    font-weight: 400;
+    color: black;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    display: none;
+  }
+  
