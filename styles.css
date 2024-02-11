@@ -351,5 +351,8 @@ align-items: center;
   padding-top: 20px;
 }
 #url {
-  margin-left: -3px;
+  margin-left: px;
+}
+#name {
+  margin-left: 3px;
 }
