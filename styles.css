@@ -132,7 +132,7 @@ input {
   font-size: var(--font-size);
   font-weight: 300;
   border-radius: 0; /* Remove border-radius if not needed */
-  width: 180px;
+  width: 300px;
   text-indent: 0px;
   margin-left: 0px;
   padding-left: 0px;
@@ -379,4 +379,7 @@ align-items: center;
 }
 .mr-10 {
   margin-right: 10px;
+}
+.icon-container {
+  margin-left: 10px;
 }

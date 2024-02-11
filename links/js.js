@@ -22,7 +22,8 @@ function getUsernameFromEmail(email) {
 
 // Function to copy link to clipboard
 function copyLink(username, linkName) {
-  var fullLink = `https://${username}.linksaw.com/${linkName}`;
+  // var fullLink = `https://${username}.linksaw.com/${linkName}`;
+  var fullLink = `https://${linkName}.linksaw.com/${username}`;
   var partialLink = fullLink.slice(8);
   navigator.clipboard
     .writeText(fullLink)
@@ -85,8 +86,8 @@ function loadLinks(userId) {
         var listItem = document.createElement("li");
         listItem.innerHTML = `
     <div class="row">
-    <div class = "mr-10"><strong>${truncatedName}</strong></div>
-        <a href="${url}" target="_blank" class="smalltext">${truncatedUrl}</a>
+    <a href="${url}" target="_blank"><div><strong>${truncatedName}</strong></div></a>
+        <!--<a href="${url}" target="_blank" class="smalltext">${truncatedUrl}</a>-->
         <div class="icon-container">
         <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')" class="font-awesome"><i class="fa-solid fa-pen"></i></button>
         <button onclick="deleteLink('${userId}', '${linkKey}')" class="font-awesome"><i class="fa-solid fa-trash"></i></i></button>
@@ -123,7 +124,8 @@ function addLink() {
 
   // Check if URL and Name are not empty
   if (!url.trim() || !name.trim()) {
-    alert("Please enter a valid URL and Name.");
+    // alert("Please enter a valid URL and Name.");
+    showAlert('Enter URL and Name.');
     return;
   }
 
@@ -132,35 +134,58 @@ function addLink() {
 
   // Check if the user is signed in
   if (currentUser) {
-    // Save the link to the database
-    var linkRef = database.ref("links/" + currentUser.uid).push();
-    linkRef
-      .set({
-        url: url,
-        name: name,
-        username: getUsernameFromEmail(currentUser.email),
-      })
-      .then(function () {
-        //alert('Link added successfully!');
-        // Clear the input fields after adding the link
-        document.getElementById("url").value = "";
-        document.getElementById("name").value = "";
-        // Reload the links
-        loadLinks(currentUser.uid);
+    // Check if a link with the same name already exists
+    var linksRef = database.ref("links/" + currentUser.uid);
+    
+    linksRef.once("value")
+      .then(function(snapshot) {
+        var duplicateExists = false;
+
+        snapshot.forEach(function(childSnapshot) {
+          var existingName = childSnapshot.val().name.toLowerCase();
+          if (existingName === name) {
+            duplicateExists = true;
+          }
+        });
+
+        if (duplicateExists) {
+          // alert("A link with the same name already exists. Please choose a different name.");
+          showAlert("Another link has that name.");
+        } else {
+          // Save the link to the database
+          var linkRef = linksRef.push();
+          linkRef
+            .set({
+              url: url,
+              name: name,
+              username: getUsernameFromEmail(currentUser.email),
+            })
+            .then(function () {
+              // Clear the input fields after adding the link
+              document.getElementById("url").value = "";
+              document.getElementById("name").value = "";
+              // Reload the links
+              loadLinks(currentUser.uid);
+            })
+            .catch(function (error) {
+              alert("Error adding link: " + error.message);
+            });
+        }
       })
       .catch(function (error) {
-        alert("Error adding link: " + error.message);
+        alert("Error checking for duplicate link: " + error.message);
       });
   } else {
     alert("No user signed in.");
   }
 }
+
 document.getElementById("url").addEventListener("keydown", handleKeyDown);
 document.getElementById("name").addEventListener("keydown", handleKeyDown);
 
 function editLink(userId, linkKey, currentUrl, currentName) {
-  var newUrl = prompt("Enter the new URL:", currentUrl);
-  var newName = prompt("Enter the new Name:", currentName);
+  var newUrl = prompt("URL", currentUrl);
+  var newName = prompt("Name", currentName);
   newName = newName.replace(/[^\w\s]/gi, "").replace(/\s/g, "");
   newName = newName.toLowerCase();
 
