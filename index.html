@@ -42,7 +42,15 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
 
-    
+firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            // User is signed in.
+            // You can redirect to /links or perform other actions here
+            window.location.href = '/links';
+        } else {
+            // User is not signed in. Continue with your existing code.
+        }
+    });
 
     // Initialize Google Sign-In
     const googleAuthProvider = new firebase.auth.GoogleAuthProvider();

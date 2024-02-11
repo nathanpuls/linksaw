@@ -6,7 +6,7 @@
   --dark: #ccc;
   --black: black;
   --primary-color: var(--dark-orange);
-  --font-size: 1rem;
+  --font-size: 22px;
 }
 html {
   font-size: var(--font-size); /* Set the base font size to 16 pixels */
@@ -200,8 +200,8 @@ label {
 
 .brand {
   margin-left: 10px;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.2rem;
+  font-weight: bold;
   color: black;
 
   color: black;
@@ -213,7 +213,7 @@ label {
   display: flex;
   flex-wrap: wrap;
   /* gap: 5px; */
-  
+  word-break: break-all;
   align-items: center;
 }
 
@@ -243,17 +243,21 @@ label {
   top: 80px;
   left: 50%;
   transform: translateX(-50%);
-
+  
   background-color: #ffffff;
   padding: 10px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  /* word-break: break-all; */
+  max-width: 90%;
+  overflow-wrap: break-word;
 }
 
 .alert.show {
   display: block;
   border: #ccc;
   animation: fadeOut 3s forwards;
+  word-break: break-all;
 }
 
 @keyframes fadeOut {
