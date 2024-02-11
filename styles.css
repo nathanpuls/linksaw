@@ -7,6 +7,7 @@
   --black: black;
   --primary-color: var(--dark-orange);
   --font-size: 22px;
+  --input-border-bottom: 1px solid #ccc;
 }
 html {
   font-size: var(--font-size); /* Set the base font size to 16 pixels */
@@ -127,7 +128,7 @@ a::after {
 input {
   color: black;
   border: none; /* Remove the border */
-  /* border-bottom: 1px solid #ccc; */
+  border-bottom: var(--input-border-bottom);
   padding: 5px;
   font-size: var(--font-size);
   font-weight: 300;
@@ -153,7 +154,7 @@ input:focus {
   color: black;
   outline: none;
   border: none; /* Remove the border */
-  /* border-bottom: 1px solid #ccc; */
+  border-bottom: var(--input-border-bottom);
 }
 
 /*big on profile*/
