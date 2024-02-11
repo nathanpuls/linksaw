@@ -15,15 +15,15 @@
     </style>
   </head>
   <body>
-    <script src="/header.js"></script>
+    <script src="header.js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
-    <script src="./auth/firebase-config.js"></script>
-    <script src="./auth/google-signin.js"></script>
-    <link rel="stylesheet" href="styles.css" />
+    <script src="../auth/firebase-config.js"></script>
+    <script src="../auth/google-signin.js"></script>
+    <link rel="stylesheet" href="../styles.css" />
 
     <script>
       // Check if the user is authenticated
@@ -65,7 +65,7 @@
             });
         } else {
           // User is signed out, redirect to the login page
-          window.location.href = "index.html";
+          window.location.href = "/";
         }
       });
 
@@ -118,7 +118,7 @@
     <div class="list-container">
         
         <h3 id="profile-heading"></h3>
-      <img src="./images/white.png" id="photo" width="60" height="60" alt="Profile Image" />
+      <img src="../images/white.png" id="photo" width="60" height="60" alt="Profile Image" />
       <p class="dash"><span id="displayName"></span></p>
       <p class="dash"><span id="email"></span></p>
       <p class="dash"><span id="username" class="username-dash"></span></p>

@@ -14,7 +14,7 @@
     dashButton.classList.add('header-button');
     dashButton.textContent = 'Dash';
     dashButton.addEventListener('click', function () {
-        window.location.href = '/dashboard.html';
+        window.location.href = '/profile';
     });
 
     // Append brand and dashButton to header
