@@ -153,17 +153,24 @@ input:focus {
   /* border-bottom: 1px solid #ccc; Add a bottom border */
 }
 
+/*big on profile*/
 #photo {
   border-radius: 5px;
   width: 100px;
   height: 100px;
+  margin-top: -10px;
 }
+/*small top right*/
 #profileImage {
   border-radius: 5px;
   width: 40px;
   margin-top: 5px;
   border: none;
 
+}
+#profile-heading {
+  
+  padding-bottom: 0px;
 }
 ul {
   list-style: none;
@@ -175,6 +182,7 @@ ul li {
 }
 label {
   margin: 0px;
+  
 }
 .sticky-header {
   position: fixed;
