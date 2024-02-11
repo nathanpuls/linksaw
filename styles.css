@@ -350,3 +350,6 @@ align-items: center;
 .pt-20 {
   padding-top: 20px;
 }
+#url {
+  margin-left: -3px;
+}

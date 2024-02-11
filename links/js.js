@@ -93,6 +93,7 @@ function loadLinks(userId) {
         linkTop.style.display = "flex";
         linkTop.style.flexDirection = "column";
         var urlInput = document.getElementById("url");
+        
         urlInput.setAttribute("autofocus", true);
         urlInput.focus();
 
