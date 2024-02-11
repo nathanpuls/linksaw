@@ -23,11 +23,12 @@ function getUsernameFromEmail(email) {
 // Function to copy link to clipboard
 function copyLink(username, linkName) {
   var fullLink = `https://${username}.linksaw.com/${linkName}`;
+  var partialLink = fullLink.slice(8);
   navigator.clipboard
     .writeText(fullLink)
     .then(function () {
       // alert('Link copied to clipboard: ' + fullLink);
-      showAlert("Copied: " + fullLink);
+      showAlert("Copied: " + partialLink);
     })
     .catch(function (error) {
       console.error("Error copying link to clipboard:", error);
@@ -84,7 +85,7 @@ function loadLinks(userId) {
         var listItem = document.createElement("li");
         listItem.innerHTML = `
     <div class="row">
-    <strong>${truncatedName}</strong> 
+    <div class = "mr-10"><strong>${truncatedName}</strong></div>
         <a href="${url}" target="_blank" class="smalltext">${truncatedUrl}</a>
         <div class="icon-container">
         <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')" class="font-awesome"><i class="fa-solid fa-pen"></i></button>

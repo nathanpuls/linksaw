@@ -60,7 +60,7 @@ body {
   
 }
 #link-top {
-  display: none;
+  display: block;
 }
 
 h1,
@@ -136,6 +136,9 @@ input {
   text-indent: 0px;
   margin-left: 0px;
   padding-left: 0px;
+  caret-color: rgb(161, 161, 161);
+
+  ;
 }
 
 /* Add any other styles you want */
@@ -150,7 +153,7 @@ input:focus {
   color: black;
   outline: none;
   border: none; /* Remove the border */
-  /* border-bottom: 1px solid #ccc; Add a bottom border */
+  /* border-bottom: 1px solid #ccc; */
 }
 
 /*big on profile*/
@@ -224,7 +227,7 @@ label {
 .smalltext {
   font-size: 16px;
   margin-left: 3px;
-  margin-right: 3px;
+  margin-right: 10px;
 }
 .font-awesome {
   border: none;
@@ -311,6 +314,8 @@ label {
   align-items: center;
   
 } */
+
+
 .main {
   display: flex;
   flex-direction: column;
@@ -320,7 +325,9 @@ label {
   
 }
 .username-links {
-  margin-left: 5px;
+  margin-left: 0px;
+  
+  
   padding: 0px;
   margin: 0px;
   font-weight: 400;
@@ -354,15 +361,22 @@ align-items: center;
 .pt-20 {
   padding-top: 20px;
 }
-#url {
-  margin-left: px;
-}
+
 #name {
   margin-left: 3px;
 }
 #username {
-  margin-left: 5px;
+  margin-bottom: 0px;
 }
 .profile-link {
   margin-top: 15px;
+}
+.centered {
+  text-align: center;
+}
+.pb-20 {
+  margin-bottom: 20px;
+}
+.mr-10 {
+  margin-right: 10px;
 }
