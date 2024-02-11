@@ -1,117 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <style>
-        #username {
-            margin-left: 0px; /* Adjust this value to control the spacing */
-        }
+      #username {
+        margin-left: 0px; /* Adjust this value to control the spacing */
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <script src="/header.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
-<script src="./auth/firebase-config.js"></script>
-<script src="./auth/google-signin.js"></script>
-<link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <script src="./auth/firebase-config.js"></script>
+    <script src="./auth/google-signin.js"></script>
+    <link rel="stylesheet" href="styles.css" />
 
-<script>
-    // Check if the user is authenticated
-    firebase.auth().onAuthStateChanged((user) => {
+    <script>
+      // Check if the user is authenticated
+      firebase.auth().onAuthStateChanged((user) => {
+        var columnDiv = document.querySelector('#profile-links');
+        var listContainer = document.querySelector('.list-container');
+
         if (user) {
-            // User is signed in, display dashboard content
-            console.log('User is signed in:', user);
+          // User is signed in, display dashboard content
+          console.log("User is signed in:", user);
 
-            // Fetch additional user data including the username
-            const userRef = firebase.database().ref('users/' + user.uid);
-            userRef.once('value')
-                .then((snapshot) => {
-                    const userData = snapshot.val();
-                    if (userData) {
-                        // Display user information
-                        document.getElementById('displayName').textContent = userData.displayName;
-                        document.getElementById('email').textContent = userData.email;
-                        document.getElementById('photo').src = user.photoURL;
-                        document.getElementById('username').textContent = userData.username;
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error fetching user data:', error);
-                });
+          // Fetch additional user data including the username
+          const userRef = firebase.database().ref("users/" + user.uid);
+          userRef
+            .once("value")
+            .then((snapshot) => {
+              const userData = snapshot.val();
+              if (userData) {
+                // Display user information
+                document.getElementById("profile-heading").textContent = 'Profile';
+                document.getElementById("displayName").textContent =
+                  userData.displayName;
+                document.getElementById("email").textContent = userData.email;
+                document.getElementById("photo").src = user.photoURL;
+                document.getElementById("username").textContent =
+                  '@' + userData.username;
+                  columnDiv.style.display = 'flex';
+                  listContainer.style.opacity = 0;
+                    listContainer.style.transition = 'opacity 0.3s ease-in-out';
+                    void listContainer.offsetWidth;
 
+                    // Fade in the content
+                    listContainer.style.opacity = 1;
+
+              }
+            })
+            .catch((error) => {
+              console.error("Error fetching user data:", error);
+            });
         } else {
-            // User is signed out, redirect to the login page
-            window.location.href = 'index.html';
+          // User is signed out, redirect to the login page
+          window.location.href = "index.html";
         }
-    });
+      });
 
-    // Function to delete the current user's account and redirect to the homepage
-    function deleteAccount() {
-    var user = firebase.auth().currentUser;
+      // Function to delete the current user's account and redirect to the homepage
+      function deleteAccount() {
+        var user = firebase.auth().currentUser;
 
-    // Ask for confirmation before deleting the account
-    var confirmation = confirm("Are you sure you want to delete your account? This action cannot be undone.");
+        // Ask for confirmation before deleting the account
+        var confirmation = confirm(
+          "Are you sure you want to delete your account? This action cannot be undone."
+        );
 
-    if (confirmation) {
-        // Get the user ID
-        var userId = user.uid;
+        if (confirmation) {
+          // Get the user ID
+          var userId = user.uid;
 
-        // Remove user data from the database
-        var userRef = firebase.database().ref('users/' + userId);
-        userRef.remove()
+          // Remove user data from the database
+          var userRef = firebase.database().ref("users/" + userId);
+          userRef
+            .remove()
             .then(function () {
-                console.log("User data removed from the database");
+              console.log("User data removed from the database");
 
-                // Delete the user account
-                user.delete()
-                    .then(function () {
-                        // User deleted successfully
-                        console.log("User deleted successfully");
-                        window.location.href = 'index.html'; // Redirect to homepage
-                    })
-                    .catch(function (error) {
-                        console.error("Error deleting user:", error);
-                        // Handle error, display a message to the user, etc.
-                    });
+              // Delete the user account
+              user
+                .delete()
+                .then(function () {
+                  // User deleted successfully
+                  console.log("User deleted successfully");
+                  window.location.href = "index.html"; // Redirect to homepage
+                })
+                .catch(function (error) {
+                  console.error("Error deleting user:", error);
+                  // Handle error, display a message to the user, etc.
+                });
             })
             .catch(function (error) {
-                console.error("Error removing user data from the database:", error);
-                // Handle error, display a message to the user, etc.
+              console.error(
+                "Error removing user data from the database:",
+                error
+              );
+              // Handle error, display a message to the user, etc.
             });
-    }
-}
+        }
+      }
+    </script>
 
-</script>
+    <!-- Dashboard content -->
+    
+    <div class="list-container">
+        
+        <h3 id="profile-heading"></h3>
+      <img src="./images/white.png" id="photo" width="60" height="60" alt="Profile Image" />
+      <p class="dash"><span id="displayName"></span></p>
+      <p class="dash"><span id="email"></span></p>
+      <p class="dash"><span id="username" class="username-dash"></span></p>
 
-<!-- Dashboard content -->
-<!-- <h3>Menu</h3> -->
-<img id="photo" width="60" height="60" alt="Profile Image">
+      <div id="profile-links" class="column pt-20" style="display: none;">
 
-<p><span id="displayName"></span></p>
-<p><span id="email"></span></p>
-<p><span>@</span><span id="username"></span></p>
-<br>
-
-  <button onclick="window.location.href='/links'">Links</button>
-
-  
-
-
-<br><br>
-<button class="button delete-account" onclick="deleteAccount()">Delete Account</button>
-<br><br>
-<button class="button sign-out" onclick="signOut()">Sign Out</button>
-<br><br>
-
-</body>
+          <a href="/links">Links</a>
+          <a
+            ><button class="button-dash delete-account" onclick="deleteAccount()">
+              Delete Profile
+            </button></a
+          >
+          <a href=""
+            ><button class="button-dash sign-out" onclick="signOut()">
+              Sign Out
+            </button></a
+          >
+      </div>
+    </div>
+  </body>
 </html>

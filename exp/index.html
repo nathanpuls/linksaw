@@ -15,13 +15,17 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="styles.css" />
 
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
     <script src="../auth/google-signin.js"></script>
-    
+    <style>
+      #username {
+        margin-left: -8px;
+      }
+    </style>
   </head>
   <body>
     <header class="sticky-header">
@@ -30,34 +34,27 @@
         class="header-button"
         onclick="window.location.href='/dashboard.html'"
       >
-        <!-- <i class="fa-solid fa-bars"></i> -->
-        <!-- <img src="https://lh3.googleusercontent.com/a/ACg8ocJ6BLXLhHwNRMrciwxZhOpCEftWPQBAXHhib5WBWfTlO5-q=s96-c" alt=""> -->
-        
-        <!-- <img src="../images/profile-placeholder.jpeg" id="profileImage" alt="Profile Image"> -->
-        <img src="../images/white.png" id="profileImage" alt="Profile Image">
-
+      <i class="fa-solid fa-bars"></i>
       </button>
     </header>
 
     
+      
+       
     <div class="list-container">
-      <div id="link-top">
-      <div class="row">
-        <h3>Links</h3><span id="username" class="username-links"></span>
+        <h2>Your List Title</h2>
+        <ul id="linksList">
+          <li>Item 1</li>
+          <li>Item 2</li>
+          <li>Item 3</li>
+        </ul>
       </div>
-<div class="row">
-      <label for="url"></label>
-      <input type="text" id="url" placeholder="Paste URL" autofocus />
-      <label for="name"></label>
-      <input type="text" id="name" placeholder="Enter Name" />
-    </div>
+        
+      
+    
 
-      <ul id="linksList"></ul>
-    </div>
-
-    <br />
+<br>
     <!-- <ul id="linksList" class="column"></ul> -->
-      <!-- <button onclick="addLink()">+</button> -->
 
     <script src="js.js"></script>
     <script src="action-box.js"></script>

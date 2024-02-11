@@ -1,0 +1,23 @@
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+  }
+  
+  .list-container {
+    text-align: left;
+  }
+  
+  h2 {
+    margin-bottom: 0; /* Adjust margin as needed */
+  }
+  
+  ul {
+    margin-top: 0; /* Adjust margin as needed */
+    padding-left: 0; /* Remove default indentation */
+    list-style: none; /* Remove default list styles */
+  }
+  
