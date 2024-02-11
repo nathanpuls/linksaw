@@ -65,6 +65,10 @@ function loadLinks(userId) {
           linkData.url.length > 15
             ? linkData.url.slice(0, 15) + "..."
             : linkData.url;
+        var truncatedName =
+          linkData.name.length > 15
+            ? linkData.name.slice(0, 15) + "..."
+            : linkData.name;
         console.log(truncatedUrl);
         let url = linkData.url;
         if (
@@ -80,7 +84,7 @@ function loadLinks(userId) {
         var listItem = document.createElement("li");
         listItem.innerHTML = `
     <div class="row">
-    <strong>${linkData.name}</strong> 
+    <strong>${truncatedName}</strong> 
         <a href="${url}" target="_blank" class="smalltext">${truncatedUrl}</a>
         <div class="icon-container">
         <button onclick="editLink('${userId}', '${linkKey}', '${linkData.url}', '${linkData.name}')" class="font-awesome"><i class="fa-solid fa-pen"></i></button>
@@ -93,7 +97,7 @@ function loadLinks(userId) {
         linkTop.style.display = "flex";
         linkTop.style.flexDirection = "column";
         var urlInput = document.getElementById("url");
-        
+
         urlInput.setAttribute("autofocus", true);
         urlInput.focus();
 

@@ -7,6 +7,7 @@
     // Create brand element
     var brand = document.createElement('div');
     brand.classList.add('brand');
+    brand.style.fontWeight = 'bold';
     brand.textContent = 'Linksaw';
 
     // Create Dash button element
