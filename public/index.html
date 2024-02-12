@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Links</title>
+    <title>exp</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -15,48 +15,23 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="../styles.css" />
 
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
     <script src="../auth/google-signin.js"></script>
-    <style>
-      #username {
-        margin-left: -8px;
-      }
-    </style>
+  
   </head>
   <body>
-    <header class="sticky-header">
-      <div class="brand">Linksaw</div>
-      <button
-        class="header-button"
-        onclick="window.location.href='/dashboard.html'"
-      >
-      <i class="fa-solid fa-bars"></i>
-      </button>
-    </header>
+   <!-- <span>Linksaw</span> -->
+   <!-- <h3 id="public-brand"></h3> -->
+   <h3 id="publicUser"></h3>
+   
+   <div id="linksContainer"></div>
 
-    
-      
-       
-    <div class="list-container">
-        <h2>Your List Title</h2>
-        <ul id="linksList">
-          <li>Item 1</li>
-          <li>Item 2</li>
-          <li>Item 3</li>
-        </ul>
-      </div>
-        
-      
-    
-
-<br>
-    <!-- <ul id="linksList" class="column"></ul> -->
-
+<script src="../profile/header.js"></script>
     <script src="js.js"></script>
-    <script src="action-box.js"></script>
+    
   </body>
 </html>

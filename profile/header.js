@@ -4,10 +4,11 @@ document.addEventListener("DOMContentLoaded", function () {
     header.classList.add("sticky-header");
   
     // Create brand element
-    var brand = document.createElement("div");
-    brand.classList.add("brand");
-    brand.style.fontWeight = "400";
-    brand.textContent = "Linksaw";
+    var brand = document.createElement("a");  // Change from 'div' to 'a'
+brand.classList.add("brand");
+brand.style.fontWeight = "400";
+brand.textContent = "Linksaw";
+brand.href = "/";  
   
     // Create Profile button element
     var profileButton = document.createElement("button");

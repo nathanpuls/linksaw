@@ -1,0 +1,127 @@
+// Function to get URL parameters
+function getUrlParameter(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
+
+var publicUrlParam = getUrlParameter('user');
+document.getElementById("publicUser").innerText = `@${publicUrlParam}`;
+
+let globalUserUID;
+
+// Initialize Firebase
+var firebaseConfig = {
+  apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+  authDomain: "linkshare-eb70b.firebaseapp.com",
+  databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+  projectId: "linkshare-eb70b",
+  storageBucket: "linkshare-eb70b.appspot.com",
+  messagingSenderId: "284502085616",
+  appId: "1:284502085616:web:3f24e3fb844320eef85735",
+  measurementId: "G-VQ0J98LXYT",
+};
+
+try {
+  firebase.initializeApp(firebaseConfig);
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+}
+
+// ... (your existing code)
+
+// Get username from URL parameter
+const targetUsername = getUrlParameter('user'); // Change to 'exp'
+
+console.log('Target Username:', targetUsername); // Add this line for debugging
+
+const database = firebase.database();
+const linksRef = database.ref('links');
+const linksContainer = document.getElementById('linksContainer');
+
+
+
+// Directly target the user UID of interest
+const userUID = 'EG9r2xQNVbN4mU8swoVEI4KmDVs2';
+
+// Read the data once for the specific user
+linksRef.child(userUID).once('value')
+  .then(userSnapshot => {
+    console.log('User Snapshot:', userSnapshot.val()); // Add this line for debugging
+
+    const userLinks = userSnapshot.val(); // Directly get the links object under the user UID
+
+    console.log('User UID:', userUID); // Add this line for debugging
+    console.log('User Links:', userLinks); // Add this line for debugging
+
+    // Check if the user has links
+    if (userLinks && typeof userLinks === 'object') {
+      // Iterate over each link under the user
+      Object.keys(userLinks).forEach(linkKey => {
+        const link = userLinks[linkKey];
+        // Assuming 'username' is a field within each link
+        const linkUsername = link.username;
+
+        if (linkUsername && linkUsername === targetUsername) {
+          // Create an HTML link element for the link
+          const linkElement = document.createElement('a');
+          linkElement.textContent = link.name; // Assuming 'name' is a field within the link
+          linkElement.href = link.url; // Set the href attribute
+
+          // Create a new paragraph element for each link
+          const paragraphElement = document.createElement('p');
+          // Append the link element to the paragraph
+          paragraphElement.appendChild(linkElement);
+
+          // Append the paragraph to the container
+          linksContainer.appendChild(paragraphElement);
+
+          // Log for debugging
+          console.log(`User UID: ${userUID}, Link Key: ${linkKey}, Username: ${linkUsername}, Link Name: ${link.name}`);
+        }
+      });
+    }
+  })
+  .catch(error => {
+    console.error("Error reading data:", error);
+  });
+
+  // FIND UID
+
+
+
+  function findUidByUsername(username) {
+    // Create a reference to the "links" node in the database
+    const linksRef = database.ref('links');
+  
+    // Query the database to find the link based on the username
+    linksRef.orderByChild('username').equalTo(username).once('value')
+      .then(snapshot => {
+        if (snapshot.exists()) {
+          // The username was found, get the key (unique ID)
+          const linkKey = Object.keys(snapshot.val())[0];
+          console.log(`Link key for ${username}: ${linkKey}`);
+  
+          // Access the UID directly from the link
+          const uid = snapshot.val()[linkKey].uid;
+          console.log(`UID for ${username}: ${uid}`);
+  
+          // Access the link properties
+          const linkProperties = snapshot.val()[linkKey];
+          console.log(`Link Properties for ${username}:`, linkProperties);
+  
+          // If you want to access specific properties
+          const linkName = linkProperties.name;
+          const linkUrl = linkProperties.url;
+          console.log(`Link Name: ${linkName}, Link URL: ${linkUrl}`);
+        } else {
+          console.log(`Username ${username} not found.`);
+        }
+      })
+      .catch(error => {
+        console.error('Error finding UID:', error);
+      });
+  }
+  
+  // Example usage
+  const usernameToFind = 'natepuls';
+  findUidByUsername(usernameToFind);

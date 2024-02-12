@@ -273,3 +273,4 @@ function showAlert(message) {
     alertDiv.remove();
   }, 3000);
 }
+

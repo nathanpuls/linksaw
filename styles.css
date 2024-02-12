@@ -54,7 +54,7 @@ body {
   }
 }
 
-.list-container {
+.list-container, .linksContainer {
   animation: fadeIn 1s ease-in-out;
   opacity: 1;
   text-align: left;
@@ -207,8 +207,14 @@ label {
   font-size: 1.2rem;
   font-weight: 400;
   color: rgb(221, 33, 171);
+  text-decoration: none;
 
   color: black;
+}
+.brand::after {
+  
+  height: 0px;
+  
 }
 .header-button {
   margin-right: 10px;
