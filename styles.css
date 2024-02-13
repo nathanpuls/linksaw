@@ -54,10 +54,11 @@ body {
   }
 }
 
-.list-container, .linksContainer {
+.list-container, #linksContainer, #publicUser {
   animation: fadeIn 1s ease-in-out;
   opacity: 1;
   text-align: left;
+  
   
 }
 #link-top {
@@ -389,4 +390,7 @@ align-items: center;
 }
 .icon-container {
   margin-left: 10px;
+}
+#publicPage {
+  margin-top: 15px;
 }

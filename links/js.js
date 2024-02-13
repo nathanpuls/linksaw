@@ -15,7 +15,8 @@ var database = firebase.database();
 
 // Function to extract username from email
 function getUsernameFromEmail(email) {
-  var username = email.split("@")[0];
+  let username = email.split("@")[0];
+  username = username.replace(/\./g, '');
   console.log("1:" + username); // Log the username to the console
   return username; // Return the username
 }
@@ -63,6 +64,7 @@ function loadLinks(userId) {
         var linkKey = childSnapshot.key;
         var linkData = childSnapshot.val();
         var username = linkData.username;
+        username = username.replace(/\./g, ''); // USERNAME REMOVE PERIODS 2
         var truncatedUrl =
           linkData.url.length > 15
             ? linkData.url.slice(0, 15) + "..."
@@ -159,6 +161,7 @@ function addLink() {
               url: url,
               name: name,
               username: getUsernameFromEmail(currentUser.email),
+              timestamp: formattedTime,
             })
             .then(function () {
               // Clear the input fields after adding the link
@@ -230,6 +233,7 @@ firebase.auth().onAuthStateChanged(function (user) {
 
     // Extract the username from the email
     var username = getUsernameFromEmail(user.email);
+    username = username.replace(/\./g, ''); // USERNAME REMOVE PERIODS 1
 
     console.log("Username:", username);
     document.title = "Links @" + username;
@@ -274,3 +278,8 @@ function showAlert(message) {
   }, 3000);
 }
 
+const currentTime = new Date();
+
+// Format the date in MM/DD/YYYY at h:mm a format
+const options = { month: '2-digit', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
+const formattedTime = currentTime.toLocaleString('en-US', options);

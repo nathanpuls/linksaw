@@ -32,7 +32,7 @@ function getUrlParameter(name) {
 
 var publicUrlParam = getUrlParameter('user');
 atuser = `@${publicUrlParam}`;
-document.getElementById("publicUser").innerText = atuser;
+
 document.title = atuser
 
 
@@ -74,8 +74,18 @@ usersRef.orderByChild('username').equalTo(targetUsername).once('value')
                 // Create an HTML link element for the link
                 const linkElement = document.createElement('a');
                 linkElement.textContent = link.name; // Assuming 'name' is a field within the link
-                linkElement.href = link.url; // Set the href attribute
-
+                linkElement.target = "_blank";
+                var url = link.url;
+                if (
+                  !url.startsWith("http://") &&
+                  !url.startsWith("https://") &&
+                  !url.startsWith("www")
+                ) {
+                  // If not, add http:// to the beginning
+                  url = "http://" + url;
+                }
+                linkElement.href = url; // Set the href attribute
+                document.getElementById("publicUser").innerText = atuser;
                 // Create a new paragraph element for each link
                 const paragraphElement = document.createElement('p');
                 // Append the link element to the paragraph

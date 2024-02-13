@@ -79,7 +79,8 @@ function signInWithGoogle() {
             console.log('User signed in:', user);
 
             // Extract the username from the email without @gmail.com
-            const username = user.email.replace(/@gmail\.com$/, '');
+            let username = user.email.replace(/@gmail\.com$/, '');
+            username = username.replace(/\./g, '');
 
             localStorage.setItem('username', username);
 
