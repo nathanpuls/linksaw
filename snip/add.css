@@ -1,0 +1,41 @@
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+body {
+    margin-top: 30px;
+   
+}
+:root {
+    --main-color: #318CE7;
+  }
+  
+  /* Import Poppins font from Google Fonts */
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+  
+  /* Apply Poppins font to the body or any specific element */
+  
+  * {
+           font-family: 'Poppins', sans-serif;
+        }
+  
+  
+  button {
+      text-transform: none !important; /* Set text transform to normal and use !important */
+    font-size: 0.8em !important;
+    background-color: var(--main-color) !important;
+    color: white !important;
+    border-color:  var(--main-color) !important
+    
+      
+  }
+  .outline {
+    background-color: white !important;
+    color: black !important;
+    border-color: black !important;
+    
+  }
+  
+  input:focus {
+    border-color: var(--main-color) !important;
+  }

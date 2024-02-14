@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <title>Copy Code Tool</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    * {
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    #code-container {
+      margin-top: 50px;
+      margin-bottom: 50px;
+      position: relative;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+      display: flex;
+    }
+    
+    #code {
+      margin: 0;
+      padding: 20px;
+      white-space: pre-wrap;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      /*font-family: monospace;*/
+      resize: none;
+      border: none;
+      width: calc(100% - 40px); /* Adjust the width to consider padding */
+      box-sizing: border-box; /* Include padding and border in the element's total width and height */
+      
+    }
+    
+    #code:focus {
+      border: none;
+      outline: none;
+    }
+    
+    #copy-icon {
+      cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 10px;
+      background-color: white;
+      color: red;
+      border: none;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #copy-icon img {
+      width: 20px; /* Adjust the size as needed */
+    }
+    
+    .tooltip {
+      position: fixed;
+      background-color: white;
+      border: 0px solid #ccc;
+      color: black;
+      border-radius: 8px;
+      padding: 5px;
+      border-radius: 4px;
+      font-size: 14px;
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="code-container">
+    <textarea id="code" placeholder="Content to copy goes here" value="hey there"></textarea>
+    <div id="copy-icon" onclick="copyCode()">
+      <img src="https://www.svgrepo.com/show/510939/copy.svg" alt="Copy to Clipboard">
+    </div>
+  </div>
+
+  <script>
+    function copyCode() {
+      const codeElement = document.getElementById('code');
+      const codeText = codeElement.value;
+  
+      navigator.clipboard.writeText(codeText)
+        .then(() => {
+          // Create a tooltip element
+          const tooltip = document.createElement('div');
+          tooltip.classList.add('tooltip');
+          tooltip.textContent = 'Copied!';
+  
+          // Append the tooltip to the body
+          document.body.appendChild(tooltip);
+  
+          // Position the tooltip to the left of the copy icon
+          const copyIcon = document.getElementById('copy-icon');
+          const iconRect = copyIcon.getBoundingClientRect();
+          tooltip.style.top = iconRect.top + iconRect.height / 2 - tooltip.offsetHeight / 2 + 'px';
+          tooltip.style.left = iconRect.left - tooltip.offsetWidth - -5 + 'px';
+  
+          // Fade out and remove the tooltip after a short delay
+          setTimeout(() => {
+            tooltip.style.opacity = '0';
+            setTimeout(() => {
+              document.body.removeChild(tooltip);
+            }, 300); // Adjust the duration of the fade-out animation
+          }, 1500); // Adjust the duration the tooltip is visible
+        })
+        .catch(err => {
+          console.error('Unable to copy code', err);
+        });
+    }
+  
+// Dynamically adjust textarea height based on content
+// Dynamically adjust textarea height based on content
+const codeElement = document.getElementById('code');
+let previousHeight = codeElement.scrollHeight;
+
+codeElement.addEventListener('input', function () {
+  const currentHeight = this.scrollHeight;
+
+  if (currentHeight > previousHeight) {
+    // Grow the height when new lines are added
+    this.style.height = currentHeight + 'px';
+  } else {
+    // Shrink the height when text is removed
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+  }
+
+  previousHeight = currentHeight;
+
+  // Scroll to bottom after adjusting height
+  this.scrollTop = this.scrollHeight;
+});
+
+  </script>
+
+  <script src="js.js"></script>
+
+</body>
+</html>
