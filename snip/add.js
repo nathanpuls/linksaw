@@ -13,28 +13,53 @@ var firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+// Assuming you have the currentUser defined before this point
+
+// Add an authentication state observer
+firebase.auth().onAuthStateChanged(function (user) {
+    if (!user) {
+        // If there is no user, redirect to the home page
+        window.location.href = '/';
+    }
+});
+
 function addSnip() {
     const title = document.getElementById('title').value;
     const content = document.getElementById('content').value;
+    const currentUser = firebase.auth().currentUser;
 
     // Check if both title and content are provided
     if (title && content) {
         // Get a reference to the database
         const database = firebase.database();
 
-        // Push the snip to the database
-        const snipRef = database.ref('snips').push();
-        snipRef.set({
-            title: title,
-            content: content
-        });
+        if (currentUser) {
+            // If there is a current user, add the snip with their email
+            const snipRef = database.ref('snips').push();
+            snipRef.set({
+                name: title,
+                content: content,
+                test: 'test',
+                url: 'test',
+                email: currentUser.email
+            })
+            .then(() => {
+                // Clear the input fields after adding the snip
+                document.getElementById('title').value = '';
+                document.getElementById('content').value = '';
 
-        // Clear the input fields after adding the snip
-        document.getElementById('title').value = '';
-        document.getElementById('content').value = '';
-
-        alert('Snip added successfully!');
+                // Redirect to sniplist.html after successful save
+                window.location.href = 'sniplist.html';
+            })
+            .catch((error) => {
+                console.error('Error saving snip to database:', error);
+                alert('An error occurred while saving the snip. Please try again.');
+            });
+        } else {
+            alert('Please provide both title and content.');
+        }
     } else {
         alert('Please provide both title and content.');
     }
 }
+

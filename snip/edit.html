@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Snip</title>
+  <!-- Include Firebase SDK -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/milligram@1.4.1/dist/milligram.min.css">
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
+  <style>
+    :root {
+      --main-color: #318ce7;
+    }
+    .delete-button {
+        margin-left: 50px;
+    }
+    .notification {
+        
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+
+        margin-top: 20px;
+        font-size: 2rem;
+        color: rgb(44, 44, 44);
+        background-color: rgb(255, 255, 255);
+        
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    input:focus {
+      border-color: var(--main-color) !important;
+    }
+
+    a {
+      color: var(--main-color);
+    }
+
+    .container {
+      max-width: 600px;
+      background-color: white;
+      position: relative;
+      
+    }
+
+    .snip-container {
+      margin-right: 60px;
+    }
+
+    .copy-input {
+      padding-right: 50px;
+    }
+
+    button {
+        background-color: var(--main-color);
+        border-color: var(--main-color);
+        
+        
+    }
+
+    .copy-button {
+      position: absolute;
+      margin-left: 2px;
+      margin-right: 20px;
+      font-size: 0.8rem;
+      margin-bottom: 23px;
+      padding-bottom: 15px;
+      padding-left: 5px;
+      padding-right: 5px;
+      background-color: var(--main-color);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      width: 60px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    textarea {
+      height: 300px !important;
+      font-family: Poppins;
+    }
+
+    textarea:focus {
+      border-color: #318ce7;
+    }
+
+    body {
+      margin-top: 90px;
+    }
+    .delete-button {
+    position: absolute;
+    top: 30px;
+    right: 45px;
+    color: black;
+    background-color: white;
+    border: none;
+    font-weight: 300;
+    text-transform: none;
+
+  }
+  .delete-button:hover {
+    background-color: white;
+    color: black;
+  }
+  
+  </style>
+</head>
+<body>
+    <div class="container">
+        <a href="sniplist.html">All snips</a>
+        <div class="rows">
+          <h4>Edit Snip</h4>
+          
+        </div>
+        <ul id="snipsList"></ul>
+      </div>
+
+  <script>
+    // Your Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+      authDomain: "linkshare-eb70b.firebaseapp.com",
+      databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+      projectId: "linkshare-eb70b",
+      storageBucket: "linkshare-eb70b.appspot.com",
+      messagingSenderId: "284502085616",
+      appId: "1:284502085616:web:3f24e3fb844320eef85735",
+      measurementId: "G-VQ0J98LXYT",
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    function getUrlParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Example usage:
+    const expValue = getUrlParameter('id');
+    console.log(expValue);
+
+    // Function to retrieve and display the first Snip that corresponds to the ID in the URL parameter
+    function displaySnipById(snipId) {
+      var database = firebase.database();
+      var snipsList = document.getElementById('snipsList');
+
+      // Reference to the "snips" node in the database
+      var snipsRef = database.ref('snips');
+
+      // Retrieve the snip with the specified ID
+      snipsRef.child(snipId).once('value', function(snapshot) {
+        var snipData = snapshot.val();
+        
+        if (snipData) {
+          // Create a div for the Snip
+          var divItem = document.createElement('div');
+          divItem.classList.add('snip-container');
+
+          // Create label for name
+          var nameLabel = document.createElement('input');
+          nameLabel.value = snipData.name;
+          nameLabel.placeholder = 'Snip name';
+          nameLabel.href = `/edit/?name=${snipData.name}`;
+          divItem.appendChild(nameLabel);
+
+          // Create input for content with initial value
+          var inputItem = document.createElement('textarea');
+          inputItem.classList.add('copy-input');
+          inputItem.type = 'text';
+          inputItem.value = snipData.content;
+          inputItem.placeholder = 'Snip content';
+          inputItem.rows = 1; // Set the initial number of rows
+inputItem.style.height = '500px !important';
+          divItem.appendChild(inputItem);
+          
+
+          // Create copy button
+          var copyButton = document.createElement("button");
+copyButton.classList.add("copy-button");
+copyButton.textContent = "Copy";
+copyButton.addEventListener("click", function () {
+  inputItem.select();
+  document.execCommand("copy");
+
+  // Change textContent to white checkmark for 2 seconds
+  copyButton.textContent = "✓";
+  setTimeout(function () {
+    copyButton.textContent = "Copy";
+  }, 2000);
+});
+
+divItem.appendChild(copyButton);
+
+          var saveButton = document.createElement('button');
+saveButton.textContent = 'Save';
+saveButton.addEventListener('click', function() {
+  // Get updated values
+  var updatedName = nameLabel.value;
+  var updatedContent = inputItem.value;
+
+  // Update the snip in the database
+  updateSnip(expValue, updatedName, updatedContent);
+  showNotification('Snip saved');
+});
+divItem.appendChild(saveButton);
+
+var deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Delete';
+    deleteButton.classList.add('delete-button'); // Add classes here
+
+    deleteButton.addEventListener('click', function () {
+      // Call the function to delete the snip
+      deleteSnip(expValue);
+    });
+    divItem.appendChild(deleteButton);
+
+          // Append the div to the snipsList
+          snipsList.appendChild(divItem);
+        }
+      });
+    }
+
+    // Call the displaySnipById function with the ID from the URL parameter
+    displaySnipById(expValue);
+
+    function updateSnip(snipId, updatedName, updatedContent) {
+  var database = firebase.database();
+  var snipsRef = database.ref('snips');
+
+  // Reference to the specific snip
+  var snipToUpdate = snipsRef.child(snipId);
+
+  // Update the values
+  snipToUpdate.update({
+    name: updatedName,
+    content: updatedContent
+  }).then(function() {
+    console.log('Snip updated successfully!');
+  }).catch(function(error) {
+    console.error('Error updating snip:', error);
+  });
+}
+function showNotification(message) {
+  var notification = document.createElement('div');
+  notification.classList.add('notification');
+  notification.textContent = message;
+
+  document.body.appendChild(notification);
+
+  // Remove the notification after a certain time (e.g., 3000 milliseconds)
+  setTimeout(function() {
+    notification.remove();
+  }, 3000);
+}
+function deleteSnip(snipId) {
+    var database = firebase.database();
+    var snipsRef = database.ref('snips');
+
+    // Reference to the specific snip
+    var snipToDelete = snipsRef.child(snipId);
+
+    // Remove the snip from the database
+    snipToDelete.remove().then(function () {
+      console.log('Snip deleted successfully!');
+      window.location.href = 'sniplist.html';
+      // Optionally, you can redirect the user to another page or show a confirmation message.
+    }).catch(function (error) {
+      console.error('Error deleting snip:', error);
+    });
+  }
+  </script>
+</body>
+</html>

@@ -205,7 +205,7 @@ label {
 
 .brand {
   margin-left: 10px;
-  font-size: 1.2rem;
+  /* font-size: 1.2rem; */
   font-weight: 400;
   color: rgb(221, 33, 171);
   text-decoration: none;

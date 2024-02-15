@@ -2,6 +2,23 @@
     max-width: 600px;
     margin: 0 auto;
 }
+.container-middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Optional: Set the container's height to the full viewport height */
+}
+
+.container-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  height: 100vh; /* Optional: Set the container's height to the full viewport height */
+}
+
+
 body {
     margin-top: 30px;
    
@@ -22,7 +39,7 @@ body {
   
   button {
       text-transform: none !important; /* Set text transform to normal and use !important */
-    font-size: 0.8em !important;
+    /* font-size: 0.8rem !important; */
     background-color: var(--main-color) !important;
     color: white !important;
     border-color:  var(--main-color) !important
@@ -38,4 +55,8 @@ body {
   
   input:focus {
     border-color: var(--main-color) !important;
+  }
+
+  a {
+    color: var(--main-color);
   }

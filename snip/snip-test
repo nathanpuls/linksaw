@@ -1,0 +1,12 @@
+<div class="snip-container">
+    <!-- Label for name -->
+    <label>{{ snipData.name }}</label>
+    
+    <div id="main-snip-container"></div>
+    <!-- Input for content with initial value -->
+    <input class="copy-input" type="text" value="{{ snipData.content }}">
+    
+    <!-- Copy button -->
+    <button class="copy-button" onclick="copyText()">Copy</button>
+</div>
+</div>

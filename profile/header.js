@@ -11,7 +11,7 @@ brand.textContent = "Linksaw";
 brand.href = "/";  
   
     // Create Profile button element
-    var profileButton = document.createElement("button");
+    var profileButton = document.createElement("div");
     profileButton.classList.add("header-button");
   
     // Check if the current page is "profile"
