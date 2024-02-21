@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      integrity="sha512-..."
+      crossorigin="anonymous"
+    />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/nathanpuls/css@main/milligram-blue.css"
+    />
+<script src="../scripts/menuLink.js"></script>
+    <style>
+      #username {
+        margin-left: 0px; /* Adjust this value to control the spacing */
+      }
+    </style>
+  </head>
+  <body>
+    <script src="header.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <script src="../firebaseconfig.js"></script>
+    <script src="../scripts/login.js"></script>
+    <link rel="stylesheet" href="../global.css" />
+
+    <template id="userTemplate">
+        <img src="${imageSrc}" alt="${alt}">
+        <p>${name}</p>
+        <p>${email}</p>
+        <p>${username}</p>
+    </template>
+
+    <script>
+
+        // Retrieve template content
+        var template = document.getElementById('template').innerHTML;
+
+        
+        var data = {
+            name: userData.name,
+            email: userData.email,
+            username: userData.username,
+
+        };
+
+        // Replace placeholders with data
+        var postTemp = template.replace(/{\s*([\w.]+)\s*}/g, function(match, p1) {
+            return data[p1];
+        });
+
+        // Insert rendered template into the document
+        document.body.innerHTML += postTemp;
+
+      let showUsername;
+
+      // Function to fetch user data
+      function fetchUserData(user) {
+        return new Promise((resolve, reject) => {
+          const userRef = firebase.database().ref("users/" + user.uid);
+          userRef
+            .once("value")
+            .then((snapshot) => {
+              const userData = snapshot.val();
+              if (userData) {
+                showUsername = userData.username;
+                showUsername = showUsername.replace(/\./g, "");
+                resolve(userData);
+              } else {
+                reject("User data not found");
+              }
+            })
+            .catch((error) => reject(error));
+        });
+      }
+
+      // Function to display user information
+      function displayUserData(user) {
+        const columnDiv = document.querySelector("#profile-links");
+        const listContainer = document.querySelector(".list-container");
+
+        document.getElementById("profile-heading").textContent = "Profile";
+        document.getElementById("displayName").textContent = user.displayName;
+        document.getElementById("email").textContent = user.email;
+        document.getElementById("photo").src = user.photoURL;
+        document.getElementById("username").textContent = "@" + user.username;
+
+        columnDiv.style.display = "flex";
+        listContainer.style.opacity = 0;
+        listContainer.style.transition = "opacity 0.3s ease-in-out";
+        void listContainer.offsetWidth;
+
+        // Fade in the content
+        listContainer.style.opacity = 1;
+      }
+
+      // Function to fetch and display user data
+      function fetchDataAndDisplay() {
+        return new Promise((resolve, reject) => {
+          firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+              fetchUserData(user)
+                .then(displayUserData)
+                .then(resolve)
+                .catch(reject);
+            } else {
+              reject("User not signed in");
+            }
+          });
+        });
+      }
+
+      // Function to create and display public page link
+      function displayUsername() {
+        // Create the anchor element with content
+        const profileLink = document.createElement("a");
+        profileLink.href = "/public/?user=" + showUsername;
+        //http://127.0.0.1:5500/public/?user=natepuls
+        profileLink.classList.add("profile-link");
+        profileLink.textContent = "Public Page";
+
+        // Get the element with ID "publicPage"
+        const publicPageContainer = document.getElementById("publicPage");
+
+        // Append the anchor element to the "publicPage" container
+        publicPageContainer.appendChild(profileLink);
+      }
+
+      // Function to delete the current user's account and redirect to the homepage
+      function deleteAccount() {
+        const user = firebase.auth().currentUser;
+
+        // Ask for confirmation before deleting the account
+        const confirmation = confirm(
+          "Are you sure you want to delete your account? This action cannot be undone."
+        );
+
+        if (confirmation) {
+          // Get the user ID
+          const userId = user.uid;
+
+          // Remove user data from the database
+          const userRef = firebase.database().ref("users/" + userId);
+          userRef
+            .remove()
+            .then(() => {
+              console.log("User data removed from the database");
+
+              // Delete the user account
+              user
+                .delete()
+                .then(() => {
+                  // User deleted successfully
+                  console.log("User deleted successfully");
+                  window.location.href = "index.html"; // Redirect to homepage
+                })
+                .catch((error) => {
+                  console.error("Error deleting user:", error);
+                  // Handle error, display a message to the user, etc.
+                });
+            })
+            .catch((error) => {
+              console.error(
+                "Error removing user data from the database:",
+                error
+              );
+              // Handle error, display a message to the user, etc.
+            });
+        }
+      }
+
+      // Call the function to initiate the process
+      fetchDataAndDisplay()
+        .then(displayUsername)
+        .catch((error) => console.error(error));
+    </script>
+
+    <!-- Dashboard content -->
+
+    <div class="list-container container">
+      <h3 id="profile-heading"></h3>
+      <img
+        src="../images/white.png"
+        id="photo"
+        width="60"
+        height="60"
+        alt="Profile Image"
+        style="border-radius: 8px;"
+      />
+      <p class="dash"><span id="displayName"></span></p>
+      <p class="dash"><span id="email"></span></p>
+      <p class="dash"><span id="username" class="username-dash"></span></p>
+
+      <!-- <div id="profile-links" class="column pt-20" style="display: none">
+        <a href="/links" class="profile-link">Shortlinks</a>
+        <a href="../snip/sniplist.html" class="profile-link">Snips</a>
+        <a href="../snip/add.html" class="profile-link">Add Snip</a>
+
+        <div id="publicPage"></div> -->
+
+        <a
+          ><button
+            class="button-dash delete-account profile-link"
+            onclick="deleteAccount()"
+          >
+            Delete Profile
+          </button></a
+        >
+        <a href=""
+          ><button
+            class="button-dash sign-out profile-link"
+            onclick="signOut()"
+          >
+            Sign Out
+          </button></a
+        >
+      </div>
+    </div>
+    <script>
+      // Your JavaScript code here
+      var currentUser = {
+        username: "natepuls", // Replace with the actual username
+        // other user properties...
+      };
+
+      function displayUsername() {
+        // Create the anchor element with content
+        var usernameValue = fetchUsername();
+        var profileLink =
+          '<a href="public/?user=' +
+          usernameValue +
+          '" class="profile-link">Public Page</a>';
+
+        // Set the innerHTML of the placeholder element with the dynamically created anchor element
+        document.getElementById("publicPage").innerHTML = profileLink;
+      }
+
+      displayUsername();
+    </script>
+  </body>
+</html>

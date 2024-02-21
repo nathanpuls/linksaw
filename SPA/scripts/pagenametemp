@@ -1,0 +1,40 @@
+
+        
+        
+function updateHashDisplay() {
+    // Get the current hash from the URL
+    var currentHash = window.location.hash;
+    currentHash = currentHash.slice(1);
+    currentHash = currentHash.charAt(0).toUpperCase() + currentHash.slice(1);
+    
+    
+    // Update the content of the h4 element with the current hash
+    document.getElementById('pagename').textContent = currentHash;
+    }
+    
+    // Attach the function to the hashchange event
+    window.addEventListener('hashchange', updateHashDisplay);
+    
+    // Call the function on page load
+    window.addEventListener('load', updateHashDisplay);
+
+    //>>>>
+        
+        // Retrieve template content
+        var template = document.getElementById('template').innerHTML;
+
+        // Sample data
+        var data = {
+            title: 'Website',
+            adjective: 'simple'
+        };
+
+        // Replace placeholders with data
+        var postTemp = template.replace(/{\s*([\w.]+)\s*}/g, function(match, p1) {
+            return data[p1];
+        });
+
+        // Insert rendered template into the document
+        document.body.innerHTML += postTemp;
+
+        

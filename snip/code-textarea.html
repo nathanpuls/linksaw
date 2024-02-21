@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  display: flex;
+  height: 100vh;
+}
+
+#editor-container {
+  flex-grow: 1;
+  position: relative;
+  
+}
+
+#line-numbers {
+  width: 10px;
+  background-color: #f4f4f4;
+  padding: 10px;
+  text-align: right;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  border-right: 1px solid #ddd;
+  pointer-events: none; /* Make line numbers unselectable */
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+    #code {
+  width: calc(100% - 40px);
+  height: 100%;
+  padding: 10px;
+  border: none;
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: 40px; /* Adjust the padding to leave space for line numbers */
+  box-sizing: border-box; /* Include padding in the width calculation */
+  margin: 0; /* Reset default margin */
+}
+
+#code:focus {
+      outline: none; /* Remove the default focus outline */
+      border: 0px solid #ddd; /* Add your desired border style when focused */
+    }
+
+  </style>
+</head>
+<body>
+  <div id="editor-container">
+    <div id="line-numbers"></div>
+    <textarea id="code" placeholder="Enter your code here..."></textarea>
+  </div>
+
+  <script>
+    const codeTextarea = document.getElementById('code');
+    const lineNumbers = document.getElementById('line-numbers');
+
+    codeTextarea.addEventListener('input', updateLineNumbers);
+
+    function updateLineNumbers() {
+      const lines = codeTextarea.value.split('\n');
+      const lineCount = lines.length;
+
+      const lineNumbersHTML = Array.from({ length: lineCount }, (_, index) => `<div>${index + 1}</div>`).join('');
+      lineNumbers.innerHTML = lineNumbersHTML;
+    }
+
+    // Initial update
+    updateLineNumbers();
+  </script>
+</body>
+</html>

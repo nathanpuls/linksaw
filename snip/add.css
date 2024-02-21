@@ -60,3 +60,9 @@ body {
   a {
     color: var(--main-color);
   }
+
+  textarea:focus {
+    border: 1px solid var(--main-color);
+  }
+
+  

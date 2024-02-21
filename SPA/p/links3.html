@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Links</title>
+    <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/nathanpuls/css@main/milligram-blue.css"
+  />
+    <link rel="stylesheet" href="../global.css">
+    
+</head>
+<body>
+
+    
+
+    <div class="container">
+        <h1>Your Links</h1>
+        <ul id="linksList"></ul>
+    </div>
+
+    <!-- Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
+    <script src="../firebaseconfig.js"></script>
+    <script src="../scripts/link3.js"></script>
+    <!-- Add any additional Firebase scripts you need -->
+
+    <script>
+        // TODO: Replace with your Firebase project configuration
+        // const firebaseConfig = {
+        //     apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+        //     authDomain: "linkshare-eb70b.firebaseapp.com",
+        //     databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+        //     projectId: "linkshare-eb70b",
+        //     storageBucket: "linkshare-eb70b.appspot.com",
+        //     messagingSenderId: "284502085616",
+        //     appId: "1:284502085616:web:3f24e3fb844320eef85735",
+        //     measurementId: "G-VQ0J98LXYT"
+        // };
+
+        // // Initialize Firebase
+        // firebase.initializeApp(firebaseConfig);
+
+        // Function to display links
+        
+    
+    // const firebaseConfig = {
+    //     apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+    //     authDomain: "linkshare-eb70b.firebaseapp.com",
+    //     databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+    //     projectId: "linkshare-eb70b",
+    //     storageBucket: "linkshare-eb70b.appspot.com",
+    //     messagingSenderId: "284502085616",
+    //     appId: "1:284502085616:web:3f24e3fb844320eef85735",
+    //     measurementId: "G-VQ0J98LXYT"
+    // };
+
+ 
+    // firebase.initializeApp(firebaseConfig);
+
+    // function displayLinks() {
+    //     firebase.auth().onAuthStateChanged((user) => {
+    //         if (user) {
+    //             const username = user.email.replace(/@gmail\.com$/i, "");
+    //             const linksRef = firebase.database().ref("users/" + username + "/links");
+
+    //             linksRef.once("value", (snapshot) => {
+    //                 const linksList = document.getElementById("linksList");
+
+    //                 snapshot.forEach((childSnapshot) => {
+    //                     const linkData = childSnapshot.val();
+    //                     const listItem = document.createElement("li");
+
+    //                     // Display link data as list items
+    //                     listItem.innerHTML = `<a href="${linkData.url}">${linkData.name}</a>`;
+
+    //                     linksList.appendChild(listItem);
+    //                 });
+    //             });
+    //         } else {
+    //             console.error("User not logged in");
+    //             // Handle the case where the user is not logged in
+    //         }
+    //     });
+    // }
+
+    // // Call the function to display links when the page loads
+    // document.addEventListener("DOMContentLoaded", displayLinks);
+</script>
+
+</body>
+</html>

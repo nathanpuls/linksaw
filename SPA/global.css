@@ -1,0 +1,166 @@
+/* * {
+  color: red;
+} */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+.red {
+  color: blue;
+  background-color: red;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    /* padding: 40px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  */
+
+}
+.middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; /* Optional: Set the container's height to the full viewport height */
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  height: 100vh; /* Optional: Set the container's height to the full viewport height */
+}
+
+
+body {
+    margin-top: 90px;
+    
+}
+
+
+.fade-in {
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+}
+
+body.show {
+    display: block;
+}
+:root {
+    --main-color: #318CE7;
+  }
+  
+  /* Import Poppins font from Google Fonts */
+  
+  
+  /* Apply Poppins font to the body or any specific element */
+  
+  * {
+           font-family: 'Poppins', sans-serif;
+        }
+  
+  
+  button {
+      text-transform: none !important; /* Set text transform to normal and use !important */
+    /* font-size: 0.8rem !important; */
+    background-color: var(--main-color) !important;
+    color: white !important;
+    border-color:  var(--main-color) !important;
+    font-weight: 400;
+    
+      
+  }
+  .outline {
+    background-color: white !important;
+    color: black !important;
+    border-color: black !important;
+    
+  }
+
+  .wide {
+    min-width: 300px;
+    font-size: 1.5rem;
+  }
+
+  .menu {
+    font-size: 2.5rem;
+}
+  
+  input:focus, textarea:focus {
+    border-color: var(--main-color) !important;
+  }
+
+  a {
+    color: var(--main-color);
+  }
+
+  #app {
+    opacity: 0; /* Set initial opacity to 0 */
+    transition: opacity 0.5s ease-in-out; /* Add a transition for the opacity property */
+}
+
+#app.fade-in {
+    opacity: 1; /* Set opacity to 1 for the fade-in effect */
+}
+#profile-photo {
+  border-radius: 8px;
+}
+.page-heading {
+  color: inherit
+}
+textarea {
+  height: 300px !important;
+  font-family: Poppins;
+}
+
+textarea:focus {
+  border-color: #318ce7;
+}
+
+
+
+
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+  /* border-bottom: 1px solid #ccc; */
+  background-color: #fff;
+  z-index: 1000;
+  /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); */
+
+}
+
+.brand {
+  
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  padding: 10px;
+  
+}
+
+
+
+a {
+  text-decoration: none;
+  color: #333;
+}
+.icon-container {
+  background-color: red;
+  display: flex !important;
+ 
+
+
+}
+.row {
+  margin-left: 0rem;
+}

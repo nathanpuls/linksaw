@@ -1,0 +1,48 @@
+<!-- Your main HTML file -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your Page Title</title>
+
+    <!-- Include Handlebars library -->
+    <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.7/dist/handlebars.js"></script>
+
+    <!-- Include the navbar partial -->
+    <script src="path/to/navbar-partial.html"></script>
+
+    <!-- Your existing styles -->
+    <style>
+      /* ... (your existing styles) ... */
+    </style>
+  </head>
+  <body>
+    <!-- Container for the navigation bar -->
+    <div id="navbar-container"></div>
+
+    <!-- Your page content goes here -->
+    <div class="container">
+      <!-- ... (your page content) ... -->
+    </div>
+
+    <!-- Your existing scripts -->
+    <script>
+      // Fetch and compile the navbar template
+      var navbarTemplateSource = document.getElementById("navbar-template").innerHTML;
+      var navbarTemplate = Handlebars.compile(navbarTemplateSource);
+
+      // Data for the navigation bar
+      var navbarData = {
+        brand: { href: "/", text: "Your Brand" },
+        navLinks: [
+          { href: "/about", label: "About" },
+          // Add more navigation items as needed
+        ],
+      };
+
+      // Render the navigation bar using Handlebars
+      document.getElementById("navbar-container").innerHTML = navbarTemplate(navbarData);
+    </script>
+  </body>
+</html>

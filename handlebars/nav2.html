@@ -1,0 +1,14 @@
+<!-- navbar-partial.html -->
+<script id="navbar-template" type="text/x-handlebars-template">
+    <nav class="navbar">
+      <div class="brand">
+        <a href="{{brand.href}}">{{brand.text}}</a>
+      </div>
+      <ul class="nav-links">
+        {{#each navLinks}}
+          <li><a href="{{this.href}}">{{this.label}}</a></li>
+        {{/each}}
+      </ul>
+    </nav>
+  </script>
+  

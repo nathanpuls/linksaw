@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Snip</title>
+  <!-- Include Firebase SDK -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/milligram@1.4.1/dist/milligram.min.css">
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
+  <style>
+    /* Your CSS styles here */
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+
+  <script type="text/template" id="edit-snip-template">
+    <div class="container">
+      <a href="sniplist.html">All snips</a>
+      <div class="rows">
+        <h4>Edit Snip</h4>
+      </div>
+      <ul id="snipsList"></ul>
+    </div>
+  </script>
+
+  <script type="text/template" id="snip-container-template">
+    <div class="snip-container">
+      <input class="name-label" placeholder="Snip name">
+      <textarea class="copy-input" placeholder="Snip content" rows="1"></textarea>
+      <button class="copy-button">Copy</button>
+      <button class="save-button">Save</button>
+      <button class="delete-button">Delete</button>
+    </div>
+  </script>
+
+  <script>
+    // Your Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyCauN-vsgUfQJXc5b41NoCnYzi6FIn86MQ",
+      authDomain: "linkshare-eb70b.firebaseapp.com",
+      databaseURL: "https://linkshare-eb70b-default-rtdb.firebaseio.com",
+      projectId: "linkshare-eb70b",
+      storageBucket: "linkshare-eb70b.appspot.com",
+      messagingSenderId: "284502085616",
+      appId: "1:284502085616:web:3f24e3fb844320eef85735",
+      measurementId: "G-VQ0J98LXYT",
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    function getUrlParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Example usage:
+    const expValue = getUrlParameter('id');
+    console.log(expValue);
+
+    function renderEditSnipTemplate() {
+      var app = document.getElementById('app');
+      var editSnipTemplate = document.getElementById('edit-snip-template').innerHTML;
+      app.innerHTML = editSnipTemplate;
+    }
+
+    function renderSnipContainerTemplate() {
+      var snipsList = document.getElementById('snipsList');
+      var snipContainerTemplate = document.getElementById('snip-container-template').innerHTML;
+      snipsList.innerHTML = snipContainerTemplate;
+    }
+
+    function displaySnipById(snipId) {
+      // Existing code for displaying snip
+    }
+
+    function updateSnip(snipId, updatedName, updatedContent) {
+      // Existing code for updating snip
+    }
+
+    function showNotification(message) {
+      // Existing code for showing notification
+    }
+
+    function deleteSnip(snipId) {
+      // Existing code for deleting snip
+    }
+
+    // Initial rendering
+    renderEditSnipTemplate();
+    renderSnipContainerTemplate();
+    displaySnipById(expValue);
+  </script>
+</body>
+
+</html>

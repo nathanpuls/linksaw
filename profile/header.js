@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
 brand.classList.add("brand");
 brand.style.fontWeight = "400";
 brand.textContent = "Linksaw";
-brand.href = "/";  
+brand.href = "/profile";  
   
     // Create Profile button element
     var profileButton = document.createElement("div");

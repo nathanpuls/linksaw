@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      integrity="sha512-..."
+      crossorigin="anonymous"
+    />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/nathanpuls/css@main/milligram-blue.css"
+    />
+    <script src="../scripts/menuLink.js"></script>
+    <style>
+      #username {
+        margin-left: 0px; /* Adjust this value to control the spacing */
+      }
+    </style>
+  </head>
+  <body>
+    <script src="header.js"></script>
+
+    <!-- Load Firebase scripts first -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <script src="../firebaseconfig.js"></script>
+
+    <!-- Your other scripts -->
+    <script src="../scripts/login.js"></script>
+    <link rel="stylesheet" href="../global.css" />
+
+    <a href="../#menu" class="page-heading" style="text-align: center">
+      <h2>Profile</h2>
+    </a>
+
+    <template id="template">
+      <img src="{photo}" alt="photo" id="profile-photo" />
+      <h4>{name}</h4>
+      <span>{email}</span>
+      <p>@{username}</p>
+      <a
+        ><button
+          class="button-dash delete-account profile-link"
+          onclick="deleteAccount()"
+        >
+          Delete Profile
+        </button></a
+      >
+      <a href=""
+        ><button class="button-dash sign-out profile-link" onclick="signOut()">
+          Sign Out
+        </button></a
+      >
+    </template>
+
+
+    <script>
+      var template = document.getElementById("template").innerHTML;
+      var templateContainer = document.createElement("div"); // Create a container
+      templateContainer.className = "container";
+
+      var data = {
+        photo: '../images/white.png'
+      }; // Initialize an empty object
+
+      function renderTemplate() {
+        // Replace placeholders with data
+        var renderedTemplate = template.replace(
+          /{\s*([\w.]+)\s*}/g,
+          function (match, p1) {
+            return data[p1] || ""; // Use an empty string if property doesn't exist
+          }
+        );
+
+        // Update the container with the new template
+        templateContainer.innerHTML = renderedTemplate;
+      }
+
+      // Insert rendered template into the container
+      renderTemplate();
+
+      // Append the container to the document body
+      document.body.appendChild(templateContainer);
+
+      // Check authentication state
+      function handleUserData(user) {
+        if (user) {
+          // User is signed in
+          console.log("User email:", user.email);
+          console.log("User name:", user.displayName);
+
+          let username = user.email.replace(/@gmail\.com/g, "");
+
+          // Update the data object with user properties
+          data = {
+            photo: user.photoURL,
+            name: user.displayName,
+            email: user.email,
+            username: username,
+          };
+
+          // Render the template with updated data
+          renderTemplate();
+
+          // Call another function and pass the user object
+          anotherFunction(user);
+        } else {
+          // No user is signed in
+          console.log("No user signed in");
+
+          // Clear the data object
+          data = {};
+
+          // Render the template with empty data
+          renderTemplate();
+        }
+      }
+
+      function anotherFunction(user) {
+        // Do something with the user object
+        console.log("User in another function:", user);
+      }
+
+      // Listen for authentication state changes
+      firebase.auth().onAuthStateChanged(handleUserData);
+    </script>
+  </body>
+</html>

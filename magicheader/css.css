@@ -1,0 +1,25 @@
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+}
+
+nav {
+    background-color: #333; /* Set your desired background color */
+    color: #fff; /* Set your desired text color */
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand {
+    font-size: 1.5em; /* Set your desired font size */
+    margin-left: 20px; /* Adjust the margin as needed */
+}
+
+.nav-link {
+    margin-right: 20px; /* Adjust the margin as needed */
+    text-decoration: none;
+    color: #fff; /* Set your desired text color */
+    font-weight: bold;
+}

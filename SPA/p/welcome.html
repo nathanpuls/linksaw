@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linksaw</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/nathanpuls/css@main/milligram-blue.css"
+    />
+    <link rel="stylesheet" href="../global.css" />
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="../scripts/login.js"></script>
+    <script src="../scripts/console.js"></script>
+  </head>
+  <body>
+    <div class="container" style="padding-top: 70px;">
+      <h1>Linksaw</h1>
+      <p>Custom shortlinks based on your Google username</p>
+      <p>And shortcut tools to make life easier</p>
+      <button onclick="signInWithGoogle()">Login with Google</button>
+    </div>
+
+    <script src="../firebaseconfig.js"></script>
+  </body>
+</html>

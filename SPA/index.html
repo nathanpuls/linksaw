@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linksaw</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/nathanpuls/css@main/milligram-blue.css"
+    />
+    <link rel="stylesheet" href="global.css" />
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="scripts/login.js"></script>
+    <script src="scripts/console.js"></script>
+    <script src="scripts/fadeIn.js"></script>
+  </head>
+  <body>
+    <nav>
+      <a href="#menu" class="brand">Linksaw</a>
+    </nav>
+
+    <header style="text-align: center">
+        <h2 id="pagename" style="margin: 10px"></h2>
+    </header>
+    
+    <main id="app" class="container"></main>
+    
+    <script src="firebaseconfig.js"></script>
+    <script src="app.js"></script>
+
+    <script src="scripts/pagename.js"></script>
+
+    <script src="scripts/links.js"></script>
+    <script src="scripts/addlink.js"></script>
+    <script src="scripts/snips.js"></script>
+    <script src="scripts/testdb.js"></script>
+    <script src="scripts/addsnip.js"></script>
+  </body>
+</html>

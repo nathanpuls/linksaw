@@ -4,92 +4,99 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Snips List</title>
+
     <!-- Include Firebase SDK -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/milligram@1.4.1/dist/milligram.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/nathanpuls/css@main/milligram-blue.css">
+</head>
+    <!-- <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="css.css" /> -->
+    <script src="https://cdn.jsdelivr.net/npm/mustache@4.2.0/mustache.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
 
     <style>
-      :root {
-        --main-color: #318ce7;
-      }
-      input:focus {
-        border-color: var(--main-color) !important;
-      }
-      .notification {
-        
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
+        .top {
+  background-color: #ffffff;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start; /* Add this line for height to fit content */
+  height: 40px; /* Add this line for height to fit content */
+    align-items: center;
+}
 
-        margin-top: 20px;
-        font-size: 2rem;
-        color: rgb(44, 44, 44);
-        background-color: rgb(255, 255, 255);
-        
-        padding: 20px;
-        border-radius: 8px;
-    }
-
-      a {
-        color: var(--main-color);
-      }
-
-      .container {
-        max-width: 600px;
-        /* margin: 50px auto; */
-
-        background-color: white;
-      }
-
-      .snip-container {
-        margin-right: 60px;
-      }
-      .copy-input {
-        padding-right: 50px;
-      }
-
-      .copy-button {
-        position: absolute;
-        /* right: 0; */
-        margin-left: 4px;
-        margin-right: 20px;
-        font-size: 0.8rem;
-        margin-bottom: 23px;
-        padding-bottom: 15px;
-        padding-left: 5px;
-        padding-right: 5px;
-        background-color: var(--main-color);
-        color: #fff;
-        border: none;
-        cursor: pointer;
-
-        width: 60px; /* Adjust the width as needed */
-        box-sizing: border-box; /* Include padding in the width calculation */
-        text-align: center; /* Center text horizontally */
-      }
-      textarea {
-        height: 10px !important;
-      }
-      textarea:focus {
-        border-color: #318ce7;
-      }
-      body {
-        margin-top: 90px;
-      }
+/* Additional styling for the individual items if needed */
+.top div {
+  padding: 10px; /* Adjust the padding as needed */
+  padding-left: 10px;
+  padding-right: 10ox;
+}
+#copy-btn {
+    min-width: 50px;
+    text-transform: uppercase;
+    font-size: 1rem;
+    margin-right: 5px;
+    cursor: pointer;
+    color: black;
+}
+#label {
+  margin-left: 15px;
+  color: black;
+  font-size: 1.2rem;
+  /* text-decoration: underline; */
+  
+}
+input {
+    border-radius: 0px 0px 8px 8px !important;
+    font-family: Poppins;
+}
+.snips-head {
+    display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  
+align-items: center;
+    
+}
+.snips-head h4 {
+    margin: 0; /* Optional: Remove default margin for the h4 element */
+}
     </style>
   </head>
+
   <body>
-    <div class="container">
-      <a href="add.html">+ Add snip</a>
-      <h4>Snips List</h4>
+    <div
+      style="
+        max-width: 600px;
+        margin-top: 90px;
+        margin-right: auto;
+        margin-left: auto;
+      "
+    >
+    <div class="snips-head">
+        <h4>Snips</h4>
+        <a href="add.html"><button>ADD</button></a>
+    </div>
+
       <ul id="snipsList"></ul>
     </div>
+
+    <script id="snip-template" type="text/template">
+      {{#snips}}
+      <div class="repeat">
+        <div class="top">
+          <a id="label" href="edit.html?id={{key}}">{{name}}</a>
+          <div id="copy-btn" onclick="copyToClipboard(this)">Copy</div>
+        </div>
+        <input class="snip-input" type="text" value="{{content}}" />
+      </div>
+      {{/snips}}
+    </script>
 
     <script>
       // Your Firebase configuration
@@ -107,79 +114,48 @@
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
 
+      // Reference to the "snips" node in the database
+      var snipsRef = firebase.database().ref("snips");
+
       // Function to retrieve and display Snips
       function displaySnips() {
-        var database = firebase.database();
         var snipsList = document.getElementById("snipsList");
-
-        // Reference to the "snips" node in the database
-        var snipsRef = database.ref("snips");
 
         // Listen for changes in the "snips" node
         snipsRef.on("value", function (snapshot) {
-          snipsList.innerHTML = ""; // Clear the list
-
-          // Iterate through each Snip in the snapshot
-          snapshot.forEach(function (childSnapshot) {
-            var snipKey = childSnapshot.key;
-            var snipData = childSnapshot.val();
-
-            // Create a div for each Snip
-            var divItem = document.createElement("div");
-            divItem.classList.add("snip-container");
-
-            // Create label for name
-            var nameLabel = document.createElement("a");
-            nameLabel.textContent = snipData.name;
-            nameLabel.href= `edit.html?id=${snipKey}`;
-            divItem.appendChild(nameLabel);
-
-            // Create input for content with initial value
-            var inputItem = document.createElement("input");
-            inputItem.classList.add("copy-input");
-            inputItem.type = "text";
-
-            inputItem.value = snipData.content;
-            divItem.appendChild(inputItem);
-
-            // Create copy button
-            var copyButton = document.createElement("button");
-copyButton.classList.add("copy-button");
-copyButton.textContent = "Copy";
-copyButton.addEventListener("click", function () {
-  inputItem.select();
-  document.execCommand("copy");
-
-  // Change textContent to white checkmark for 2 seconds
-  copyButton.textContent = "✓";
-  setTimeout(function () {
-    copyButton.textContent = "Copy";
-  }, 2000);
-});
-
-divItem.appendChild(copyButton);
-
-
-            // Append the div to the snipsList
-            snipsList.insertBefore(divItem, snipsList.firstChild);
-          });
+          var snips = snapshotToArray(snapshot);
+          var snipTemplate = document.getElementById("snip-template").innerHTML;
+          snipsList.innerHTML = Mustache.render(snipTemplate, { snips: snips });
         });
+      }
+
+      // Convert Firebase snapshot to array
+      function snapshotToArray(snapshot) {
+        var returnArr = [];
+        snapshot.forEach(function (childSnapshot) {
+          var item = childSnapshot.val();
+          item.key = childSnapshot.key;
+          returnArr.push(item);
+        });
+        return returnArr.reverse();
+      }
+
+      // Copy to clipboard function
+      function copyToClipboard(button) {
+        var input = button.closest(".repeat").querySelector(".snip-input");
+
+        input.select();
+        document.execCommand("copy");
+
+        // Change textContent to white checkmark for 2 seconds
+        button.textContent = "✓";
+        setTimeout(function () {
+          button.textContent = "Copy";
+        }, 2000);
       }
 
       // Call the displaySnips function to initially display Snips
       displaySnips();
-      function showNotification(message) {
-  var notification = document.createElement('div');
-  notification.classList.add('notification');
-  notification.textContent = message;
-
-  document.body.appendChild(notification);
-
-  // Remove the notification after a certain time (e.g., 3000 milliseconds)
-  setTimeout(function() {
-    notification.remove();
-  }, 3000);
-}
     </script>
   </body>
 </html>

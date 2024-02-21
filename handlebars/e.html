@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snips List</title>
+    <!-- Include Firebase SDK -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/milligram@1.4.1/dist/milligram.min.css" />
+    <link rel="stylesheet" href="header.css">
+    <!-- <script src="../profile/header.js"></script> -->
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.3/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.7/dist/handlebars.js"></script>
+    <script src="fb.js"></script>
+
+    <!-- Your existing styles -->
+    <style>
+      /* ... (your existing styles) ... */
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a href="add.html">+ Add snip</a>
+      <h4>Snips List</h4>
+      <ul id="snipsList"></ul>
+    </div>
+
+    <!-- Define Handlebars template -->
+    <script id="snip-template" type="text/x-handlebars-template">
+      {{#each snips}}
+        <div class="snip-container">
+          <a href="edit.html?id={{id}}">{{name}}</a>
+          <input class="copy-input" type="text" value="{{content}}" />
+          <button class="copy-button">Copy</button>
+        </div>
+      {{/each}}
+    </script>
+
+    <script>
+     
+
+      // Initialize Firebase
+      
+
+      // Function to retrieve and display Snips using Handlebars
+      function displaySnips() {
+        var database = firebase.database();
+        var snipsList = document.getElementById("snipsList");
+        var snipTemplateSource = document.getElementById("snip-template").innerHTML;
+        var snipTemplate = Handlebars.compile(snipTemplateSource);
+
+        // Reference to the "snips" node in the database
+        var snipsRef = database.ref("snips");
+
+        // Listen for changes in the "snips" node
+        snipsRef.on("value", function (snapshot) {
+          var snipsData = [];
+
+          // Iterate through each Snip in the snapshot and push data to array
+          snapshot.forEach(function (childSnapshot) {
+            var snipKey = childSnapshot.key;
+            var snipData = childSnapshot.val();
+            snipsData.push({ id: snipKey, name: snipData.name, content: snipData.content });
+          });
+
+          // Render the Handlebars template with the snipsData
+          snipsList.innerHTML = snipTemplate({ snips: snipsData });
+        });
+      }
+
+      // Call the displaySnips function to initially display Snips
+      displaySnips();
+
+      // ... (your existing code, such as showNotification function)
+    </script>
+  </body>
+</html>
