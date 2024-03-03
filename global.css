@@ -97,3 +97,8 @@ a.menu:hover {
     display: flex;
     justify-content: space-between;
   }
+
+  button {
+    font-weight: 300;
+    font-size: 1.5rem;
+  }
