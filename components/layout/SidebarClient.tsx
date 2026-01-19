@@ -5,13 +5,20 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import type { LucideIcon } from "lucide-react"
+import { Home, Link2, FileText, Clipboard } from "lucide-react"
 
 interface SidebarItem {
     label: string
-    icon: LucideIcon
+    icon: string
     href: string
     type: string | null
+}
+
+const iconMap = {
+    Home,
+    Link2,
+    FileText,
+    Clipboard
 }
 
 interface SidebarClientProps {
@@ -28,6 +35,7 @@ export function SidebarClient({ items }: SidebarClientProps) {
             <TooltipProvider delayDuration={0}>
                 {items.map((item) => {
                     const isActive = pathname === "/" && currentType === item.type
+                    const IconComponent = iconMap[item.icon as keyof typeof iconMap]
 
                     return (
                         <Tooltip key={item.label}>
@@ -40,7 +48,7 @@ export function SidebarClient({ items }: SidebarClientProps) {
                                             isActive && "bg-secondary"
                                         )}
                                     >
-                                        <item.icon className="h-5 w-5 shrink-0" />
+                                        <IconComponent className="h-5 w-5 shrink-0" />
                                         <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap overflow-hidden">
                                             {item.label}
                                         </span>

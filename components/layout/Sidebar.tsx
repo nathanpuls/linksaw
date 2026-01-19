@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { Link2, FileText, Clipboard, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { createClient } from "@/utils/supabase/server"
@@ -28,25 +27,25 @@ export async function Sidebar({ className }: SidebarProps) {
     const items = [
         {
             label: "All Items",
-            icon: Home,
+            icon: "Home",
             href: "/",
             type: null
         },
         {
             label: "Links",
-            icon: Link2,
+            icon: "Link2",
             href: "/?type=link",
             type: "link"
         },
         {
             label: "Snips",
-            icon: FileText,
+            icon: "FileText",
             href: "/?type=snip",
             type: "snip"
         },
         {
             label: "Clips",
-            icon: Clipboard,
+            icon: "Clipboard",
             href: "/?type=clip",
             type: "clip"
         }
