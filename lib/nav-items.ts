@@ -22,5 +22,11 @@ export const navItems = [
         icon: "Clipboard",
         href: "/?type=clip",
         type: "clip"
+    },
+    {
+        label: "Settings",
+        icon: "Settings",
+        href: "/settings",
+        type: null
     }
 ]

@@ -1,47 +1,94 @@
-import { supabase } from "@/lib/supabase"
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
     try {
+        // Get the clipboard content from the request
         const body = await request.json()
-        const { content, url } = body
+        const { content, title, url } = body
 
         if (!content) {
-            return NextResponse.json({ error: "Content is required" }, { status: 400 })
+            return NextResponse.json(
+                { error: 'Content is required' },
+                { status: 400 }
+            )
         }
 
-        const type = 'clip';
-        const title = content.slice(0, 30) || 'Clipboard Item';
-        const language = 'text';
+        // Create Supabase client
+        const supabase = await createClient()
 
-        // Generate random slug 
-        const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-        const slug = Array.from({ length: 7 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        // Check for API key in Authorization header
+        const authHeader = request.headers.get('authorization')
+        let user = null
 
-        const { data, error } = await supabase
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const apiKey = authHeader.substring(7)
+
+            // Look up user by API key
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('api_key', apiKey)
+                .single()
+
+            if (profileError || !profile) {
+                return NextResponse.json(
+                    { error: 'Invalid API key' },
+                    { status: 401 }
+                )
+            }
+
+            user = { id: profile.id }
+        } else {
+            // Fall back to session-based auth
+            const { data: { user: sessionUser }, error: authError } = await supabase.auth.getUser()
+
+            if (authError || !sessionUser) {
+                return NextResponse.json(
+                    { error: 'Unauthorized. Please provide an API key in the Authorization header or authenticate.' },
+                    { status: 401 }
+                )
+            }
+
+            user = sessionUser
+        }
+
+        // Generate a title from content if not provided
+        const itemTitle = title || content.slice(0, 50) || 'Clipboard'
+
+        // Create a new clip item
+        const { data: item, error: insertError } = await supabase
             .from('items')
             .insert({
-                content,
-                source_url: url || 'iPhone',
-                type,
-                title,
-                slug,
-                language
+                user_id: user.id,
+                type: 'clip',
+                title: itemTitle,
+                content: content,
+                source_url: url || 'iPhone Shortcut',
+                created_at: new Date().toISOString()
             })
             .select()
             .single()
 
-        if (error) {
-            console.error('Supabase error:', error)
-            return NextResponse.json({ error: error.message }, { status: 500 })
+        if (insertError) {
+            console.error('Insert error:', insertError)
+            return NextResponse.json(
+                { error: 'Failed to save clipboard content' },
+                { status: 500 }
+            )
         }
 
         return NextResponse.json({
             success: true,
-            item: data
+            message: 'Clipboard saved successfully',
+            item: item
         })
-    } catch (err: any) {
-        console.error('API Error:', err)
-        return NextResponse.json({ error: err.message }, { status: 500 })
+
+    } catch (error) {
+        console.error('API error:', error)
+        return NextResponse.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        )
     }
 }

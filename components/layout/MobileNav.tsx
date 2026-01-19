@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { Home, Link2, FileText, Clipboard } from "lucide-react"
+import { Home, Link2, FileText, Clipboard, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const iconMap = {
     Home,
     Link2,
     FileText,
-    Clipboard
+    Clipboard,
+    Settings
 }
 
 interface MobileNavProps {

@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Home, Link2, FileText, Clipboard } from "lucide-react"
+import { Home, Link2, FileText, Clipboard, Settings } from "lucide-react"
 
 interface SidebarItem {
     label: string
@@ -18,7 +18,8 @@ const iconMap = {
     Home,
     Link2,
     FileText,
-    Clipboard
+    Clipboard,
+    Settings
 }
 
 interface SidebarClientProps {
