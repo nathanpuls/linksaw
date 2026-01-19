@@ -9,6 +9,9 @@ export async function signInWithGoogle() {
         provider: 'google',
         options: {
             redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+            queryParams: {
+                prompt: 'select_account',
+            },
         },
     })
 
