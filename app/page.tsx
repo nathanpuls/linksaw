@@ -12,6 +12,8 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileNav } from "@/components/layout/MobileNav";
+import { navItems } from "@/lib/nav-items";
 
 export const revalidate = 0;
 
@@ -124,8 +126,9 @@ export default async function Home(props: {
 
       {/* Global Header */}
       <header className="fixed top-0 left-0 right-0 h-[57px] border-b bg-background/80 backdrop-blur-md z-50 flex items-center px-4 justify-between gap-4">
-        {/* Logo / Branding */}
+        {/* Mobile Menu + Logo / Branding */}
         <div className="flex items-center gap-2 shrink-0">
+          <MobileNav items={navItems} />
           <Link href="/" className="flex items-center gap-2">
             <div className="relative w-8 h-8 rounded-full overflow-hidden">
               <Image

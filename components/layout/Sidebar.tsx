@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { createClient } from "@/utils/supabase/server"
 import { UserProfileMenu } from "@/components/feature/UserProfileMenu"
 import { SidebarClient } from "./SidebarClient"
+import { navItems } from "@/lib/nav-items"
 
 interface SidebarProps {
     className?: string
@@ -24,36 +25,9 @@ export async function Sidebar({ className }: SidebarProps) {
         profile = data
     }
 
-    const items = [
-        {
-            label: "All Items",
-            icon: "Home",
-            href: "/",
-            type: null
-        },
-        {
-            label: "Links",
-            icon: "Link2",
-            href: "/?type=link",
-            type: "link"
-        },
-        {
-            label: "Snips",
-            icon: "FileText",
-            href: "/?type=snip",
-            type: "snip"
-        },
-        {
-            label: "Clips",
-            icon: "Clipboard",
-            href: "/?type=clip",
-            type: "clip"
-        }
-    ]
-
     return (
         <aside className={cn("flex flex-col h-[calc(100vh-57px)] w-[60px] hover:w-[200px] border-r bg-card transition-all duration-300 z-40 group fixed left-0 top-[57px] overflow-hidden shadow-sm", className)}>
-            <SidebarClient items={items} />
+            <SidebarClient items={navItems} />
 
             {/* User Profile Menu at Bottom */}
             {user && (
