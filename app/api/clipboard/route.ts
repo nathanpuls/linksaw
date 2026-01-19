@@ -21,8 +21,11 @@ export async function POST(request: Request) {
         const authHeader = request.headers.get('authorization')
         let user = null
 
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const apiKey = authHeader.substring(7)
+        if (authHeader) {
+            // Handle both "Bearer [key]" and just "[key]"
+            const apiKey = authHeader.startsWith('Bearer ')
+                ? authHeader.substring(7)
+                : authHeader
 
             // Look up user by API key
             const { data: profile, error: profileError } = await supabase
@@ -53,15 +56,19 @@ export async function POST(request: Request) {
             user = sessionUser
         }
 
-        // Generate a title from content if not provided
-        const itemTitle = title || content.slice(0, 50) || 'Clipboard'
+        // Detect if content is a URL
+        const isUrl = /^https?:\/\/[^\s$.?#].[^\s]*$/i.test(content.trim())
+        const type = isUrl ? 'link' : 'clip'
 
-        // Create a new clip item
+        // Generate a title from content if not provided
+        const itemTitle = title || (isUrl ? content : content.slice(0, 50)) || (isUrl ? 'Link' : 'Clipboard')
+
+        // Create a new item
         const { data: item, error: insertError } = await supabase
             .from('items')
             .insert({
                 user_id: user.id,
-                type: 'clip',
+                type: type,
                 title: itemTitle,
                 content: content,
                 source_url: url || 'iPhone Shortcut',
