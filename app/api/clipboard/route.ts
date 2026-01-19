@@ -2,32 +2,40 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
+    console.log('[API] Incoming Clipboard Request')
+    console.log('[API] Method:', request.method)
+
+    const contentType = request.headers.get('content-type') || ''
+    console.log('[API] Content-Type:', contentType)
+
     // Try to get content from JSON or FormData
     let content, title, url
 
-    const contentType = request.headers.get('content-type') || ''
-
     if (contentType.includes('application/json')) {
+        console.log('[API] Attempting to parse JSON...')
         try {
             const body = await request.json()
+            console.log('[API] JSON parsed:', { ...body, content: body.content?.substring(0, 20) + '...' })
             content = body.content
             title = body.title
             url = body.url
         } catch (e) {
-            // Invalid JSON
+            console.error('[API] JSON Parse Error:', e)
             return NextResponse.json(
                 { error: 'Invalid JSON body' },
                 { status: 400 }
             )
         }
     } else {
-        // Fallback to FormData (standard Shortcuts behavior if not JSON)
+        console.log('[API] Attempting to parse FormData...')
         try {
             const formData = await request.formData()
+            console.log('[API] FormData keys:', Array.from(formData.keys()))
             content = formData.get('content')
             title = formData.get('title')
             url = formData.get('url')
         } catch (e) {
+            console.error('[API] FormData Parse Error:', e)
             return NextResponse.json(
                 { error: 'Invalid request format' },
                 { status: 400 }
