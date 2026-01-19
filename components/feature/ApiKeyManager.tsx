@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Copy, Eye, EyeOff, RefreshCw } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface ApiKeyManagerProps {
     initialApiKey: string | null
@@ -14,7 +14,6 @@ export function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
     const [apiKey, setApiKey] = useState(initialApiKey)
     const [isVisible, setIsVisible] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
-    const { toast } = useToast()
 
     const generateApiKey = async () => {
         setIsGenerating(true)
@@ -31,16 +30,11 @@ export function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
             setApiKey(data.apiKey)
             setIsVisible(true)
 
-            toast({
-                title: "API Key Generated",
+            toast.success("API Key Generated", {
                 description: "Your new API key has been created. Make sure to copy it!",
             })
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to generate API key. Please try again.",
-                variant: "destructive"
-            })
+            toast.error("Failed to generate API key. Please try again.")
         } finally {
             setIsGenerating(false)
         }
@@ -49,10 +43,7 @@ export function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
     const copyToClipboard = () => {
         if (apiKey) {
             navigator.clipboard.writeText(apiKey)
-            toast({
-                title: "Copied!",
-                description: "API key copied to clipboard",
-            })
+            toast.success("API key copied to clipboard")
         }
     }
 
