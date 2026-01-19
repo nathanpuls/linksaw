@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { ApiKeyManager } from "@/components/feature/ApiKeyManager"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 
 export default async function SettingsPage() {
     const supabase = await createClient()
@@ -19,7 +21,16 @@ export default async function SettingsPage() {
     return (
         <div className="min-h-screen bg-background">
             <div className="container max-w-4xl mx-auto py-8 px-4">
-                <h1 className="text-3xl font-bold mb-8">Settings</h1>
+                <div className="flex items-center gap-4 mb-8">
+                    <Link
+                        href="/"
+                        className="p-2 hover:bg-muted rounded-full transition-colors"
+                        title="Back to Dashboard"
+                    >
+                        <ArrowLeft className="w-6 h-6" />
+                    </Link>
+                    <h1 className="text-3xl font-bold">Settings</h1>
+                </div>
 
                 <div className="space-y-8">
                     {/* Profile Section */}
