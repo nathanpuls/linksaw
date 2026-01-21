@@ -36,10 +36,11 @@ export function ItemEditor({ snippet, username, readOnly = false }: ItemEditorPr
 
     // Sync state with props when server-side data refreshes (Realtime)
     useEffect(() => {
+        router.prefetch('/')
         setTitle((snippet.title === 'Untitled Item' || snippet.title === 'Untitled') ? '' : snippet.title);
         setContent(snippet.content);
         setAlias(snippet.alias || '');
-    }, [snippet.title, snippet.content, snippet.alias]);
+    }, [snippet.title, snippet.content, snippet.alias, router]);
 
     // Auto-resize textarea
     useEffect(() => {

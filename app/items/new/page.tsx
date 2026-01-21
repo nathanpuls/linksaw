@@ -27,6 +27,9 @@ function CreateItemForm() {
     const router = useRouter();
 
     useEffect(() => {
+        // Prefetch dashboard for fast ESC navigation
+        router.prefetch('/');
+
         // Force focus on mount
         textareaRef.current?.focus();
 
