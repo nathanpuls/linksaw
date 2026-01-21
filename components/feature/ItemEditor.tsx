@@ -68,6 +68,13 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose }: Ite
         }
     }, 1000);
 
+    // Flush pending saves on unmount (e.g. clicking outside modal)
+    useEffect(() => {
+        return () => {
+            debouncedUpdate.flush();
+        }
+    }, [debouncedUpdate]);
+
     // Listen for Escape key to go back
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -151,18 +158,25 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose }: Ite
                     </div>
 
                     {!readOnly && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground transition-opacity duration-500 z-10 relative">
-                            {saveStatus === 'saving' ? (
-                                <>
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Cloud className="h-3 w-3" />
-                                    Saved
-                                </>
-                            )}
+                        <div className="flex items-center gap-3 z-10 relative">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground transition-opacity duration-500 mr-2">
+                                {saveStatus === 'saving' ? (
+                                    <>
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        <span className="hidden sm:inline">Saving...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Cloud className="h-3 w-3" />
+                                        <span className="hidden sm:inline">Saved</span>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="h-4 w-[1px] bg-border mx-1" />
+
+                            <ItemCopyButton content={content} type="button" className="text-muted-foreground hover:text-foreground h-8 w-8" />
+                            <ItemDeleteButton id={snippet.id} redirectAfterDelete={true} className="text-muted-foreground hover:text-destructive h-8 w-8" />
                         </div>
                     )}
                 </div>
@@ -171,11 +185,6 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose }: Ite
             <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl pb-32">
 
                 <div className="flex items-start gap-2 h-full">
-                    {/* Copy Button (Left) */}
-                    <div className="shrink-0 pt-2.5 pl-2 opacity-50 hover:opacity-100 transition-opacity">
-                        <ItemCopyButton content={content} type="button" />
-                    </div>
-
                     {/* Content (Middle) - Editable Textarea */}
                     <div className="flex-grow min-w-0">
                         {/* Hide title if it matches the alias or slug (case-insensitive) to avoid redundancy */}
@@ -198,13 +207,6 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose }: Ite
                             placeholder="Type your item..."
                         />
                     </div>
-
-                    {/* Delete Button (Right) - Only if not readOnly */}
-                    {!readOnly && (
-                        <div className="shrink-0 pt-2.5 pr-2 opacity-50 hover:opacity-100 transition-opacity">
-                            <ItemDeleteButton id={snippet.id} redirectAfterDelete={true} />
-                        </div>
-                    )}
                 </div>
             </main>
         </div>
