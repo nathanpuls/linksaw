@@ -71,10 +71,15 @@ export function ItemCard({ id, title: initialTitle, content, language, slug, dra
         }
     }
 
+    const targetPath = `/items/${slug || id}`
+
     return (
         <Card
             className="group flex flex-col h-full overflow-hidden transition-all hover:shadow-md hover:border-primary/50 cursor-pointer bg-background p-0 gap-0"
             onClick={handleCardClick}
+            onMouseEnter={() => {
+                if (!isUrl) router.prefetch(targetPath)
+            }}
         >
             {/* Minimal Toolbar Header */}
             <div className="flex items-center justify-between border-b bg-background h-[30px] shrink-0 gap-2">
