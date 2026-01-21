@@ -182,7 +182,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose }: Ite
                 </div>
             </header>
 
-            <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl pb-32">
+            <main className="flex-1 container mx-auto px-4 py-4 max-w-4xl pb-32">
 
                 <div className="flex items-start gap-2 h-full">
                     {/* Content (Middle) - Editable Textarea */}
@@ -194,7 +194,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose }: Ite
                                 onChange={handleTitleChange}
                                 readOnly={readOnly}
                                 placeholder="Untitled Item"
-                                className="w-full bg-transparent border-none outline-none pt-4 px-0 text-lg font-bold text-foreground placeholder:text-muted-foreground/30 focus:ring-0"
+                                className="w-full bg-transparent border-none outline-none pt-0 px-0 text-lg font-bold text-foreground placeholder:text-muted-foreground/30 focus:ring-0"
                             />
                         )}
                         <Textarea
@@ -203,7 +203,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose }: Ite
                             value={content}
                             onChange={handleChange}
                             readOnly={readOnly}
-                            className={`min-h-[200px] w-full resize-none border-none shadow-none pb-4 pt-3 text-sm md:text-base font-sans leading-relaxed bg-transparent focus-visible:ring-0 px-0 ${readOnly ? 'cursor-text' : ''}`}
+                            className={`min-h-[200px] w-full resize-none border-none shadow-none pb-4 pt-0 text-sm md:text-base font-sans leading-relaxed bg-transparent focus-visible:ring-0 px-0 ${readOnly ? 'cursor-text' : ''}`}
                             placeholder="Type your item..."
                         />
                     </div>
