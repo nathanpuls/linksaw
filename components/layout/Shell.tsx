@@ -6,10 +6,12 @@ import { NewItemButton } from "@/components/feature/NewItemButton"
 import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { UserProfileMenu } from "@/components/feature/UserProfileMenu"
 
 interface ShellProps {
     children: React.ReactNode
     profile?: any
+    user?: any
     isReadOnly?: boolean
     pageTitle?: string
     showSearch?: boolean
@@ -19,6 +21,7 @@ interface ShellProps {
 export async function Shell({
     children,
     profile,
+    user,
     isReadOnly = false,
     pageTitle,
     showSearch = true,
@@ -83,6 +86,12 @@ export async function Shell({
                             {showActions && (
                                 <div className="hidden md:block">
                                     <NewItemButton />
+                                </div>
+                            )}
+                            {/* User Avatar Menu (Mobile) */}
+                            {user && profile && (
+                                <div className="md:hidden">
+                                    <UserProfileMenu user={user} profile={profile} />
                                 </div>
                             )}
                         </div>

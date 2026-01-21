@@ -123,7 +123,7 @@ export default async function Home(props: {
   const pageTitle = typeFilter ? `${typeFilter}s` : 'All Items';
 
   return (
-    <Shell profile={profile} pageTitle={pageTitle}>
+    <Shell profile={profile} user={user} pageTitle={pageTitle}>
       <UsernameModal initialIsOpen={showUsernameModal} />
       <ItemList initialItems={snippets || []} username={profile?.username} displayName={profile?.full_name} />
       <ItemRealtimeListener />
