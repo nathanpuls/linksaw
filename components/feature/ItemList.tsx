@@ -39,10 +39,11 @@ interface Item {
 interface ItemListProps {
     initialItems: any[]
     username?: string
+    displayName?: string
     isReadOnly?: boolean
 }
 
-export function ItemList({ initialItems, username, isReadOnly = false }: ItemListProps) {
+export function ItemList({ initialItems, username, displayName, isReadOnly = false }: ItemListProps) {
     const [items, setItems] = useState<Item[]>(initialItems)
     const [isPending, startTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
@@ -131,7 +132,9 @@ export function ItemList({ initialItems, username, isReadOnly = false }: ItemLis
                         content={item.content}
                         language={item.language}
                         slug={item.slug}
+                        alias={item.alias}
                         isReadOnly={isReadOnly}
+                        username={username}
                     />
                 ))}
             </div>
@@ -187,6 +190,7 @@ export function ItemList({ initialItems, username, isReadOnly = false }: ItemLis
                                 onSelect={() => toggleSelection(item.id)}
                                 onDelete={() => handleSingleDelete(item.id)}
                                 isReadOnly={isReadOnly}
+                                username={username}
                             />
                         ))}
                     </div>
@@ -203,6 +207,7 @@ export function ItemList({ initialItems, username, isReadOnly = false }: ItemLis
                             <ItemEditor
                                 snippet={activeItem || undefined}
                                 username={username}
+                                displayName={displayName}
                                 onClose={handleClose}
                                 readOnly={isReadOnly}
                                 onCreated={(newItem) => {
@@ -258,13 +263,14 @@ export function ItemList({ initialItems, username, isReadOnly = false }: ItemLis
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-function SortableItemCard({ item, onClick, isSelected, onSelect, onDelete, isReadOnly }: {
+function SortableItemCard({ item, onClick, isSelected, onSelect, onDelete, isReadOnly, username }: {
     item: any,
     onClick: () => void,
     isSelected: boolean,
     onSelect: () => void,
     onDelete?: () => void,
-    isReadOnly?: boolean
+    isReadOnly?: boolean,
+    username?: string
 }) {
     const {
         attributes,
@@ -290,12 +296,14 @@ function SortableItemCard({ item, onClick, isSelected, onSelect, onDelete, isRea
                 content={item.content}
                 language={item.language}
                 slug={item.slug}
+                alias={item.alias}
                 onClick={onClick}
                 dragHandleProps={!isReadOnly ? { ...attributes, ...listeners } : undefined}
                 isSelected={isSelected}
                 onSelect={onSelect}
                 onDelete={onDelete}
                 isReadOnly={isReadOnly}
+                username={username}
             />
         </div>
     )

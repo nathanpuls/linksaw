@@ -2,10 +2,11 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Copy, Pencil, GripVertical, Check, Circle, CheckCircle2 } from "lucide-react"
+import { Copy, Pencil, GripVertical, Check, Circle, CheckCircle2, Link2 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ItemDeleteButton } from "./ItemDeleteButton"
+import { ItemCopyButton } from "./ItemCopyButton"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useDebouncedCallback } from "use-debounce"
@@ -18,6 +19,8 @@ interface ItemCardProps {
     content: string
     language?: string
     slug?: string
+    alias?: string | null
+    username?: string
     onClick?: () => void
     isSelected?: boolean
     onSelect?: (selected: boolean) => void
@@ -31,18 +34,19 @@ export function ItemCard({
     content,
     language,
     slug,
+    alias,
     onClick,
     dragHandleProps,
     isSelected = false,
     onSelect,
     onDelete,
-    isReadOnly = false
+    isReadOnly = false,
+    username
 }: ItemCardProps & { dragHandleProps?: any }) {
     const router = useRouter()
     // If title is explicitly 'Untitled Item' (legacy default) or just 'Untitled', treat as empty for UX
     const displayTitle = (initialTitle === 'Untitled Item' || initialTitle === 'Untitled') ? '' : initialTitle
     const [title, setTitle] = useState(displayTitle)
-    const [copied, setCopied] = useState(false)
 
     // Sync state with props when server-side data refreshes (Realtime)
     useEffect(() => {
@@ -71,17 +75,6 @@ export function ItemCard({
         debouncedUpdateTitle(newTitle)
     }
 
-    const handleCopy = async (e: React.MouseEvent) => {
-        e.stopPropagation()
-        try {
-            await navigator.clipboard.writeText(content)
-            setCopied(true)
-            toast.success("Copied to clipboard")
-            setTimeout(() => setCopied(false), 2000)
-        } catch (err) {
-            toast.error("Failed to copy")
-        }
-    }
 
     const handleCardClick = () => {
         if (onClick) {
@@ -131,15 +124,19 @@ export function ItemCard({
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                 >
-                    <Button
-                        variant="ghost"
-                        size="icon"
+                    <ItemCopyButton
+                        content={`https://linksaw.com/${username || 'user'}/${alias || slug || id}`}
                         className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none cursor-pointer"
-                        onClick={handleCopy}
-                        title="Copy to clipboard"
+                        title="Copy public link"
                     >
-                        {copied ? <Check className="h-[14px] w-[14px]" /> : <Copy className="h-[14px] w-[14px]" />}
-                    </Button>
+                        <Link2 className="h-[14px] w-[14px]" />
+                    </ItemCopyButton>
+
+                    <ItemCopyButton
+                        content={content}
+                        className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none cursor-pointer"
+                        title="Copy content"
+                    />
 
                     {!isReadOnly && <ItemDeleteButton id={id} onDelete={onDelete} />}
 

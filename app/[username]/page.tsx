@@ -46,7 +46,7 @@ export default async function UserProfilePage(props: { params: Promise<{ usernam
 
     return (
         <Shell profile={profile} isReadOnly={true}>
-            <ItemList initialItems={items || []} isReadOnly={true} username={username} />
+            <ItemList initialItems={items || []} isReadOnly={true} username={username} displayName={profile?.full_name} />
         </Shell>
     );
 }

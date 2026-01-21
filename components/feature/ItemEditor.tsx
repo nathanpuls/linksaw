@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ItemCopyButton } from "@/components/feature/ItemCopyButton"
 import { ItemDeleteButton } from "@/components/feature/ItemDeleteButton"
 import { updateItem, createItemJson } from "@/actions/items"
-import { Check, ChevronLeft, Loader2, Cloud } from "lucide-react"
+import { Check, ChevronLeft, Loader2, Cloud, Link2 } from "lucide-react"
 import Link from "next/link"
 import { useRef, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -23,6 +23,7 @@ interface ItemEditorProps {
         alias?: string | null
     }
     username?: string
+    displayName?: string
     readOnly?: boolean
     onClose?: () => void
     onCreated?: (item: any) => void
@@ -30,7 +31,7 @@ interface ItemEditorProps {
     initialTitle?: string
 }
 
-export function ItemEditor({ snippet, username, readOnly = false, onClose, onCreated, initialContent = '', initialTitle = '' }: ItemEditorProps) {
+export function ItemEditor({ snippet, username, displayName, readOnly = false, onClose, onCreated, initialContent = '', initialTitle = '' }: ItemEditorProps) {
     const router = useRouter();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -176,19 +177,22 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
         <div className={cn("min-h-screen flex flex-col", readOnly ? "bg-white text-black" : "bg-background text-foreground")}>
             <header className={cn("sticky top-0 z-50", readOnly ? "bg-white" : "border-b bg-card/30 backdrop-blur-sm")}>
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center relative gap-4">
-                    {/* Top Left: linksaw brand / Copy content icon */}
-                    <div className="flex items-center gap-4 z-10 relative">
-                        {readOnly ? (
-                            <Link href="/app" className="text-sm font-bold tracking-tight hover:opacity-70 transition-opacity">
-                                linksaw
-                            </Link>
-                        ) : (
-                            <ItemCopyButton
-                                content={content}
-                                type="button"
-                                className="text-muted-foreground hover:text-foreground h-8 w-8 transition-colors"
-                            />
-                        )}
+                    {/* Top Left: Logo & Display Name */}
+                    <div className="flex items-center gap-2 z-10 relative">
+                        <Link href="/app" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                            <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                                <img
+                                    src="/logo.png"
+                                    alt="Logo"
+                                    className="object-cover"
+                                />
+                            </div>
+                            {displayName && (
+                                <span className="font-bold text-sm hidden sm:inline-block">
+                                    {displayName}
+                                </span>
+                            )}
+                        </Link>
                     </div>
 
                     {/* Centered URL / Alias Display (Only in non-readonly or refined for readonly) */}
@@ -218,28 +222,38 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
                         )}
                     </div>
 
-                    {/* Top Right: Done / Copy + Context Display */}
-                    <div className="flex items-center gap-4 z-10 relative">
+                    {/* Top Right: Actions (Copy Link, Copy Content, Delete, Done) */}
+                    <div className="flex items-center gap-2 z-10 relative">
+                        {/* Copy Link Button */}
+                        <ItemCopyButton
+                            content={`https://linksaw.com/${username || 'user'}/${alias || displaySlug}`}
+                            className="text-muted-foreground hover:text-foreground h-8 w-8 transition-colors"
+                            title="Copy Public Link"
+                        >
+                            <Link2 className="h-4 w-4" />
+                        </ItemCopyButton>
+
+                        {/* Copy Content Button */}
+                        <ItemCopyButton
+                            content={content}
+                            className="text-muted-foreground hover:text-foreground h-8 w-8 transition-colors"
+                            title="Copy Content"
+                        />
+
                         {readOnly ? (
-                            <div className="flex items-center gap-3">
-                                <div className="text-xs font-sans text-muted-foreground/60">
-                                    {username || 'user'}/{alias || displaySlug}
-                                </div>
-                                <ItemCopyButton
-                                    content={content}
-                                    type="button"
-                                    className="text-muted-foreground hover:text-foreground h-8 w-8 transition-colors"
-                                />
+                            <div className="text-xs font-sans text-muted-foreground/40 ml-2 hidden md:block">
+                                {username || 'user'}/{alias || displaySlug}
                             </div>
                         ) : (
                             <>
+                                <div className="h-4 w-px bg-border mx-1" />
                                 {id && (
                                     <ItemDeleteButton id={id} redirectAfterDelete={true} className="text-muted-foreground hover:text-destructive h-8 w-8" />
                                 )}
                                 <Link
                                     href="/app"
                                     onClick={handleBack}
-                                    className="text-sm font-semibold text-foreground hover:opacity-70 transition-opacity whitespace-nowrap px-1"
+                                    className="text-sm font-semibold text-foreground hover:opacity-70 transition-opacity whitespace-nowrap px-2"
                                 >
                                     Done
                                 </Link>

@@ -11,7 +11,13 @@ interface ItemCopyButtonProps extends React.ComponentProps<typeof Button> {
     variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link"
 }
 
-export function ItemCopyButton({ content, variant = "ghost", className, ...props }: ItemCopyButtonProps) {
+export function ItemCopyButton({
+    content,
+    variant = "ghost",
+    className,
+    children,
+    ...props
+}: ItemCopyButtonProps) {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
@@ -27,14 +33,21 @@ export function ItemCopyButton({ content, variant = "ghost", className, ...props
 
     return (
         <Button
-            variant="ghost"
+            variant={variant}
             size="icon"
             className={cn("h-8 w-8 hover:bg-transparent cursor-pointer focus-visible:ring-0 focus-visible:ring-offset-0", className)}
-            onClick={handleCopy}
-            title="Copy Item"
+            onClick={(e) => {
+                e.stopPropagation();
+                handleCopy();
+            }}
+            title="Copy"
             {...props}
         >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? (
+                <Check className="h-4 w-4" />
+            ) : (
+                children || <Copy className="h-4 w-4" />
+            )}
         </Button>
     )
 }

@@ -44,7 +44,9 @@ export async function Shell({
                                     className="object-cover"
                                 />
                             </div>
-                            <span className="font-bold text-lg hidden sm:inline-block">linksaw</span>
+                            <span className="font-bold text-lg hidden sm:inline-block">
+                                {profile?.full_name || ''}
+                            </span>
                         </Link>
                         {profile?.username && (
                             <Link
