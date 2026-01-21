@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Snippets",
+  "name": "Linksaw",
   "version": "1.0.0",
-  "description": "Your personal code snippet manager",
+  "description": "Your personal link and clip manager",
   "action": {
     "default_popup": "index.html",
     "default_icon": {

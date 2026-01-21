@@ -33,7 +33,7 @@ export default async function ItemPage(props: { params: Promise<{ id: string }> 
 
     // Canonical redirect: If accessed via UUID but a slug exists, redirect to slug
     if (isUuid && item.slug) {
-        redirect(`/items/${item.slug}`);
+        redirect(`/app/items/${item.slug}`);
     }
 
     const { data: { user } } = await supabase.auth.getUser();

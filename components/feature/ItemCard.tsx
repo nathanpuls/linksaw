@@ -84,16 +84,14 @@ export function ItemCard({
     }
 
     const handleCardClick = () => {
-        if (isUrl) {
-            window.open(content.trim(), '_blank', 'noopener,noreferrer')
-        } else if (onClick) {
+        if (onClick) {
             onClick();
         } else {
-            router.push(`/items/${slug || id}`)
+            router.push(`/app/items/${slug || id}`)
         }
     }
 
-    const targetPath = `/items/${slug || id}`
+    const targetPath = `/app/items/${slug || id}`
 
     return (
         <Card
@@ -120,6 +118,7 @@ export function ItemCard({
                     readOnly={isReadOnly}
                     className={cn(
                         "flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] font-semibold text-foreground/70 transition-colors truncate p-0 leading-none py-3",
+                        isReadOnly ? "cursor-default" : "cursor-text",
                         !isReadOnly && "hover:text-foreground focus:text-foreground"
                     )}
                 />
@@ -169,8 +168,20 @@ export function ItemCard({
 
             {/* Content Area */}
             <CardContent className="p-3 flex-1 overflow-hidden">
-                <div className={`text-sm font-sans break-words leading-relaxed line-clamp-4 ${isUrl ? 'underline text-foreground hover:opacity-70 transition-opacity' : 'text-card-foreground group-hover:text-foreground'} whitespace-pre-wrap`}>
-                    {content}
+                <div className="text-sm font-sans break-words leading-relaxed line-clamp-4 text-card-foreground group-hover:text-foreground whitespace-pre-wrap">
+                    {isUrl ? (
+                        <a
+                            href={content.trim()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline text-foreground hover:opacity-80 transition-opacity decoration-foreground/30 hover:decoration-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {content}
+                        </a>
+                    ) : (
+                        content
+                    )}
                 </div>
             </CardContent>
         </Card>

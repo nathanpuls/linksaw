@@ -41,17 +41,17 @@ export function UsernameModal({ initialIsOpen = false }: { initialIsOpen?: boole
                     <DialogTitle>Claim your handle</DialogTitle>
                     <DialogDescription>
                         Choose a unique username to create your personal Linksaw space.
-                        Your items will be at <code>linksaw.com/@username/item</code>
+                        Your items will be at <code>linksaw.com/username/item</code>
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground font-mono text-lg">@</span>
+                        <span className="text-muted-foreground text-lg">@</span>
                         <Input
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             placeholder="username"
-                            className="font-mono"
+                            className="font-sans"
                             minLength={3}
                             maxLength={30}
                             pattern="[a-zA-Z0-9_]+"

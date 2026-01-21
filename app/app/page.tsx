@@ -13,6 +13,7 @@ import Image from "next/image";
 
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { Shell } from "@/components/layout/Shell";
 import { navItems } from "@/lib/nav-items";
 
 export const revalidate = 0;
@@ -45,7 +46,7 @@ export default async function Home(props: {
         </div>
         <h1 className="text-4xl font-bold mb-4">linksaw</h1>
         <p className="text-muted-foreground mb-8">Personal link and clip manager.</p>
-        <Link href="/login">
+        <Link href="/app/login">
           <Button>Sign In</Button>
         </Link>
       </div>
@@ -119,74 +120,23 @@ export default async function Home(props: {
   }
 
   const showUsernameModal = !profile?.username;
+  const pageTitle = typeFilter ? `${typeFilter}s` : 'All Items';
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <Shell profile={profile} pageTitle={pageTitle}>
       <UsernameModal initialIsOpen={showUsernameModal} />
-
-      {/* Global Header */}
-      <header className="fixed top-0 left-0 right-0 h-[57px] border-b bg-background/80 backdrop-blur-md z-50 flex items-center px-4 justify-between gap-4">
-        {/* Mobile Menu + Logo / Branding */}
-        <div className="flex items-center gap-2 shrink-0">
-          <MobileNav items={navItems} />
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden">
-              <Image
-                src="/logo.png"
-                alt="Linksaw Logo"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <span className="font-bold text-lg hidden sm:inline-block">linksaw</span>
-            {profile?.username && (
-              <span className="text-sm font-normal text-muted-foreground hidden sm:inline-block ml-1">
-                @{profile.username}
-              </span>
-            )}
-          </Link>
-
-          {/* Divider & Page Title (Optional) */}
-          <div className="h-4 w-[1px] bg-border mx-2 hidden md:block" />
-          <h1 className="text-sm font-medium text-muted-foreground hidden md:block capitalize">
-            {typeFilter ? `${typeFilter}s` : 'All Items'}
-          </h1>
-        </div>
-
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-2 md:gap-4 flex-1 justify-end min-w-0">
-          <div className="w-full max-w-[200px] md:max-w-xs">
-            <SearchBar />
-          </div>
-          <div className="hidden md:block">
-            <NewItemButton />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Layout Area */}
-      <div className="pt-[57px] flex min-h-screen">
-        {/* Sidebar - Fixed Position set in component (top-[57px]) */}
-        <Sidebar className="hidden md:flex" />
-
-        {/* Content Wrapper */}
-        <main className="flex-1 flex flex-col md:pl-[60px] transition-all">
-          <div className="container mx-auto px-4 py-6 flex-1">
-            <ItemList initialItems={snippets || []} username={profile?.username} />
-            <ItemRealtimeListener />
-          </div>
-        </main>
-      </div>
+      <ItemList initialItems={snippets || []} username={profile?.username} />
+      <ItemRealtimeListener />
 
       {/* Mobile Floating Action Button */}
       <div className="md:hidden fixed bottom-6 right-6 z-50">
-        <Link href="/items/new">
+        <Link href="/app/items/new">
           <Button size="icon" className="h-14 w-14 rounded-full bg-black text-white hover:bg-black/80 dark:bg-white dark:text-black shadow-lg">
             <Plus className="h-6 w-6" />
             <span className="sr-only">New Item</span>
           </Button>
         </Link>
       </div>
-    </div>
+    </Shell>
   );
 }

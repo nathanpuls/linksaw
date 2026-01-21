@@ -9,7 +9,7 @@ export default async function LoginPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-        redirect('/')
+        redirect('/app')
     }
 
     return (

@@ -82,7 +82,7 @@ export function ItemList({ initialItems, username, isReadOnly = false }: ItemLis
             setActiveItem(null)
         } else if (isCreatingOpen) {
             setIsCreatingOpen(false)
-            router.push('/')
+            router.push('/app')
         }
     }
 
@@ -204,7 +204,7 @@ export function ItemList({ initialItems, username, isReadOnly = false }: ItemLis
                                 snippet={activeItem || undefined}
                                 username={username}
                                 onClose={handleClose}
-                                isReadOnly={isReadOnly}
+                                readOnly={isReadOnly}
                                 onCreated={(newItem) => {
                                     setItems(prev => {
                                         if (prev.some(i => i.id === newItem.id)) return prev;

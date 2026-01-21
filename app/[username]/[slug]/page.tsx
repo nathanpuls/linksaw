@@ -4,34 +4,32 @@ import { ItemEditor } from "@/components/feature/ItemEditor"
 
 export const revalidate = 0;
 
-export default async function ItemResolverPage(props: { params: Promise<{ handle: string, slug: string }> }) {
+export default async function ItemResolverPage(props: { params: Promise<{ username: string, slug: string }> }) {
     const params = await props.params;
-    const handle = decodeURIComponent(params.handle);
+    const username = decodeURIComponent(params.username);
     const slug = decodeURIComponent(params.slug);
 
-    if (!handle.startsWith('@')) {
+    const supabase = await createClient();
+
+    const reservedUsernames = ['app', 'api', 'auth', 'login', 'settings', 'static'];
+    if (reservedUsernames.includes(username)) {
         notFound();
     }
 
-    const username = handle.slice(1);
-    const supabase = await createClient();
-
     // 1. Resolve User
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', username)
         .single();
 
-    if (!profile) {
+    if (profileError || !profile) {
+        console.error("[PublicItemResolver] Profile error:", profileError, "for username:", username);
         notFound();
     }
 
     // 2. Resolve Item
-    // We check both slug and alias.
-    // Since alias is unique per user (allegedly) and slug is unique per user (allegedly global but definitely per user),
-    // we can check if either matches.
-    const { data: item } = await supabase
+    const { data: item, error: itemError } = await supabase
         .from('items')
         .select('*')
         .eq('user_id', profile.id)
@@ -39,7 +37,8 @@ export default async function ItemResolverPage(props: { params: Promise<{ handle
         .or(`slug.eq.${slug},alias.eq.${slug}`)
         .single();
 
-    if (!item) {
+    if (itemError || !item) {
+        console.error("[PublicItemResolver] Item error:", itemError, "for slug/alias:", slug, "user:", profile.id);
         notFound();
     }
 

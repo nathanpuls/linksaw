@@ -25,7 +25,7 @@ export function ItemDeleteButton({ id, redirectAfterDelete = false, onDelete }: 
             await deleteItem(id)
             router.refresh()
             if (redirectAfterDelete) {
-                router.push('/')
+                router.push('/app')
             }
             toast.success("Item deleted", {
                 action: {

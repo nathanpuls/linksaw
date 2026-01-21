@@ -25,7 +25,7 @@ export default async function EditItemPage(props: { params: Promise<{ id: string
         <div className="min-h-screen bg-background text-foreground flex flex-col">
             <header className="border-b bg-card/30 backdrop-blur-sm">
                 <div className="container mx-auto px-4 py-4">
-                    <Link href={`/items/${item.id}`} className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <Link href={`/app/items/${item.id}`} className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                         <ChevronLeft className="h-4 w-4 mr-1" />
                         Cancel Edit
                     </Link>
@@ -55,7 +55,7 @@ export default async function EditItemPage(props: { params: Promise<{ id: string
                         />
                     </div>
                     <div className="flex justify-end gap-4">
-                        <Link href={`/items/${item.id}`}>
+                        <Link href={`/app/items/${item.id}`}>
                             <Button variant="outline" type="button">Cancel</Button>
                         </Link>
                         <Button type="submit">Save Changes</Button>

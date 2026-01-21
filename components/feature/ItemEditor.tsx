@@ -129,7 +129,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
                 if (onClose) {
                     onClose();
                 } else {
-                    router.push('/')
+                    router.push('/app')
                 }
             }
         }
@@ -142,7 +142,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
         if (onClose) {
             onClose();
         } else {
-            router.push('/');
+            router.push('/app');
         }
     }
 
@@ -179,7 +179,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
                     {/* Top Left: linksaw brand / Copy content icon */}
                     <div className="flex items-center gap-4 z-10 relative">
                         {readOnly ? (
-                            <Link href="/" className="text-sm font-bold tracking-tight hover:opacity-70 transition-opacity">
+                            <Link href="/app" className="text-sm font-bold tracking-tight hover:opacity-70 transition-opacity">
                                 linksaw
                             </Link>
                         ) : (
@@ -197,14 +197,14 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
                             <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-sans overflow-hidden select-none bg-muted/30 px-3 py-1.5 rounded-full border border-border/50 max-w-full">
                                 {id ? (
                                     <ItemCopyButton
-                                        content={`https://linksaw.com/@${username || 'user'}/${alias || displaySlug}`}
+                                        content={`https://linksaw.com/${username || 'user'}/${alias || displaySlug}`}
                                         className="text-muted-foreground/60 hover:text-foreground transition-colors h-3.5 w-3.5 shrink-0"
                                     />
                                 ) : (
                                     <Cloud className="h-3.5 w-3.5 text-muted-foreground/30 animate-pulse shrink-0" />
                                 )}
                                 <div className="flex items-center gap-0.5 min-w-0">
-                                    <span className="shrink-0 text-muted-foreground/60 hidden sm:inline">linksaw.com/@{username || 'user'}/</span>
+                                    <span className="shrink-0 text-muted-foreground/60 hidden sm:inline">linksaw.com/{username || 'user'}/</span>
                                     <div className="relative min-w-[20px] max-w-[150px]">
                                         <input
                                             value={alias}
@@ -223,7 +223,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
                         {readOnly ? (
                             <div className="flex items-center gap-3">
                                 <div className="text-xs font-sans text-muted-foreground/60">
-                                    {username}/{alias || displaySlug}
+                                    {username || 'user'}/{alias || displaySlug}
                                 </div>
                                 <ItemCopyButton
                                     content={content}
@@ -237,7 +237,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
                                     <ItemDeleteButton id={id} redirectAfterDelete={true} className="text-muted-foreground hover:text-destructive h-8 w-8" />
                                 )}
                                 <Link
-                                    href="/"
+                                    href="/app"
                                     onClick={handleBack}
                                     className="text-sm font-semibold text-foreground hover:opacity-70 transition-opacity whitespace-nowrap px-1"
                                 >
@@ -250,10 +250,10 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
             </header>
 
             <main
-                className="flex-1 container mx-auto px-4 py-4 max-w-4xl pb-32 cursor-text"
+                className={cn("flex-1 container mx-auto px-4 py-4 max-w-4xl pb-32", readOnly ? "cursor-default" : "cursor-text")}
                 onClick={(e) => {
                     // Focus if clicking the background container
-                    if (e.target !== textareaRef.current) {
+                    if (!readOnly && e.target !== textareaRef.current) {
                         textareaRef.current?.focus();
                     }
                 }}
@@ -280,7 +280,7 @@ export function ItemEditor({ snippet, username, readOnly = false, onClose, onCre
                             readOnly={readOnly}
                             className={cn(
                                 "min-h-[200px] w-full resize-none border-none shadow-none pb-4 pt-0 text-sm md:text-base font-sans leading-relaxed bg-transparent focus-visible:ring-0 px-0",
-                                readOnly ? "cursor-text text-foreground/90" : ""
+                                readOnly ? "cursor-default text-foreground/90" : ""
                             )}
                         />
                     </div>
