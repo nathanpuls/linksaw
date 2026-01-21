@@ -134,7 +134,7 @@ export function ItemList({ initialItems, username }: ItemListProps) {
             </DndContext>
 
             <Dialog open={!!activeItem} onOpenChange={(open) => !open && setActiveItem(null)}>
-                <DialogContent className="max-w-4xl h-[90vh] p-0 gap-0 overflow-hidden bg-background">
+                <DialogContent className="sm:max-w-[90vw] md:max-w-3xl h-[80vh] md:h-[60vh] p-0 gap-0 overflow-hidden bg-background">
                     <VisuallyHidden>
                         <DialogTitle>Edit Item</DialogTitle>
                     </VisuallyHidden>

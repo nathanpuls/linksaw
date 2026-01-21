@@ -12,10 +12,10 @@ export const navItems = [
         type: "link"
     },
     {
-        label: "Snips",
+        label: "Text",
         icon: "FileText",
-        href: "/?type=snip",
-        type: "snip"
+        href: "/?type=text",
+        type: "text"
     },
     {
         label: "Clips",

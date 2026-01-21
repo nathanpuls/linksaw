@@ -74,8 +74,8 @@ export default async function Home(props: {
       queryBuilder = queryBuilder.eq('type', 'clip');
     } else if (typeFilter === 'link') {
       queryBuilder = queryBuilder.eq('type', 'link');
-    } else if (typeFilter === 'snip') {
-      queryBuilder = queryBuilder.neq('type', 'link').neq('type', 'clip'); // Assume 'snip' is default or explicit
+    } else if (typeFilter === 'text' || typeFilter === 'snip') {
+      queryBuilder = queryBuilder.neq('type', 'link').neq('type', 'clip'); // 'text' (formerly snip) is everything else
     }
   } else {
     // Default view: Everything EXCEPT clips? Or Everything?
@@ -102,7 +102,7 @@ export default async function Home(props: {
     if (typeFilter) {
       if (typeFilter === 'clip') queryBuilder = queryBuilder.eq('type', 'clip');
       if (typeFilter === 'link') queryBuilder = queryBuilder.eq('type', 'link');
-      if (typeFilter === 'snip') queryBuilder = queryBuilder.neq('type', 'link').neq('type', 'clip');
+      if (typeFilter === 'text' || typeFilter === 'snip') queryBuilder = queryBuilder.neq('type', 'link').neq('type', 'clip');
     } else {
       queryBuilder = queryBuilder.neq('type', 'clip');
     }
