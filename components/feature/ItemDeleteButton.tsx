@@ -5,14 +5,16 @@ import { Trash } from "lucide-react"
 import { toast } from "sonner"
 import { deleteItem, restoreItem } from "@/actions/items"
 import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 interface ItemDeleteButtonProps {
     id: string
     redirectAfterDelete?: boolean
     onDelete?: () => void
+    className?: string
 }
 
-export function ItemDeleteButton({ id, redirectAfterDelete = false, onDelete }: ItemDeleteButtonProps) {
+export function ItemDeleteButton({ id, redirectAfterDelete = false, onDelete, className }: ItemDeleteButtonProps) {
     const router = useRouter()
 
     const handleDelete = async (e: React.MouseEvent) => {
@@ -50,7 +52,7 @@ export function ItemDeleteButton({ id, redirectAfterDelete = false, onDelete }: 
         <Button
             variant="ghost"
             size="icon"
-            className="h-full w-9 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer rounded-none"
+            className={cn("h-full w-9 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer rounded-none", className)}
             onClick={handleDelete}
             title="Delete Item"
         >

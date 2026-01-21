@@ -32,6 +32,7 @@ interface Item {
     content: string
     language?: string
     slug?: string
+    alias?: string | null
     order_index: number
     type?: string
 }

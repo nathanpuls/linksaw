@@ -18,7 +18,7 @@ interface ItemEditorProps {
         id: string
         title: string
         content: string
-        language: string
+        language?: string
         slug?: string
         alias?: string | null
     }
