@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Copy, Pencil, GripVertical } from "lucide-react"
+import { Copy, Pencil, GripVertical, Check, Circle, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ItemDeleteButton } from "./ItemDeleteButton"
@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useDebouncedCallback } from "use-debounce"
 import { updateItem } from "@/actions/items"
+import { cn } from "@/lib/utils"
 
 interface ItemCardProps {
     id: string
@@ -18,13 +19,30 @@ interface ItemCardProps {
     language?: string
     slug?: string
     onClick?: () => void
+    isSelected?: boolean
+    onSelect?: (selected: boolean) => void
+    onDelete?: () => void
+    isReadOnly?: boolean
 }
 
-export function ItemCard({ id, title: initialTitle, content, language, slug, onClick, dragHandleProps }: ItemCardProps & { dragHandleProps?: any }) {
+export function ItemCard({
+    id,
+    title: initialTitle,
+    content,
+    language,
+    slug,
+    onClick,
+    dragHandleProps,
+    isSelected = false,
+    onSelect,
+    onDelete,
+    isReadOnly = false
+}: ItemCardProps & { dragHandleProps?: any }) {
     const router = useRouter()
     // If title is explicitly 'Untitled Item' (legacy default) or just 'Untitled', treat as empty for UX
     const displayTitle = (initialTitle === 'Untitled Item' || initialTitle === 'Untitled') ? '' : initialTitle
     const [title, setTitle] = useState(displayTitle)
+    const [copied, setCopied] = useState(false)
 
     // Sync state with props when server-side data refreshes (Realtime)
     useEffect(() => {
@@ -42,8 +60,8 @@ export function ItemCard({ id, title: initialTitle, content, language, slug, onC
 
         try {
             await updateItem(id, formData, slug)
-        } catch (err) {
-            toast.error("Failed to update title")
+        } catch (err: any) {
+            toast.error(err.message || "Failed to update title")
         }
     }, 1000)
 
@@ -57,7 +75,9 @@ export function ItemCard({ id, title: initialTitle, content, language, slug, onC
         e.stopPropagation()
         try {
             await navigator.clipboard.writeText(content)
+            setCopied(true)
             toast.success("Copied to clipboard")
+            setTimeout(() => setCopied(false), 2000)
         } catch (err) {
             toast.error("Failed to copy")
         }
@@ -84,58 +104,66 @@ export function ItemCard({ id, title: initialTitle, content, language, slug, onC
             }}
         >
             {/* Minimal Toolbar Header */}
-            <div className="flex items-center justify-between border-b bg-background h-[30px] shrink-0 gap-2">
-                {/* Drag Handle */}
-                <div
-                    {...dragHandleProps}
-                    className="flex items-center h-full pl-2 text-muted-foreground/30 hover:text-foreground cursor-grab active:cursor-grabbing transition-colors touch-none shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <GripVertical className="h-4 w-4" />
-                </div>
-
+            <div
+                className={cn(
+                    "flex items-center justify-between border-b bg-background min-h-[38px] shrink-0 gap-2 pl-3 transition-colors",
+                    !isReadOnly ? "cursor-grab active:cursor-grabbing touch-none" : "",
+                    isSelected && "bg-accent border-primary/20"
+                )}
+                {...(!isReadOnly ? dragHandleProps : {})}
+            >
                 {/* Editable Title */}
                 <input
                     value={title}
                     onChange={handleTitleChange}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-1 min-w-0 bg-transparent border-none outline-none h-full text-xs font-semibold text-foreground/70 hover:text-foreground focus:text-foreground transition-colors placeholder:text-muted-foreground/50 truncate"
-                    placeholder="Name"
+                    readOnly={isReadOnly}
+                    className={cn(
+                        "flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] font-semibold text-foreground/70 transition-colors truncate p-0 leading-none py-3",
+                        !isReadOnly && "hover:text-foreground focus:text-foreground"
+                    )}
                 />
 
                 <div
-                    className="flex items-center h-full shrink-0"
+                    className={cn(
+                        "flex items-center self-stretch shrink-0 transition-opacity cursor-default",
+                        (isSelected || isReadOnly) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                 >
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none"
+                        className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none cursor-pointer"
                         onClick={handleCopy}
                         title="Copy to clipboard"
                     >
-                        <Copy className="h-[14px] w-[14px]" />
+                        {copied ? <Check className="h-[14px] w-[14px]" /> : <Copy className="h-[14px] w-[14px]" />}
                     </Button>
 
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onClick) {
-                                onClick();
-                            } else {
-                                router.push(`/items/${slug || id}`);
+                    {!isReadOnly && <ItemDeleteButton id={id} onDelete={onDelete} />}
+
+                    {/* Selection Toggle */}
+                    {!isReadOnly && (
+                        <div
+                            className={cn(
+                                "flex items-center h-full cursor-pointer px-2 transition-opacity hover:bg-muted",
+                                isSelected ? "opacity-100 bg-primary/10" : "opacity-0 group-hover:opacity-100"
+                            )}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelect?.(!isSelected);
+                            }}
+                        >
+                            {isSelected ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-foreground" />
+                            ) : (
+                                <Circle className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-foreground transition-colors" />
+                            )
                             }
-                        }}
-                        title="Edit Item"
-                    >
-                        <Pencil className="h-[14px] w-[14px]" />
-                    </Button>
-
-                    <ItemDeleteButton id={id} />
+                        </div>
+                    )}
                 </div>
             </div>
 

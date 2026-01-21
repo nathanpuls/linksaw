@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import {
     DndContext,
     closestCenter,
@@ -18,8 +18,13 @@ import {
 } from '@dnd-kit/sortable'
 import { restrictToFirstScrollableAncestor } from '@dnd-kit/modifiers'
 import { ItemCard } from './ItemCard'
-import { updateItemOrder } from '@/actions/items'
-import { useEffect } from 'react'
+import { updateItemOrder, deleteItems } from '@/actions/items'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { ItemEditor } from './ItemEditor'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 
 interface Item {
     id: string
@@ -31,26 +36,32 @@ interface Item {
     type?: string
 }
 
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { ItemEditor } from './ItemEditor'
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
-
 interface ItemListProps {
     initialItems: any[]
     username?: string
+    isReadOnly?: boolean
 }
 
-export function ItemList({ initialItems, username }: ItemListProps) {
-    const [items, setItems] = useState(initialItems)
+export function ItemList({ initialItems, username, isReadOnly = false }: ItemListProps) {
+    const [items, setItems] = useState<Item[]>(initialItems)
     const [isPending, startTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
     const [activeItem, setActiveItem] = useState<Item | null>(null)
+    const [selectedIds, setSelectedIds] = useState<string[]>([])
+
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const isCreating = searchParams.get('new') === 'true'
+    const [isCreatingOpen, setIsCreatingOpen] = useState(false)
+
+    useEffect(() => {
+        setIsCreatingOpen(isCreating)
+    }, [isCreating])
 
     useEffect(() => {
         setMounted(true)
     }, [])
 
-    // Sync state with props when server-side data refreshes (Realtime)
     useEffect(() => {
         setItems(initialItems)
     }, [initialItems])
@@ -58,7 +69,7 @@ export function ItemList({ initialItems, username }: ItemListProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8, // Avoid accidental drags
+                distance: isReadOnly ? 1000 : 8, // Effectively disable drag in read-only
             },
         }),
         useSensor(KeyboardSensor, {
@@ -66,11 +77,53 @@ export function ItemList({ initialItems, username }: ItemListProps) {
         })
     )
 
+    const handleClose = () => {
+        if (activeItem) {
+            setActiveItem(null)
+        } else if (isCreatingOpen) {
+            setIsCreatingOpen(false)
+            router.push('/')
+        }
+    }
+
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id)
+                ? prev.filter(i => i !== id)
+                : [...prev, id]
+        )
+    }
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return
+
+        const idsToDelete = [...selectedIds]
+        const previousItems = [...items]
+
+        setSelectedIds([])
+        setItems(prev => prev.filter(item => !idsToDelete.includes(item.id)))
+
+        startTransition(async () => {
+            try {
+                await deleteItems(idsToDelete)
+                toast.success(`Deleted ${idsToDelete.length} items`)
+                router.refresh()
+            } catch (e: any) {
+                toast.error("Failed to delete items")
+                setItems(previousItems)
+                setSelectedIds(idsToDelete)
+            }
+        })
+    }
+
+    const handleSingleDelete = (id: string) => {
+        setItems(prev => prev.filter(item => item.id !== id))
+    }
+
     if (!mounted) {
-        // Render a static version during SSR/Hydration to avoid mismatch
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {initialItems.map((item) => (
+                {items.map((item) => (
                     <ItemCard
                         key={item.id}
                         id={item.id}
@@ -78,6 +131,7 @@ export function ItemList({ initialItems, username }: ItemListProps) {
                         content={item.content}
                         language={item.language}
                         slug={item.slug}
+                        isReadOnly={isReadOnly}
                     />
                 ))}
             </div>
@@ -85,8 +139,9 @@ export function ItemList({ initialItems, username }: ItemListProps) {
     }
 
     const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event
+        if (isReadOnly) return
 
+        const { active, over } = event
         if (over && active.id !== over.id) {
             const oldIndex = items.findIndex((s) => s.id === active.id)
             const newIndex = items.findIndex((s) => s.id === over.id)
@@ -105,7 +160,7 @@ export function ItemList({ initialItems, username }: ItemListProps) {
     }
 
     return (
-        <>
+        <div className="relative pb-24">
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -121,42 +176,96 @@ export function ItemList({ initialItems, username }: ItemListProps) {
                             <SortableItemCard
                                 key={item.id}
                                 item={item}
-                                onClick={() => setActiveItem(item)}
+                                onClick={() => {
+                                    if (!isReadOnly && selectedIds.length > 0) {
+                                        toggleSelection(item.id)
+                                    } else {
+                                        setActiveItem(item)
+                                    }
+                                }}
+                                isSelected={selectedIds.includes(item.id)}
+                                onSelect={() => toggleSelection(item.id)}
+                                onDelete={() => handleSingleDelete(item.id)}
+                                isReadOnly={isReadOnly}
                             />
                         ))}
-                        {items.length === 0 && (
-                            <div className="col-span-full text-center py-12 text-muted-foreground">
-                                No items found. Press 'N' to create one!
-                            </div>
-                        )}
                     </div>
                 </SortableContext>
             </DndContext>
 
-            <Dialog open={!!activeItem} onOpenChange={(open) => !open && setActiveItem(null)}>
+            <Dialog open={!!activeItem || isCreatingOpen} onOpenChange={(open) => !open && handleClose()}>
                 <DialogContent className="sm:max-w-[90vw] md:max-w-3xl h-[80vh] md:h-[60vh] p-0 gap-0 overflow-hidden bg-background">
                     <VisuallyHidden>
-                        <DialogTitle>Edit Item</DialogTitle>
+                        <DialogTitle>{isCreatingOpen ? 'New Item' : 'Edit Item'}</DialogTitle>
                     </VisuallyHidden>
-                    {activeItem && (
+                    {(activeItem || isCreatingOpen) && (
                         <div className="flex flex-col h-full overflow-y-auto">
                             <ItemEditor
-                                snippet={activeItem}
+                                snippet={activeItem || undefined}
                                 username={username}
-                                onClose={() => setActiveItem(null)}
+                                onClose={handleClose}
+                                isReadOnly={isReadOnly}
+                                onCreated={(newItem) => {
+                                    setItems(prev => {
+                                        if (prev.some(i => i.id === newItem.id)) return prev;
+                                        return [newItem, ...prev];
+                                    });
+                                }}
+                                initialContent={
+                                    isCreatingOpen
+                                        ? [searchParams.get('content'), searchParams.get('url')].filter(Boolean).join('\n\n')
+                                        : undefined
+                                }
+                                initialTitle={isCreating ? (searchParams.get('title') || '') : undefined}
                             />
                         </div>
                     )}
                 </DialogContent>
             </Dialog>
-        </>
+
+            {/* Bulk Actions Toolbar */}
+            {!isReadOnly && selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-background border shadow-2xl rounded-full px-5 py-2.5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <span className="text-sm font-semibold whitespace-nowrap px-1">
+                        {selectedIds.length} {selectedIds.length === 1 ? 'item' : 'items'}
+                    </span>
+                    <div className="h-4 w-px bg-border" />
+                    <div className="flex items-center gap-1.5">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-8 rounded-full px-3 hover:bg-accent"
+                            onClick={() => setSelectedIds([])}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="text-xs h-8 rounded-full px-4 shadow-sm cursor-pointer"
+                            onClick={handleBulkDelete}
+                            disabled={isPending}
+                        >
+                            {isPending ? "..." : "Delete"}
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-function SortableItemCard({ item, onClick }: { item: any, onClick: () => void }) {
+function SortableItemCard({ item, onClick, isSelected, onSelect, onDelete, isReadOnly }: {
+    item: any,
+    onClick: () => void,
+    isSelected: boolean,
+    onSelect: () => void,
+    onDelete?: () => void,
+    isReadOnly?: boolean
+}) {
     const {
         attributes,
         listeners,
@@ -164,7 +273,7 @@ function SortableItemCard({ item, onClick }: { item: any, onClick: () => void })
         transform,
         transition,
         isDragging
-    } = useSortable({ id: item.id })
+    } = useSortable({ id: item.id, disabled: isReadOnly })
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -182,7 +291,11 @@ function SortableItemCard({ item, onClick }: { item: any, onClick: () => void })
                 language={item.language}
                 slug={item.slug}
                 onClick={onClick}
-                dragHandleProps={{ ...attributes, ...listeners }}
+                dragHandleProps={!isReadOnly ? { ...attributes, ...listeners } : undefined}
+                isSelected={isSelected}
+                onSelect={onSelect}
+                onDelete={onDelete}
+                isReadOnly={isReadOnly}
             />
         </div>
     )

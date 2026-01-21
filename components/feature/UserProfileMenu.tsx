@@ -66,7 +66,7 @@ export function UserProfileMenu({ user, profile }: UserProfileMenuProps) {
         <>
             <button
                 onClick={() => setIsOpen(true)}
-                className="w-full flex items-center gap-3 p-2 hover:bg-accent rounded-md transition-colors"
+                className="w-full flex items-center justify-center group-hover:justify-start p-2 hover:bg-accent rounded-md transition-all"
             >
                 <div className="relative w-8 h-8 rounded-full overflow-hidden bg-muted shrink-0">
                     {avatarUrl ? (
@@ -82,7 +82,7 @@ export function UserProfileMenu({ user, profile }: UserProfileMenuProps) {
                         </div>
                     )}
                 </div>
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap overflow-hidden text-sm font-medium">
+                <span className="opacity-0 group-hover:opacity-100 max-w-0 group-hover:max-w-[150px] group-hover:ml-3 transition-all duration-300 whitespace-nowrap overflow-hidden text-sm font-medium">
                     {displayName}
                 </span>
             </button>

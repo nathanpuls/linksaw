@@ -28,12 +28,12 @@ export async function updateItem(id: string, formData: FormData, slug?: string) 
 
         if (raw && raw.trim() !== '') {
             alias = raw.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
-            if (alias.length < 2) alias = null;
+            if (alias.length < 1) alias = null;
         }
     } else if (title && title !== 'Untitled' && title !== 'Untitled Item') {
         // Sync alias to title for card-view renames
         const candidate = title.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
-        if (candidate.length >= 2) {
+        if (candidate.length >= 1) {
             alias = candidate;
             shouldUpdateAlias = true;
         }
@@ -44,6 +44,24 @@ export async function updateItem(id: string, formData: FormData, slug?: string) 
     const updateData: any = { title, content, language, type };
     if (shouldUpdateAlias) {
         updateData.alias = alias;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    if (shouldUpdateAlias && alias) {
+        const { data: existing } = await supabase
+            .from('items')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('alias', alias)
+            .neq('id', id)
+            .is('deleted_at', null)
+            .maybeSingle()
+
+        if (existing) {
+            throw new Error(`The name "${alias}" is already taken by another card.`)
+        }
     }
 
     const { error } = await supabase
@@ -67,18 +85,17 @@ export async function createItem(formData: FormData) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-        // For public demo/testing without auth, this might fail unless we allow nullable user_id
-        // But request implies "user-owned", so we should enforce auth.
-        // If the current user is not logged in, we should probably redirect to login.
-        // For now, let's treat it as error.
         throw new Error('You must be logged in to create items')
     }
 
     const content = (formData.get('content') as string) || ''
-    const title = 'Untitled'; // Default to Untitled in DB, but UI will hide it if it matches 'Untitled'
+    const title = 'Untitled';
     const language = 'text';
     const type = determineType(content)
 
+    // Generate slug locally to avoid race conditions or extra round trips if needed, 
+    // though for strict uniqueness we might rely on DB or retry. 
+    // Here we just use random slug.
     const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
     const slug = Array.from({ length: 7 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 
@@ -103,6 +120,69 @@ export async function createItem(formData: FormData) {
     redirect('/')
 }
 
+export async function createItemJson(formData: FormData) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error('You must be logged in to create items')
+    }
+
+    const content = (formData.get('content') as string) || ''
+    const title = (formData.get('title') as string) || 'Untitled';
+    const language = 'text';
+    const type = determineType(content)
+
+    // Check for alias
+    let alias = null;
+    if (formData.has('alias')) {
+        const raw = formData.get('alias') as string;
+        if (raw && raw.trim() !== '') {
+            alias = raw.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+            if (alias.length < 2) alias = null;
+        }
+    }
+
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    const slug = Array.from({ length: 7 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+
+    const insertData: any = {
+        title,
+        content,
+        language,
+        slug,
+        type,
+        user_id: user.id
+    };
+    if (alias) {
+        const { data: existing } = await supabase
+            .from('items')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('alias', alias)
+            .is('deleted_at', null)
+            .maybeSingle()
+
+        if (existing) {
+            throw new Error(`The name "${alias}" is already taken.`)
+        }
+        insertData.alias = alias;
+    }
+
+    const { data, error } = await supabase
+        .from('items')
+        .insert(insertData)
+        .select('*')
+        .single()
+
+    if (error) {
+        throw new Error('Failed to create item: ' + error.message)
+    }
+
+    revalidatePath('/')
+    return data;
+}
+
 export async function deleteItem(id: string) {
     const supabase = await createClient()
     const { error } = await supabase
@@ -116,6 +196,20 @@ export async function deleteItem(id: string) {
 
     revalidatePath('/')
     revalidatePath(`/items/${id}`)
+}
+
+export async function deleteItems(ids: string[]) {
+    const supabase = await createClient()
+    const { error } = await supabase
+        .from('items')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', ids)
+
+    if (error) {
+        throw new Error('Failed to delete items')
+    }
+
+    revalidatePath('/')
 }
 
 export async function restoreItem(id: string) {

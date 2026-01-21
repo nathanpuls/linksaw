@@ -29,7 +29,7 @@ export function ItemCopyButton({ content, variant = "ghost", className, ...props
         <Button
             variant="ghost"
             size="icon"
-            className={cn("h-8 w-8 hover:bg-transparent cursor-pointer", className)}
+            className={cn("h-8 w-8 hover:bg-transparent cursor-pointer focus-visible:ring-0 focus-visible:ring-offset-0", className)}
             onClick={handleCopy}
             title="Copy Item"
             {...props}

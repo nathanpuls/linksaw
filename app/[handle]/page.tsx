@@ -71,7 +71,7 @@ export default async function UserProfilePage(props: { params: Promise<{ handle:
                     <p className="text-muted-foreground">{items?.length || 0} items</p>
                 </div>
 
-                <ItemList initialItems={items || []} />
+                <ItemList initialItems={items || []} isReadOnly={true} />
             </main>
         </div>
     );

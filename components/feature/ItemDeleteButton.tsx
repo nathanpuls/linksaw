@@ -9,9 +9,10 @@ import { useRouter } from "next/navigation"
 interface ItemDeleteButtonProps {
     id: string
     redirectAfterDelete?: boolean
+    onDelete?: () => void
 }
 
-export function ItemDeleteButton({ id, redirectAfterDelete = false }: ItemDeleteButtonProps) {
+export function ItemDeleteButton({ id, redirectAfterDelete = false, onDelete }: ItemDeleteButtonProps) {
     const router = useRouter()
 
     const handleDelete = async (e: React.MouseEvent) => {
@@ -20,7 +21,9 @@ export function ItemDeleteButton({ id, redirectAfterDelete = false }: ItemDelete
         e.stopPropagation()
 
         try {
+            if (onDelete) onDelete()
             await deleteItem(id)
+            router.refresh()
             if (redirectAfterDelete) {
                 router.push('/')
             }
@@ -30,6 +33,7 @@ export function ItemDeleteButton({ id, redirectAfterDelete = false }: ItemDelete
                     onClick: async () => {
                         try {
                             await restoreItem(id)
+                            router.refresh()
                             toast.success("Item restored")
                         } catch (err) {
                             toast.error("Failed to restore item")
