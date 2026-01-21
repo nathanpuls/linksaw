@@ -172,7 +172,7 @@ export default async function Home(props: {
         {/* Content Wrapper */}
         <main className="flex-1 flex flex-col md:pl-[60px] transition-all">
           <div className="container mx-auto px-4 py-6 flex-1">
-            <ItemList initialItems={snippets || []} />
+            <ItemList initialItems={snippets || []} username={profile?.username} />
             <ItemRealtimeListener />
           </div>
         </main>

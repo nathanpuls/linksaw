@@ -23,9 +23,10 @@ interface ItemEditorProps {
     }
     username?: string
     readOnly?: boolean
+    onClose?: () => void
 }
 
-export function ItemEditor({ snippet, username, readOnly = false }: ItemEditorProps) {
+export function ItemEditor({ snippet, username, readOnly = false, onClose }: ItemEditorProps) {
     const router = useRouter();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const displayTitle = (snippet.title === 'Untitled Item' || snippet.title === 'Untitled') ? '' : snippet.title
@@ -71,12 +72,25 @@ export function ItemEditor({ snippet, username, readOnly = false }: ItemEditorPr
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
-                router.push('/')
+                if (onClose) {
+                    onClose();
+                } else {
+                    router.push('/')
+                }
             }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [router])
+    }, [router, onClose])
+
+    const handleBack = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (onClose) {
+            onClose();
+        } else {
+            router.push('/');
+        }
+    }
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (readOnly) return;
@@ -105,7 +119,7 @@ export function ItemEditor({ snippet, username, readOnly = false }: ItemEditorPr
         <div className="min-h-screen bg-background text-foreground flex flex-col">
             <header className="border-b bg-card/30 backdrop-blur-sm sticky top-0 z-50">
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group/back">
+                    <Link href="/" onClick={handleBack} className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group/back">
                         <ChevronLeft className="h-4 w-4 mr-1" />
                         Back
                         <span className="ml-2 text-[10px] bg-muted px-1.5 py-0.5 rounded opacity-50 group-hover/back:opacity-100 transition-opacity">Esc</span>

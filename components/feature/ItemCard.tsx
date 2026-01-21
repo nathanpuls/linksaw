@@ -17,14 +17,14 @@ interface ItemCardProps {
     content: string
     language?: string
     slug?: string
+    onClick?: () => void
 }
 
-export function ItemCard({ id, title: initialTitle, content, language, slug, dragHandleProps }: ItemCardProps & { dragHandleProps?: any }) {
+export function ItemCard({ id, title: initialTitle, content, language, slug, onClick, dragHandleProps }: ItemCardProps & { dragHandleProps?: any }) {
     const router = useRouter()
     // If title is explicitly 'Untitled Item' (legacy default) or just 'Untitled', treat as empty for UX
     const displayTitle = (initialTitle === 'Untitled Item' || initialTitle === 'Untitled') ? '' : initialTitle
     const [title, setTitle] = useState(displayTitle)
-    const [isEditingTitle, setIsEditingTitle] = useState(false)
 
     // Sync state with props when server-side data refreshes (Realtime)
     useEffect(() => {
@@ -66,6 +66,8 @@ export function ItemCard({ id, title: initialTitle, content, language, slug, dra
     const handleCardClick = () => {
         if (isUrl) {
             window.open(content.trim(), '_blank', 'noopener,noreferrer')
+        } else if (onClick) {
+            onClick();
         } else {
             router.push(`/items/${slug || id}`)
         }
@@ -78,7 +80,7 @@ export function ItemCard({ id, title: initialTitle, content, language, slug, dra
             className="group flex flex-col h-full overflow-hidden transition-all hover:shadow-md hover:border-primary/50 cursor-pointer bg-background p-0 gap-0"
             onClick={handleCardClick}
             onMouseEnter={() => {
-                if (!isUrl) router.prefetch(targetPath)
+                if (!isUrl && !onClick) router.prefetch(targetPath)
             }}
         >
             {/* Minimal Toolbar Header */}
@@ -122,7 +124,11 @@ export function ItemCard({ id, title: initialTitle, content, language, slug, dra
                         className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none"
                         onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/items/${slug || id}`);
+                            if (onClick) {
+                                onClick();
+                            } else {
+                                router.push(`/items/${slug || id}`);
+                            }
                         }}
                         title="Edit Item"
                     >

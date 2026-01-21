@@ -31,14 +31,20 @@ interface Item {
     type?: string
 }
 
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { ItemEditor } from './ItemEditor'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
+
 interface ItemListProps {
     initialItems: any[]
+    username?: string
 }
 
-export function ItemList({ initialItems }: ItemListProps) {
+export function ItemList({ initialItems, username }: ItemListProps) {
     const [items, setItems] = useState(initialItems)
     const [isPending, startTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
+    const [activeItem, setActiveItem] = useState<Item | null>(null)
 
     useEffect(() => {
         setMounted(true)
@@ -99,38 +105,58 @@ export function ItemList({ initialItems }: ItemListProps) {
     }
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            modifiers={[restrictToFirstScrollableAncestor]}
-        >
-            <SortableContext
-                items={items.map(s => s.id)}
-                strategy={rectSortingStrategy}
+        <>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToFirstScrollableAncestor]}
             >
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {items.map((item) => (
-                        <SortableItemCard
-                            key={item.id}
-                            item={item}
-                        />
-                    ))}
-                    {items.length === 0 && (
-                        <div className="col-span-full text-center py-12 text-muted-foreground">
-                            No items found. Press 'N' to create one!
+                <SortableContext
+                    items={items.map(s => s.id)}
+                    strategy={rectSortingStrategy}
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {items.map((item) => (
+                            <SortableItemCard
+                                key={item.id}
+                                item={item}
+                                onClick={() => setActiveItem(item)}
+                            />
+                        ))}
+                        {items.length === 0 && (
+                            <div className="col-span-full text-center py-12 text-muted-foreground">
+                                No items found. Press 'N' to create one!
+                            </div>
+                        )}
+                    </div>
+                </SortableContext>
+            </DndContext>
+
+            <Dialog open={!!activeItem} onOpenChange={(open) => !open && setActiveItem(null)}>
+                <DialogContent className="max-w-4xl h-[90vh] p-0 gap-0 overflow-hidden bg-background">
+                    <VisuallyHidden>
+                        <DialogTitle>Edit Item</DialogTitle>
+                    </VisuallyHidden>
+                    {activeItem && (
+                        <div className="flex flex-col h-full overflow-y-auto">
+                            <ItemEditor
+                                snippet={activeItem}
+                                username={username}
+                                onClose={() => setActiveItem(null)}
+                            />
                         </div>
                     )}
-                </div>
-            </SortableContext>
-        </DndContext>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }
 
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-function SortableItemCard({ item }: { item: any }) {
+function SortableItemCard({ item, onClick }: { item: any, onClick: () => void }) {
     const {
         attributes,
         listeners,
@@ -155,6 +181,7 @@ function SortableItemCard({ item }: { item: any }) {
                 content={item.content}
                 language={item.language}
                 slug={item.slug}
+                onClick={onClick}
                 dragHandleProps={{ ...attributes, ...listeners }}
             />
         </div>
