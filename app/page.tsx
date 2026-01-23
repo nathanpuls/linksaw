@@ -96,7 +96,7 @@ export default async function Home(props: {
                                     <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <Link2 className="h-6 w-6 text-blue-500" />
                                     </div>
-                                    <h3 className="text-xl font-semibold mb-2">Save Links</h3>
+                                    <h3 className="text-xl font-semibold mb-2">links</h3>
                                     <p className="text-muted-foreground">
                                         Bookmark important URLs and access them from anywhere. Share your favorite links with custom short URLs.
                                     </p>
@@ -110,9 +110,9 @@ export default async function Home(props: {
                                     <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <FileCode className="h-6 w-6 text-purple-500" />
                                     </div>
-                                    <h3 className="text-xl font-semibold mb-2">Text Snippets</h3>
+                                    <h3 className="text-xl font-semibold mb-2">text</h3>
                                     <p className="text-muted-foreground">
-                                        Store reusable text snippets, templates, and notes. Perfect for developers and writers.
+                                        Store reusable text snippets, templates, and notes.
                                     </p>
                                 </div>
                             </div>
@@ -124,7 +124,7 @@ export default async function Home(props: {
                                     <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <Clipboard className="h-6 w-6 text-green-500" />
                                     </div>
-                                    <h3 className="text-xl font-semibold mb-2">Clipboard Manager</h3>
+                                    <h3 className="text-xl font-semibold mb-2">clips</h3>
                                     <p className="text-muted-foreground">
                                         Never lose what you copy. Access your clipboard history and paste from anywhere.
                                     </p>
