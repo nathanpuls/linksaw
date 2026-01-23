@@ -52,7 +52,7 @@ export function VisibilityToggle({ initialIsPublic }: VisibilityToggleProps) {
                 checked={isPublic}
                 onCheckedChange={handleToggle}
                 disabled={loading}
-                className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
+                className="data-[state=checked]:bg-blue-600"
             />
         </div>
     )
