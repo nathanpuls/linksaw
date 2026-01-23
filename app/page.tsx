@@ -38,15 +38,15 @@ export default async function Home(props: {
                     <div className="max-w-4xl mx-auto text-center space-y-8">
                         {/* Logo & Brand */}
                         <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                            <div className="flex items-center gap-2">
-                                <div className="relative w-16 h-16 rounded-full overflow-hidden">
+                            <div className="flex items-end gap-3 md:gap-4">
+                                <div className="relative w-20 h-20 md:w-28 md:h-28 -mb-3 md:-mb-4">
                                     <img
                                         src="/logo.svg"
                                         alt="Linksaw Logo"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                                <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent pb-1 md:pb-2">
                                     linksaw
                                 </h1>
                             </div>

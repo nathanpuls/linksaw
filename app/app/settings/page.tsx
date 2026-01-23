@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
 import { ApiKeyManager } from "@/components/feature/ApiKeyManager"
+import { VisibilityToggle } from "@/components/feature/VisibilityToggle"
 import { Shell } from "@/components/layout/Shell"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
@@ -35,6 +36,13 @@ export default async function SettingsPage() {
                             <p className="font-medium">@{profile?.username || 'Not set'}</p>
                         </div>
                     </div>
+                </div>
+
+
+                {/* Visibility Section */}
+                <div className="border rounded-lg p-6">
+                    <h2 className="text-xl font-semibold mb-4">Privacy & Visibility</h2>
+                    <VisibilityToggle initialIsPublic={profile?.is_public || false} />
                 </div>
 
                 {/* API Key Section */}
