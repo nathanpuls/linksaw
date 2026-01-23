@@ -15,17 +15,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Linksaw",
+  metadataBase: new URL('https://linksaw.com'),
+  title: {
+    default: "linksaw",
+    template: "%s | linksaw",
+  },
   description: "Your personal link and clip manager",
+  openGraph: {
+    title: "linksaw",
+    description: "Your personal link and clip manager",
+    url: "https://linksaw.com",
+    siteName: "linksaw",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "linksaw",
+    description: "Your personal link and clip manager",
+  },
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
     apple: "/logo.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Linksaw",
+    title: "linksaw",
   },
 };
 

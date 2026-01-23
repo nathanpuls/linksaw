@@ -46,9 +46,7 @@ export async function updateSession(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (request.nextUrl.pathname === '/') {
-        const url = request.nextUrl.clone()
-        url.pathname = '/app'
-        return NextResponse.redirect(url)
+        // Do not redirect to /app, allow / to load
     }
 
     const isAppPage = request.nextUrl.pathname.startsWith('/app')

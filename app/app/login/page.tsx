@@ -9,7 +9,7 @@ export default async function LoginPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-        redirect('/app')
+        redirect('/')
     }
 
     return (
@@ -22,7 +22,7 @@ export default async function LoginPage() {
                         <div className="flex items-center gap-2">
                             <div className="relative w-16 h-16 rounded-full overflow-hidden">
                                 <img
-                                    src="/logo.png"
+                                    src="/logo.svg"
                                     alt="Linksaw Logo"
                                     className="w-full h-full object-cover"
                                 />

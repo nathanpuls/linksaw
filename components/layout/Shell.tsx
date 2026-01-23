@@ -38,13 +38,12 @@ export async function Shell({
                     {/* Left Side: Branding & Context */}
                     <div className="flex items-center gap-2 shrink-0">
                         {!isReadOnly && <MobileNav items={navItems} />}
-                        <Link href="/app" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <div className="relative w-8 h-8 rounded-full overflow-hidden">
-                                <Image
-                                    src="/logo.png"
+                                <img
+                                    src="/logo.svg"
                                     alt="Linksaw Logo"
-                                    fill
-                                    className="object-cover"
+                                    className="w-full h-full object-cover"
                                 />
                             </div>
                             <span className="font-bold text-lg hidden sm:inline-block">

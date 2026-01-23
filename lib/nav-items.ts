@@ -2,25 +2,25 @@ export const navItems = [
     {
         label: "All Items",
         icon: "Home",
-        href: "/app",
+        href: "/",
         type: null
     },
     {
         label: "Links",
         icon: "Link2",
-        href: "/app?type=link",
+        href: "/?type=link",
         type: "link"
     },
     {
         label: "Text",
         icon: "FileText",
-        href: "/app?type=text",
+        href: "/?type=text",
         type: "text"
     },
     {
         label: "Clips",
         icon: "Clipboard",
-        href: "/app?type=clip",
+        href: "/?type=clip",
         type: "clip"
     },
     {

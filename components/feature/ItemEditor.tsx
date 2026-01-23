@@ -130,7 +130,7 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
                 if (onClose) {
                     onClose();
                 } else {
-                    router.push('/app')
+                    router.push('/')
                 }
             }
         }
@@ -143,7 +143,7 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
         if (onClose) {
             onClose();
         } else {
-            router.push('/app');
+            router.push('/');
         }
     }
 
@@ -179,10 +179,10 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center relative gap-4">
                     {/* Top Left: Logo & Display Name */}
                     <div className="flex items-center gap-2 z-10 relative">
-                        <Link href="/app" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <div className="relative w-6 h-6 rounded-full overflow-hidden">
                                 <img
-                                    src="/logo.png"
+                                    src="/logo.svg"
                                     alt="Logo"
                                     className="object-cover"
                                 />
@@ -251,7 +251,7 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
                                     <ItemDeleteButton id={id} redirectAfterDelete={true} className="text-muted-foreground hover:text-destructive h-8 w-8" />
                                 )}
                                 <Link
-                                    href="/app"
+                                    href="/"
                                     onClick={handleBack}
                                     className="text-sm font-semibold text-foreground hover:opacity-70 transition-opacity whitespace-nowrap px-2"
                                 >

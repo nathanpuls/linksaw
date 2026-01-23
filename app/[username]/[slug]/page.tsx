@@ -1,10 +1,78 @@
 import { createClient } from "@/utils/supabase/server"
 import { notFound, redirect } from "next/navigation"
+import type { Metadata } from "next"
 import { ItemEditor } from "@/components/feature/ItemEditor"
 import { ItemList } from "@/components/feature/ItemList"
 import { Shell } from "@/components/layout/Shell"
 
 export const revalidate = 0;
+
+export async function generateMetadata(props: { params: Promise<{ username: string, slug: string }> }): Promise<Metadata> {
+    const params = await props.params;
+    const username = decodeURIComponent(params.username);
+    const slug = decodeURIComponent(params.slug);
+    const supabase = await createClient();
+
+    // 1. Resolve User
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, full_name, username')
+        .eq('username', username)
+        .single();
+
+    if (!profile) {
+        return {
+            title: 'Item Not Found',
+        }
+    }
+
+    const displayName = profile.full_name || profile.username;
+
+    // 2. Handle Filter Views
+    if (['clip', 'link', 'text'].includes(slug)) {
+        return {
+            title: `${displayName}'s ${slug}s`,
+            description: `View all ${slug}s curated by ${displayName}`,
+            openGraph: {
+                title: `${displayName}'s ${slug}s`,
+                description: `View all ${slug}s curated by ${displayName}`,
+            }
+        };
+    }
+
+    // 3. Resolve Single Item
+    const { data: item } = await supabase
+        .from('items')
+        .select('title, content, type')
+        .eq('user_id', profile.id)
+        .is('deleted_at', null)
+        .or(`slug.eq.${slug},alias.eq.${slug}`)
+        .single();
+
+    if (!item) {
+        return {
+            title: 'Item Not Found',
+        };
+    }
+
+    const title = item.title || 'Untitled Item';
+    const description = item.content ? item.content.slice(0, 150) + (item.content.length > 150 ? '...' : '') : `View this ${item.type} on Linksaw`;
+
+    return {
+        title: title,
+        description: description,
+        openGraph: {
+            title: title,
+            description: description,
+            type: 'article',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: title,
+            description: description,
+        }
+    };
+}
 
 export default async function ItemResolverPage(props: { params: Promise<{ username: string, slug: string }> }) {
     const params = await props.params;

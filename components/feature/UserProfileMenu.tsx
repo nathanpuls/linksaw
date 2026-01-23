@@ -5,10 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { claimUsername } from "@/actions/user"
-import { signOut } from "@/actions/auth"
+import { signOut, switchAccount } from "@/actions/auth"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { User, LogOut, AlertTriangle } from "lucide-react"
+import { User, LogOut, AlertTriangle, ArrowLeftRight } from "lucide-react"
 import Image from "next/image"
 
 interface UserProfileMenuProps {
@@ -60,6 +60,10 @@ export function UserProfileMenu({ user, profile }: UserProfileMenuProps) {
 
     const handleSignOut = async () => {
         await signOut()
+    }
+
+    const handleSwitchAccount = async () => {
+        await switchAccount()
     }
 
     return (
@@ -173,7 +177,15 @@ export function UserProfileMenu({ user, profile }: UserProfileMenuProps) {
                         </div>
                     </div>
 
-                    <DialogFooter className="border-t pt-4">
+                    <div className="flex flex-col gap-2 border-t pt-4 mt-4">
+                        <Button
+                            variant="ghost"
+                            onClick={handleSwitchAccount}
+                            className="w-full justify-start text-muted-foreground hover:text-foreground"
+                        >
+                            <ArrowLeftRight className="h-4 w-4 mr-2" />
+                            Switch Account
+                        </Button>
                         <Button
                             variant="ghost"
                             onClick={handleSignOut}
@@ -182,7 +194,7 @@ export function UserProfileMenu({ user, profile }: UserProfileMenuProps) {
                             <LogOut className="h-4 w-4 mr-2" />
                             Sign Out
                         </Button>
-                    </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>
