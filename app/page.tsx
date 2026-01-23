@@ -44,6 +44,11 @@ export default async function Home(props: {
                 <Link href="/app/login">
                     <Button>Sign In</Button>
                 </Link>
+
+                <div className="absolute bottom-4 flex gap-6 text-sm text-muted-foreground">
+                    <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+                    <Link href="/terms" className="hover:underline">Terms of Service</Link>
+                </div>
             </div>
         )
     }
