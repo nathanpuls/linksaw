@@ -79,12 +79,7 @@ export default async function Home(props: {
       queryBuilder = queryBuilder.neq('type', 'link').neq('type', 'clip'); // 'text' (formerly snip) is everything else
     }
   } else {
-    // Default view: Everything EXCEPT clips? Or Everything?
-    // Previously we excluded clips. Let's keep excluding clips unless explicitly asked or unified view.
-    // "All Items" usually implies Links + Snips. Clips are usually separate history.
-    // But user said "links snips and clips goes".
-    // If no type is selected (Home), let's show links and snips (no filters aside from not clips).
-    queryBuilder = queryBuilder.neq('type', 'clip');
+    // Default view: Show everything including clips
   }
 
   if (query) {
