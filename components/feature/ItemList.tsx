@@ -14,7 +14,8 @@ import {
     arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
-    rectSortingStrategy
+    rectSortingStrategy,
+    verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { restrictToFirstScrollableAncestor } from '@dnd-kit/modifiers'
 import { ItemCard } from './ItemCard'
@@ -25,6 +26,9 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { LayoutGrid, List } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface Item {
     id: string
@@ -46,6 +50,7 @@ interface ItemListProps {
 
 export function ItemList({ initialItems, username, displayName, isReadOnly = false }: ItemListProps) {
     const [items, setItems] = useState<Item[]>(initialItems)
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
     const [isPending, startTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
     const [activeItem, setActiveItem] = useState<Item | null>(null)
@@ -69,9 +74,11 @@ export function ItemList({ initialItems, username, displayName, isReadOnly = fal
     }, [initialItems])
 
     const sensors = useSensors(
-        useSensor(PointerSensor, {
+        useSensor(PointerSensor, { // Requires pointer to drag
             activationConstraint: {
-                distance: isReadOnly ? 1000 : 8, // Effectively disable drag in read-only
+                // If read only, make distance huge to effectively disable. 
+                // Alternatively, just don't pass sensors if read only but hook rules.
+                distance: isReadOnly ? 1000 : 8,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -122,26 +129,6 @@ export function ItemList({ initialItems, username, displayName, isReadOnly = fal
         setItems(prev => prev.filter(item => item.id !== id))
     }
 
-    if (!mounted) {
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {items.map((item) => (
-                    <ItemCard
-                        key={item.id}
-                        id={item.id}
-                        title={item.title}
-                        content={item.content}
-                        language={item.language}
-                        slug={item.slug}
-                        alias={item.alias}
-                        isReadOnly={isReadOnly}
-                        username={username}
-                    />
-                ))}
-            </div>
-        )
-    }
-
     const handleDragEnd = async (event: DragEndEvent) => {
         if (isReadOnly) return
 
@@ -163,8 +150,41 @@ export function ItemList({ initialItems, username, displayName, isReadOnly = fal
         }
     }
 
+    if (!mounted) {
+        return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {items.map((item) => (
+                    <ItemCard
+                        key={item.id}
+                        id={item.id}
+                        title={item.title}
+                        content={item.content}
+                        language={item.language}
+                        slug={item.slug}
+                        alias={item.alias}
+                        isReadOnly={isReadOnly}
+                        username={username}
+                    />
+                ))}
+            </div>
+        )
+    }
+
     return (
         <div className="relative pb-24">
+            {!isReadOnly && (
+                <div className="flex justify-end mb-4">
+                    <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}>
+                        <ToggleGroupItem value="grid" aria-label="Grid view">
+                            <LayoutGrid className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="list" aria-label="List view">
+                            <List className="h-4 w-4" />
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                </div>
+            )}
+
             <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -173,9 +193,12 @@ export function ItemList({ initialItems, username, displayName, isReadOnly = fal
             >
                 <SortableContext
                     items={items.map(s => s.id)}
-                    strategy={rectSortingStrategy}
+                    strategy={viewMode === 'grid' ? rectSortingStrategy : verticalListSortingStrategy}
                 >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <div className={cn(
+                        "grid gap-2",
+                        viewMode === 'grid' ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1"
+                    )}>
                         {items.map((item) => (
                             <SortableItemCard
                                 key={item.id}
