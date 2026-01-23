@@ -1,6 +1,28 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { ItemEditor } from "@/components/feature/ItemEditor";
+
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+    const params = await props.params;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+    const supabase = await createClient();
+
+    let query = supabase.from('items').select('title, slug, alias').is('deleted_at', null);
+    if (isUuid) query = query.eq('id', params.id);
+    else query = query.or(`slug.eq.${params.id},alias.eq.${params.id}`);
+
+    const { data: item } = await query.single();
+    if (!item) return { title: 'Item Not Found' };
+
+    const friendlyTitle = (item.title && item.title !== 'Untitled' && item.title !== 'Untitled Item')
+        ? item.title
+        : (item.alias || item.slug || 'Unnamed Card');
+
+    return {
+        title: friendlyTitle,
+    };
+}
 
 export const revalidate = 0;
 

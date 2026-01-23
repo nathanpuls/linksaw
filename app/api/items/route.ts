@@ -11,7 +11,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Content is required" }, { status: 400 })
         }
 
-        const title = customTitle || content.slice(0, 30) || 'Untitled Item'
+        const title = customTitle || ''
         const language = 'text'
         const type = content.trim().match(/^https?:\/\//) ? 'link' : 'snip';
 

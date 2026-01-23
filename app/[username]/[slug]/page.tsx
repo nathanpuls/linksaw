@@ -16,7 +16,7 @@ export async function generateMetadata(props: { params: Promise<{ username: stri
     // 1. Resolve User
     const { data: profile } = await supabase
         .from('profiles')
-        .select('id, full_name, username')
+        .select('id, full_name, username, render_markdown')
         .eq('username', username)
         .single();
 
@@ -55,7 +55,7 @@ export async function generateMetadata(props: { params: Promise<{ username: stri
         };
     }
 
-    const title = item.title || 'Untitled Item';
+    const title = item.title ? (item.title === 'Untitled Item' || item.title === 'Untitled' ? slug : item.title) : slug;
     const description = item.content ? item.content.slice(0, 150) + (item.content.length > 150 ? '...' : '') : `View this ${item.type} on Linksaw`;
 
     return {
@@ -89,7 +89,7 @@ export default async function ItemResolverPage(props: { params: Promise<{ userna
     // 1. Resolve User
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, full_name')
+        .select('id, username, full_name, render_markdown')
         .eq('username', username)
         .single();
 
@@ -154,6 +154,6 @@ export default async function ItemResolverPage(props: { params: Promise<{ userna
 
     // 5. Render View
     return (
-        <ItemEditor snippet={item} readOnly={true} username={username} />
+        <ItemEditor snippet={item} readOnly={true} username={username} renderMarkdown={profile.render_markdown || false} />
     );
 }

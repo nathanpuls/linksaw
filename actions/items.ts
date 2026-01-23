@@ -62,6 +62,7 @@ export async function updateItem(id: string, formData: FormData, slug?: string) 
         if (existing) {
             throw new Error(`The name "${alias}" is already taken by another card.`)
         }
+        updateData.alias = alias;
     }
 
     const { error } = await supabase
@@ -89,7 +90,7 @@ export async function createItem(formData: FormData) {
     }
 
     const content = (formData.get('content') as string) || ''
-    const title = 'Untitled';
+    const title = '';
     const language = 'text';
     const type = determineType(content)
 
@@ -129,7 +130,7 @@ export async function createItemJson(formData: FormData) {
     }
 
     const content = (formData.get('content') as string) || ''
-    const title = (formData.get('title') as string) || 'Untitled';
+    const title = (formData.get('title') as string) || '';
     const language = 'text';
     const type = determineType(content)
 

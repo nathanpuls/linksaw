@@ -120,7 +120,7 @@ export default async function Home(props: {
   return (
     <Shell profile={profile} user={user} pageTitle={pageTitle}>
       <UsernameModal initialIsOpen={showUsernameModal} />
-      <ItemList initialItems={snippets || []} username={profile?.username} displayName={profile?.full_name} />
+      <ItemList initialItems={snippets || []} username={profile?.username} displayName={profile?.full_name} renderMarkdown={profile?.render_markdown || false} />
       <ItemRealtimeListener />
 
       {/* Mobile Floating Action Button */}

@@ -5,13 +5,56 @@ import { Textarea } from "@/components/ui/textarea"
 import { ItemCopyButton } from "@/components/feature/ItemCopyButton"
 import { ItemDeleteButton } from "@/components/feature/ItemDeleteButton"
 import { updateItem, createItemJson } from "@/actions/items"
-import { Check, ChevronLeft, Loader2, Cloud, Link2 } from "lucide-react"
+import { Check, ChevronLeft, Loader2, Cloud, Link2, Eye, FileText } from "lucide-react"
 import Link from "next/link"
-import { useRef, useEffect, useState } from "react"
+import React, { useRef, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useDebouncedCallback } from "use-debounce"
 import { cn } from "@/lib/utils"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
+import { LinkifiedText } from "@/lib/linkify"
+
+const markdownComponents = {
+    p: ({ children }: any) => (
+        <p>
+            {React.Children.map(children, child =>
+                typeof child === 'string' ? <LinkifiedText text={child} /> : child
+            )}
+        </p>
+    ),
+    li: ({ children }: any) => (
+        <li>
+            {React.Children.map(children, child =>
+                typeof child === 'string' ? <LinkifiedText text={child} /> : child
+            )}
+        </li>
+    ),
+    td: ({ children }: any) => (
+        <td>
+            {React.Children.map(children, child =>
+                typeof child === 'string' ? <LinkifiedText text={child} /> : child
+            )}
+        </td>
+    ),
+    h1: ({ children }: any) => <h1>{React.Children.map(children, child => typeof child === 'string' ? <LinkifiedText text={child} /> : child)}</h1>,
+    h2: ({ children }: any) => <h2>{React.Children.map(children, child => typeof child === 'string' ? <LinkifiedText text={child} /> : child)}</h2>,
+    h3: ({ children }: any) => <h3>{React.Children.map(children, child => typeof child === 'string' ? <LinkifiedText text={child} /> : child)}</h3>,
+    blockquote: ({ children }: any) => <blockquote>{React.Children.map(children, child => typeof child === 'string' ? <LinkifiedText text={child} /> : child)}</blockquote>,
+    a: ({ children, href }: any) => (
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-black dark:text-white underline hover:opacity-70 transition-opacity font-medium"
+            onClick={(e) => e.stopPropagation()}
+        >
+            {children}
+        </a>
+    ),
+};
 
 interface ItemEditorProps {
     snippet?: {
@@ -29,9 +72,10 @@ interface ItemEditorProps {
     onCreated?: (item: any) => void
     initialContent?: string
     initialTitle?: string
+    renderMarkdown?: boolean
 }
 
-export function ItemEditor({ snippet, username, displayName, readOnly = false, onClose, onCreated, initialContent = '', initialTitle = '' }: ItemEditorProps) {
+export function ItemEditor({ snippet, username, displayName, readOnly = false, onClose, onCreated, initialContent = '', initialTitle = '', renderMarkdown = false }: ItemEditorProps) {
     const router = useRouter();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -41,10 +85,11 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
     const [slug, setSlug] = useState<string | undefined>(snippet?.slug);
 
     const displayTitle = (snippet?.title === 'Untitled Item' || snippet?.title === 'Untitled' || (!snippet && !initialTitle)) ? '' : (snippet?.title || initialTitle)
-    const [title, setTitle] = useState(displayTitle);
+    const [title, setTitle] = useState(displayTitle || '');
     const [content, setContent] = useState(snippet?.content || initialContent);
     const [alias, setAlias] = useState(snippet?.alias || '');
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+    const [previewMode, setPreviewMode] = useState(!!snippet);
 
     // Sync state with props when server-side data refreshes (Realtime), ONLY if we have a snippet
     useEffect(() => {
@@ -178,8 +223,8 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
             <header className={cn("sticky top-0 z-50", readOnly ? "bg-white" : "border-b bg-card/30 backdrop-blur-sm")}>
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center relative gap-4">
                     {/* Top Left: Logo & Display Name */}
-                    <div className="flex items-center gap-2 z-10 relative">
-                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    <div className="flex items-center gap-1.5 z-10 relative">
+                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
                             <div className="relative w-6 h-6 rounded-full overflow-hidden">
                                 <img
                                     src="/logo.svg"
@@ -187,12 +232,20 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
                                     className="object-cover"
                                 />
                             </div>
-                            {displayName && (
-                                <span className="font-bold text-sm hidden sm:inline-block">
-                                    {displayName}
-                                </span>
-                            )}
                         </Link>
+                        {username && (
+                            <span className="text-[13px] font-semibold text-muted-foreground/50 ml-1">
+                                @{username}
+                            </span>
+                        )}
+                        {(alias || displaySlug) && (
+                            <>
+                                <span className="text-muted-foreground/30 text-[13px] font-medium mx-0.5">/</span>
+                                <span className="text-[13px] font-semibold text-foreground">
+                                    {alias || displaySlug}
+                                </span>
+                            </>
+                        )}
                     </div>
 
                     {/* Centered URL / Alias Display (Only in non-readonly or refined for readonly) */}
@@ -224,6 +277,28 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
 
                     {/* Top Right: Actions (Copy Link, Copy Content, Delete, Done) */}
                     <div className="flex items-center gap-2 z-10 relative">
+                        {id && !readOnly && (
+                            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 mr-2">
+                                <Button
+                                    variant={previewMode ? "ghost" : "secondary"}
+                                    size="sm"
+                                    onClick={() => setPreviewMode(false)}
+                                    className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider gap-1.5"
+                                >
+                                    <FileText className="h-3 w-3" />
+                                    Edit
+                                </Button>
+                                <Button
+                                    variant={previewMode ? "secondary" : "ghost"}
+                                    size="sm"
+                                    onClick={() => setPreviewMode(true)}
+                                    className="h-7 px-2 text-[10px] font-bold uppercase tracking-wider gap-1.5"
+                                >
+                                    <Eye className="h-3 w-3" />
+                                    View
+                                </Button>
+                            </div>
+                        )}
                         {/* Copy Link Button */}
                         <ItemCopyButton
                             content={`https://linksaw.com/${username || 'user'}/${alias || displaySlug}`}
@@ -240,11 +315,7 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
                             title="Copy Content"
                         />
 
-                        {readOnly ? (
-                            <div className="text-xs font-sans text-muted-foreground/40 ml-2 hidden md:block">
-                                {username || 'user'}/{alias || displaySlug}
-                            </div>
-                        ) : (
+                        {readOnly ? null : (
                             <>
                                 <div className="h-4 w-px bg-border mx-1" />
                                 {id && (
@@ -276,27 +347,46 @@ export function ItemEditor({ snippet, username, displayName, readOnly = false, o
                 <div className="flex items-start gap-2 h-full">
                     {/* Content (Middle) - Editable Textarea */}
                     <div className="flex-grow min-w-0">
-                        {/* Hide title if it matches the alias or slug (case-insensitive) to avoid redundancy */}
-                        {title.trim().toLowerCase() !== (alias || (snippet?.alias || '')).trim().toLowerCase() && (
-                            <input
-                                value={title}
-                                onChange={handleTitleChange}
+                        {/* Hide title if it matches the alias or slug (case-insensitive) or is default name */}
+                        {(title && title !== 'Untitled' && title !== 'Untitled Item' &&
+                            title.trim().toLowerCase() !== (alias || (snippet?.alias || '')).trim().toLowerCase()) && (
+                                <input
+                                    value={title}
+                                    onChange={handleTitleChange}
+                                    readOnly={readOnly}
+                                    placeholder="Add a title..."
+                                    className="w-full bg-transparent border-none outline-none pt-0 px-0 text-lg font-bold text-foreground placeholder:text-muted-foreground/30 focus:ring-0 mb-4"
+                                />
+                            )}
+                        {previewMode ? (
+                            <div
+                                className="prose prose-sm md:prose-base dark:prose-invert max-w-none pt-0 focus:outline-none whitespace-pre-wrap"
+                                onClick={() => !readOnly && setPreviewMode(false)}
+                            >
+                                {renderMarkdown ? (
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                                        components={markdownComponents as any}
+                                    >
+                                        {content}
+                                    </ReactMarkdown>
+                                ) : (
+                                    <LinkifiedText text={content} />
+                                )}
+                            </div>
+                        ) : (
+                            <Textarea
+                                ref={textareaRef}
+                                name="content"
+                                value={content}
+                                onChange={handleChange}
                                 readOnly={readOnly}
-                                placeholder="Untitled Item"
-                                className="w-full bg-transparent border-none outline-none pt-0 px-0 text-lg font-bold text-foreground placeholder:text-muted-foreground/30 focus:ring-0"
+                                className={cn(
+                                    "min-h-[200px] w-full resize-none border-none shadow-none pb-4 pt-0 text-sm md:text-base font-sans leading-relaxed bg-transparent focus-visible:ring-0 px-0",
+                                    readOnly ? "cursor-default text-foreground/90" : ""
+                                )}
                             />
                         )}
-                        <Textarea
-                            ref={textareaRef}
-                            name="content"
-                            value={content}
-                            onChange={handleChange}
-                            readOnly={readOnly}
-                            className={cn(
-                                "min-h-[200px] w-full resize-none border-none shadow-none pb-4 pt-0 text-sm md:text-base font-sans leading-relaxed bg-transparent focus-visible:ring-0 px-0",
-                                readOnly ? "cursor-default text-foreground/90" : ""
-                            )}
-                        />
                     </div>
                 </div>
             </main>

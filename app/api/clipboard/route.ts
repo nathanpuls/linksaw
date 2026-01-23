@@ -96,8 +96,8 @@ export async function POST(request: Request) {
     const isUrl = /^https?:\/\/[^\s$.?#].[^\s]*$/i.test(content.trim())
     const type = isUrl ? 'link' : 'clip'
 
-    // Generate a title from content if not provided
-    const itemTitle = title || (isUrl ? content : content.slice(0, 50)) || (isUrl ? 'Link' : 'Clipboard')
+    // Use provided title or empty string. No auto-generation from content.
+    const itemTitle = title || ''
 
     // Create a new item
     const { data: item, error: insertError } = await supabase

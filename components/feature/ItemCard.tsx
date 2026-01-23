@@ -2,16 +2,17 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Copy, Pencil, GripVertical, Check, Circle, CheckCircle2, Link2 } from "lucide-react"
+import { Copy, Pencil, GripVertical, Check, Circle, CheckCircle2, Link2, Tag } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ItemDeleteButton } from "./ItemDeleteButton"
 import { ItemCopyButton } from "./ItemCopyButton"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useDebouncedCallback } from "use-debounce"
 import { updateItem } from "@/actions/items"
 import { cn } from "@/lib/utils"
+import { LinkifiedText } from "@/lib/linkify"
 
 interface ItemCardProps {
     id: string
@@ -44,6 +45,9 @@ export function ItemCard({
     username
 }: ItemCardProps & { dragHandleProps?: any }) {
     const router = useRouter()
+    const inputRef = useRef<HTMLInputElement>(null)
+    const [isFocused, setIsFocused] = useState(false)
+    const [hasError, setHasError] = useState(false)
     // If title is explicitly 'Untitled Item' (legacy default) or just 'Untitled', treat as empty for UX
     const displayTitle = (initialTitle === 'Untitled Item' || initialTitle === 'Untitled') ? '' : initialTitle
     const [title, setTitle] = useState(displayTitle)
@@ -53,9 +57,6 @@ export function ItemCard({
         setTitle((initialTitle === 'Untitled Item' || initialTitle === 'Untitled') ? '' : initialTitle)
     }, [initialTitle])
 
-    // Simple URL detection
-    const isUrl = content.trim().startsWith('http://') || content.trim().startsWith('https://');
-
     const debouncedUpdateTitle = useDebouncedCallback(async (newTitle: string) => {
         const formData = new FormData()
         formData.append('title', newTitle)
@@ -64,7 +65,9 @@ export function ItemCard({
 
         try {
             await updateItem(id, formData, slug)
+            setHasError(false)
         } catch (err: any) {
+            setHasError(true)
             toast.error(err.message || "Failed to update title")
         }
     }, 1000)
@@ -72,6 +75,7 @@ export function ItemCard({
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newTitle = e.target.value
         setTitle(newTitle)
+        setHasError(false)
         debouncedUpdateTitle(newTitle)
     }
 
@@ -88,59 +92,74 @@ export function ItemCard({
 
     return (
         <Card
-            className="group flex flex-col h-full overflow-hidden transition-all hover:shadow-md hover:border-primary/50 cursor-pointer bg-background p-0 gap-0"
+            className={cn(
+                "group flex flex-col h-full overflow-hidden transition-all hover:shadow-md hover:border-primary/50 cursor-pointer bg-background p-0 gap-0",
+                hasError && "border-red-500 hover:border-red-600"
+            )}
             onClick={handleCardClick}
             onMouseEnter={() => {
-                if (!isUrl && !onClick) router.prefetch(targetPath)
+                if (!onClick) router.prefetch(targetPath)
             }}
         >
             {/* Minimal Toolbar Header */}
             <div
                 className={cn(
-                    "flex items-center justify-between border-b bg-background min-h-[38px] shrink-0 gap-2 pl-3 transition-colors",
+                    "flex items-center justify-between border-b bg-background min-h-[38px] shrink-0 gap-2 pl-3 transition-colors outline-none focus:outline-none",
                     !isReadOnly ? "cursor-grab active:cursor-grabbing touch-none" : "",
                     isSelected && "bg-accent border-primary/20"
                 )}
                 {...(!isReadOnly ? dragHandleProps : {})}
             >
-                {/* Editable Title */}
-                <input
-                    value={title}
-                    onChange={handleTitleChange}
-                    onClick={(e) => e.stopPropagation()}
-                    readOnly={isReadOnly}
-                    className={cn(
-                        "flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] font-semibold text-foreground/70 transition-colors truncate p-0 leading-none py-3",
-                        isReadOnly ? "cursor-default" : "cursor-text",
-                        !isReadOnly && "hover:text-foreground focus:text-foreground"
+                {/* Title Container */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {!isFocused && !isReadOnly && (
+                        <Tag
+                            className="h-[14px] w-[14px] text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors shrink-0 -rotate-45 cursor-pointer"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                inputRef.current?.focus();
+                            }}
+                        />
                     )}
-                />
-
-                <div
-                    className={cn(
-                        "flex items-center self-stretch shrink-0 transition-opacity cursor-default",
-                        (isSelected || isReadOnly) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                    )}
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                >
-                    <ItemCopyButton
-                        content={`https://linksaw.com/${username || 'user'}/${alias || slug || id}`}
-                        className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none cursor-pointer"
-                        title="Copy public link"
-                    >
-                        <Link2 className="h-[14px] w-[14px]" />
-                    </ItemCopyButton>
-
-                    <ItemCopyButton
-                        content={content}
-                        className="h-full w-9 text-muted-foreground hover:text-foreground hover:bg-muted rounded-none cursor-pointer"
-                        title="Copy content"
+                    <input
+                        ref={inputRef}
+                        value={title}
+                        onChange={handleTitleChange}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.currentTarget.blur();
+                            }
+                        }}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => {
+                            setIsFocused(false);
+                            if (hasError) {
+                                setTitle(displayTitle);
+                                setHasError(false);
+                            }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        readOnly={isReadOnly}
+                        className={cn(
+                            "flex-1 min-w-0 bg-transparent border-none outline-none text-[13px] font-semibold text-foreground/70 transition-colors truncate p-0 leading-none py-3",
+                            isReadOnly ? "cursor-default" : "cursor-text",
+                            !isReadOnly && "hover:text-foreground focus:text-foreground"
+                        )}
                     />
+                </div>
 
-                    {!isReadOnly && <ItemDeleteButton id={id} onDelete={onDelete} />}
+                <div className="flex items-center self-stretch shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {/* Trash */}
+                    {!isReadOnly && (
+                        <div className={cn(
+                            "flex items-center self-stretch transition-opacity",
+                            isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}>
+                            <ItemDeleteButton id={id} onDelete={onDelete} />
+                        </div>
+                    )}
 
-                    {/* Selection Toggle */}
+                    {/* Circle (Selection Toggle) */}
                     {!isReadOnly && (
                         <div
                             className={cn(
@@ -156,31 +175,37 @@ export function ItemCard({
                                 <CheckCircle2 className="h-3.5 w-3.5 text-foreground" />
                             ) : (
                                 <Circle className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-foreground transition-colors" />
-                            )
-                            }
+                            )}
                         </div>
                     )}
+
+                    {/* Link (Public Link) */}
+                    <ItemCopyButton
+                        content={`https://linksaw.com/${username || 'user'}/${alias || slug || id}`}
+                        className="h-full w-9 text-muted-foreground/20 group-hover:text-muted-foreground hover:text-foreground hover:bg-muted rounded-none cursor-pointer transition-colors flex items-center justify-center"
+                        title="Copy public link"
+                    >
+                        <Link2 className="h-[14px] w-[14px]" />
+                    </ItemCopyButton>
+
+                    {/* Copy (Content) */}
+                    <ItemCopyButton
+                        content={content}
+                        className="h-full w-9 text-muted-foreground/20 group-hover:text-muted-foreground hover:text-foreground hover:bg-muted rounded-none cursor-pointer transition-colors flex items-center justify-center"
+                        title="Copy content"
+                    />
                 </div>
             </div>
 
             {/* Content Area */}
-            <CardContent className="p-3 flex-1 overflow-hidden">
+            < CardContent className="p-3 flex-1 overflow-hidden" >
                 <div className="text-sm font-sans break-words leading-relaxed line-clamp-4 text-card-foreground group-hover:text-foreground whitespace-pre-wrap">
-                    {isUrl ? (
-                        <a
-                            href={content.trim()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline text-foreground hover:opacity-80 transition-opacity decoration-foreground/30 hover:decoration-foreground"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {content}
-                        </a>
-                    ) : (
-                        content
-                    )}
+                    <LinkifiedText
+                        text={content}
+                        className="text-black dark:text-white underline hover:opacity-70 transition-opacity font-medium decoration-foreground/30 hover:decoration-foreground"
+                    />
                 </div>
-            </CardContent>
-        </Card>
+            </CardContent >
+        </Card >
     )
 }

@@ -7,6 +7,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { UserProfileMenu } from "@/components/feature/UserProfileMenu"
+import { ViewToggle } from "@/components/feature/ViewToggle"
+import { ShortcutManager } from "@/components/feature/ShortcutManager"
 
 interface ShellProps {
     children: React.ReactNode
@@ -29,6 +31,7 @@ export async function Shell({
 }: ShellProps) {
     return (
         <div className="min-h-screen bg-background text-foreground">
+            {!isReadOnly && <ShortcutManager username={profile?.username} />}
             {/* Unified Header */}
             <header className="fixed top-0 left-0 right-0 h-[57px] border-b bg-background/80 backdrop-blur-md z-50">
                 <div className={cn(
@@ -37,7 +40,15 @@ export async function Shell({
                 )}>
                     {/* Left Side: Branding & Context */}
                     <div className="flex items-center gap-2 shrink-0">
-                        {!isReadOnly && <MobileNav items={navItems} />}
+                        {!isReadOnly && <MobileNav items={[
+                            ...navItems,
+                            ...(profile?.username ? [{
+                                label: "Profile",
+                                icon: "User",
+                                href: `/${profile.username}`,
+                                type: "profile"
+                            }] : [])
+                        ]} />}
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                             <div className="relative w-8 h-8 rounded-full overflow-hidden">
                                 <img
@@ -82,6 +93,9 @@ export async function Shell({
                                     <SearchBar />
                                 </div>
                             )}
+                            <div className="hidden md:block">
+                                <ViewToggle />
+                            </div>
                             {showActions && (
                                 <div className="hidden md:block">
                                     <NewItemButton />

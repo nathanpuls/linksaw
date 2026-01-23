@@ -98,3 +98,24 @@ export async function updateProfileVisibility(isPublic: boolean) {
     revalidatePath('/app/settings')
     revalidatePath('/')
 }
+
+export async function updateMarkdownPreference(enabled: boolean) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error('Not authenticated')
+    }
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ render_markdown: enabled, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+
+    if (error) {
+        throw new Error('Failed to update preference: ' + error.message)
+    }
+
+    revalidatePath('/app/settings')
+    revalidatePath('/')
+}

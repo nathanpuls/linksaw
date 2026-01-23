@@ -27,7 +27,16 @@ export async function Sidebar({ className }: SidebarProps) {
 
     return (
         <aside className={cn("flex flex-col h-[calc(100vh-57px)] w-[60px] hover:w-[200px] border-r bg-card transition-all duration-300 z-40 group fixed left-0 top-[57px] overflow-hidden shadow-sm", className)}>
-            <SidebarClient items={navItems} />
+            <SidebarClient items={[
+                ...navItems,
+                ...(profile?.username ? [{
+                    label: "Profile",
+                    icon: "User",
+                    shortcut: "P",
+                    href: `/${profile.username}`,
+                    type: "profile"
+                }] : [])
+            ]} />
 
             {/* User Profile Menu at Bottom */}
             {user && (

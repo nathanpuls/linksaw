@@ -46,11 +46,11 @@ interface ItemListProps {
     username?: string
     displayName?: string
     isReadOnly?: boolean
+    renderMarkdown?: boolean
 }
 
-export function ItemList({ initialItems, username, displayName, isReadOnly = false }: ItemListProps) {
+export function ItemList({ initialItems, username, displayName, isReadOnly = false, renderMarkdown = false }: ItemListProps) {
     const [items, setItems] = useState<Item[]>(initialItems)
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
     const [isPending, startTransition] = useTransition()
     const [mounted, setMounted] = useState(false)
     const [activeItem, setActiveItem] = useState<Item | null>(null)
@@ -58,6 +58,7 @@ export function ItemList({ initialItems, username, displayName, isReadOnly = fal
 
     const router = useRouter()
     const searchParams = useSearchParams()
+    const viewMode = searchParams.get('view') || 'grid'
     const isCreating = searchParams.get('new') === 'true'
     const [isCreatingOpen, setIsCreatingOpen] = useState(false)
 
@@ -172,18 +173,7 @@ export function ItemList({ initialItems, username, displayName, isReadOnly = fal
 
     return (
         <div className="relative pb-24">
-            {!isReadOnly && (
-                <div className="flex justify-end mb-4">
-                    <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'grid' | 'list')}>
-                        <ToggleGroupItem value="grid" aria-label="Grid view">
-                            <LayoutGrid className="h-4 w-4" />
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="list" aria-label="List view">
-                            <List className="h-4 w-4" />
-                        </ToggleGroupItem>
-                    </ToggleGroup>
-                </div>
-            )}
+
 
             <DndContext
                 sensors={sensors}
@@ -234,6 +224,7 @@ export function ItemList({ initialItems, username, displayName, isReadOnly = fal
                                 displayName={displayName}
                                 onClose={handleClose}
                                 readOnly={isReadOnly}
+                                renderMarkdown={renderMarkdown}
                                 onCreated={(newItem) => {
                                     setItems(prev => {
                                         if (prev.some(i => i.id === newItem.id)) return prev;

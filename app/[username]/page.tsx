@@ -56,10 +56,9 @@ export default async function UserProfilePage(props: { params: Promise<{ usernam
         notFound();
     }
 
-    // Fetch user profile
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, full_name')
+        .select('id, username, full_name, render_markdown')
         .eq('username', username)
         .single();
 
@@ -83,7 +82,13 @@ export default async function UserProfilePage(props: { params: Promise<{ usernam
 
     return (
         <Shell profile={profile} isReadOnly={true}>
-            <ItemList initialItems={items || []} isReadOnly={true} username={username} displayName={profile?.full_name} />
+            <ItemList
+                initialItems={items || []}
+                isReadOnly={true}
+                username={username}
+                displayName={profile?.full_name}
+                renderMarkdown={profile?.render_markdown || false}
+            />
         </Shell>
     );
 }
