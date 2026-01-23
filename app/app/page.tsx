@@ -46,7 +46,7 @@ export default async function Home(props: {
         </div>
         <h1 className="text-4xl font-bold mb-4">linksaw</h1>
         <p className="text-muted-foreground mb-8">Personal link and clip manager.</p>
-        <Link href="/app/login">
+        <Link href="/">
           <Button>Sign In</Button>
         </Link>
       </div>

@@ -22,6 +22,17 @@ export async function claimUsername(username: string) {
         throw new Error('Username must be 3-30 characters, alphanumeric or underscore.')
     }
 
+    const reserved = [
+        'app', 'api', 'auth', 'login', 'logout', 'settings', 'admin', 'dashboard', 'privacy', 'terms',
+        'link', 'links', 'clip', 'clips', 'user', 'users', 'item', 'items', 'search', 'public',
+        'static', 'images', 'assets', 'help', 'support', 'faq', 'contact', 'team', 'about',
+        'pricing', 'features', 'new', 'edit', 'verify'
+    ];
+
+    if (reserved.includes(cleanUsername)) {
+        throw new Error('This username is reserved.')
+    }
+
     // Check availability
     const { data: existing } = await supabase
         .from('profiles')

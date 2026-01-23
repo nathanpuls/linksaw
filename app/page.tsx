@@ -80,7 +80,7 @@ export default async function Home(props: {
                 <div className="container mx-auto px-4 py-8 md:py-12">
                     <div className="max-w-6xl mx-auto">
                         <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            Everything you need, all in <span className="relative inline-block">
+                            Everything in <span className="relative inline-block">
                                 one place
                                 <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                                     <path d="M0 6 Q50 2, 100 6 T200 6" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" fill="none" />

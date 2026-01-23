@@ -56,7 +56,7 @@ export async function updateSession(request: NextRequest) {
     if (!user && isAppPage && !isLoginPage) {
         // user is not logged in and trying to access a protected app page
         const url = request.nextUrl.clone()
-        url.pathname = '/app/login'
+        url.pathname = '/'
         return NextResponse.redirect(url)
     }
 
