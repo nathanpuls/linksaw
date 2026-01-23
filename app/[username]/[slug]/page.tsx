@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import { ItemEditor } from "@/components/feature/ItemEditor"
+import { ItemList } from "@/components/feature/ItemList"
+import { Shell } from "@/components/layout/Shell"
 
 export const revalidate = 0;
 
@@ -19,7 +21,7 @@ export default async function ItemResolverPage(props: { params: Promise<{ userna
     // 1. Resolve User
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, username, full_name')
         .eq('username', username)
         .single();
 
@@ -28,7 +30,38 @@ export default async function ItemResolverPage(props: { params: Promise<{ userna
         notFound();
     }
 
-    // 2. Resolve Item
+    // 2. Handle Filter Views (clip, link, etc.)
+    if (['clip', 'link', 'text'].includes(slug)) {
+        let query = supabase
+            .from('items')
+            .select('*')
+            .eq('user_id', profile.id)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: false });
+
+        if (slug === 'clip') {
+            query = query.eq('type', 'clip');
+        } else if (slug === 'link') {
+            query = query.eq('type', 'link');
+        } else if (slug === 'text') {
+            query = query.neq('type', 'link').neq('type', 'clip');
+        }
+
+        const { data: items } = await query;
+
+        return (
+            <Shell profile={profile} isReadOnly={true} pageTitle={`${slug}s`}>
+                <ItemList
+                    initialItems={items || []}
+                    isReadOnly={true}
+                    username={username}
+                    displayName={profile?.full_name}
+                />
+            </Shell>
+        );
+    }
+
+    // 3. Resolve Single Item
     const { data: item, error: itemError } = await supabase
         .from('items')
         .select('*')
@@ -42,7 +75,7 @@ export default async function ItemResolverPage(props: { params: Promise<{ userna
         notFound();
     }
 
-    // 3. Handle Types
+    // 4. Handle Types
     if (item.type === 'link' || (item.type === 'clip' && item.content.startsWith('http'))) {
         // Redirect links
         // If content is not a valid URL (weird for type link), we fall back to view.
@@ -51,7 +84,7 @@ export default async function ItemResolverPage(props: { params: Promise<{ userna
         }
     }
 
-    // 4. Render View
+    // 5. Render View
     return (
         <ItemEditor snippet={item} readOnly={true} username={username} />
     );
