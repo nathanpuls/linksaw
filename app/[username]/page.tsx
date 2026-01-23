@@ -41,7 +41,6 @@ export default async function UserProfilePage(props: { params: Promise<{ usernam
         .select('*')
         .eq('user_id', profile.id)
         .is('deleted_at', null)
-        .neq('type', 'clip')
         .order('created_at', { ascending: false });
 
     return (
