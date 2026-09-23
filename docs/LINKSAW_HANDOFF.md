@@ -192,3 +192,7 @@ Deferred features should follow evidence from real use rather than precede the r
 - Use Vite/Tauri development mode for normal UI/native iteration, but use the signed installed app for Keychain, Accessibility, and real paste verification.
 - Keep diagnostics free of snippet contents and authentication tokens.
 - Update this handoff when a product decision is explicitly changed, and identify the evidence for that change.
+
+## Chrome extension v1 (2026-09-23)
+
+The extension in `extension/` is a compact search/insert popup. It reads the existing `/snippets` API and shared D1 model using the existing website session cookie sent to the permitted API host. The extension does not store a separate token or access the cookie value. A row inserts ordinary text into the focused page field, opens a standalone URL, or copies when insertion is unavailable; every row also has Copy and Open in Linksaw. New snippet opens `/app/new`, and private viewing uses `/app/s/{id}`; both route into the existing authenticated web app. `/s/{code}` remains the public sharing route. No snippet editor or new backend schema was added. Chrome installation, live sign-in, and insertion still require hands-on testing.

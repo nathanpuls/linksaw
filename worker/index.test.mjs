@@ -103,3 +103,22 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.doesNotMatch(html, /href="https:\/\/README\.md"/);
   assert.doesNotMatch(html, /href="https:\/\/example\.com\/docs`"/);
 });
+
+test('private deep links serve the authenticated app and preserve the visible URL', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  const assets = [];
+  const env = {
+    DB: { prepare() { return { bind() { return { first: async () => ({ id: 'user' }) }; } }; } },
+    ASSETS: { async fetch(request) { assets.push(request.url); return new Response('app'); } },
+  };
+  for (const path of [`/app/s/${id}`, '/app/new']) {
+    const signedOut = await handle(new Request(`https://linksaw.com${path}`), env);
+    assert.equal(signedOut.status, 302);
+    assert.equal(signedOut.headers.get('Location'), 'https://linksaw.com/login');
+    const signedIn = await handle(new Request(`https://linksaw.com${path}`, {
+      headers: { Cookie: `linksaw_session=${'a'.repeat(64)}` },
+    }), env);
+    assert.equal(signedIn.status, 200);
+  }
+  assert.deepEqual(assets, ['https://linksaw.com/app/', 'https://linksaw.com/app/']);
+});

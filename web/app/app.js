@@ -163,6 +163,12 @@ async function load() {
   try {
     const [{ user }, { snippets }] = await Promise.all([api("/me"), api("/snippets")]);
     state.user = user; state.snippets = snippets; $("account").textContent = user.email; $("app").ariaBusy = "false"; render();
+    const route = new URLSearchParams(location.search);
+    if (location.pathname === "/app/new" || route.get("new") === "1") openEditor();
+    else {
+      const id = location.pathname.match(/^\/app\/s\/([a-f0-9-]{36})\/?$/)?.[1] || route.get("snippet");
+      if (id) { const snippet = snippets.find(item => item.id === id); if (snippet) openPreview(snippet); else $("status").textContent = "Snippet not found"; }
+    }
   } catch (error) { showError(error); }
 }
 

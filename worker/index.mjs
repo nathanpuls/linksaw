@@ -94,6 +94,12 @@ export async function handle(request, env) {
   if (isWebHost && request.method === "GET" && url.pathname === "/app") {
     return Response.redirect("https://linksaw.com/app/", 308);
   }
+  if (isWebHost && request.method === "GET" && (/^\/app\/s\/[a-f0-9-]{36}\/?$/.test(url.pathname) || url.pathname === "/app/new")) {
+    const session = await currentSession(request, env);
+    if (!session) return Response.redirect("https://linksaw.com/login", 302);
+    // Resolve the app's directory index while preserving the deep link in the browser.
+    return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
+  }
   if (isWebHost && request.method === "GET" && url.pathname === "/app/") {
     const session = await currentSession(request, env);
     if (!session) return Response.redirect("https://linksaw.com/login", 302);

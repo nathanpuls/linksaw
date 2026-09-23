@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Linksaw",
+  "version": "0.1.0",
+  "description": "Search and insert your Linksaw snippets.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "128": "icon.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://snippets-api.linksaw.com/*"
+  ]
+}
