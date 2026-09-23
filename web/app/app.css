@@ -82,6 +82,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .surface-header { min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 0; }
   .results { padding-inline: 5px; }
   .result-row { grid-template-columns: minmax(0,1fr) 38px 38px; }
+  .result-action { visibility: visible; }
   .settings-grid { grid-template-columns: 1fr; gap: 36px; padding: 28px 22px; }
   .shortcuts { padding: 28px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 }
