@@ -6,9 +6,10 @@ import { JSDOM } from 'jsdom';
 
 const source = readFileSync(new URL('./popup.js', import.meta.url), 'utf8');
 const contentSource = readFileSync(new URL('./content.js', import.meta.url), 'utf8');
-const insertSource = source.match(/function insert\(text\) \{[\s\S]*?\n\}/)?.[0];
+const dynamicSource = readFileSync(new URL('./dynamic.js', import.meta.url), 'utf8');
+const insertSource = source.match(/function insert\(text, cursorLeft = 0\) \{[\s\S]*?\n\}/)?.[0];
 assert.ok(insertSource, 'insert implementation is present');
-function run(html, selector, text = 'Linksaw text') {
+function run(html, selector, text = 'Linksaw text', cursorLeft = 0) {
   const dom = new JSDOM(html, { pretendToBeVisual: true });
   const { window } = dom;
   const field = window.document.querySelector(selector);
@@ -16,7 +17,7 @@ function run(html, selector, text = 'Linksaw text') {
   if (field?.setSelectionRange && !field.disabled && field.type !== "number") field.setSelectionRange(field.value.length, field.value.length);
   const context = vm.createContext({ document: window.document, window, HTMLInputElement: window.HTMLInputElement, HTMLTextAreaElement: window.HTMLTextAreaElement, InputEvent: window.InputEvent });
   const insert = vm.runInContext(`(${insertSource})`, context);
-  return { window, field, result: insert(text) };
+  return { window, field, result: insert(text, cursorLeft) };
 }
 
 test('inserts into focused input at caret and emits input event', () => {
@@ -32,6 +33,21 @@ test('inserts into textarea selection', () => {
   assert.equal(insert('Nathan'), true); assert.equal(field.value, 'hello Nathan');
 });
 
+test('places the caret at the expanded cursor marker', () => {
+  const { field, result } = run('<textarea>before </textarea>', 'textarea', 'Hey: \nThis is: Wednesday', 19);
+  assert.equal(result, true);
+  assert.equal(field.value, 'before Hey: \nThis is: Wednesday');
+  assert.equal(field.selectionStart, 'before Hey: '.length);
+  assert.equal(field.selectionEnd, 'before Hey: '.length);
+});
+
+test('expands dynamic day and removes the cursor marker', () => {
+  const context = vm.createContext({ Date });
+  vm.runInContext(dynamicSource, context);
+  const result = context.LinksawDynamic.expandDynamic('Hey: {cursor}\nThis is: {day}', { now: new Date(2026, 8, 23, 16, 30) });
+  assert.deepEqual({ ...result }, { text: 'Hey: \nThis is: Wednesday', cursorLeft: 19 });
+});
+
 test('falls back for protected or unsupported target', () => {
   assert.equal(run('<input disabled>', 'input').result, false);
   assert.equal(run('<input type="number" value="42">', 'input').result, false);
@@ -44,6 +60,7 @@ test('manifest limits fetch permission to the API and installs the autocomplete 
   assert.equal(manifest.permissions.includes('cookies'), false);
   assert.equal(manifest.permissions.includes('storage'), false);
   assert.deepEqual(manifest.content_scripts[0].matches, ['http://*/*', 'https://*/*']);
+  assert.deepEqual(manifest.content_scripts[0].js, ['dynamic.js', 'content.js']);
   assert.equal(manifest.background.service_worker, 'background.js');
   assert.match(contentSource, /pointerenter[\s\S]*selected = index/);
 });

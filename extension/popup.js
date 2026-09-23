@@ -17,16 +17,17 @@ async function api(path) {
 }
 async function copy(text, message = 'Copied') { await navigator.clipboard.writeText(text); status(message); }
 async function use(snippet) {
-  const text = content(snippet), url = urlFor(text);
+  const expanded = LinksawDynamic.expandDynamic(content(snippet));
+  const text = expanded.text, url = urlFor(text);
   if (url) { await chrome.tabs.create({ url }); return; }
   try {
     if (!tabId) throw Error('No active tab');
-    const [result] = await chrome.scripting.executeScript({ target: { tabId }, func: insert, args: [text] });
+    const [result] = await chrome.scripting.executeScript({ target: { tabId }, func: insert, args: [text, expanded.cursorLeft] });
     if (result?.result) { window.close(); return; }
   } catch { /* Restricted page: copy fallback. */ }
   await copy(text, 'Copied—paste manually');
 }
-function insert(text) {
+function insert(text, cursorLeft = 0) {
   let target = document.activeElement;
   while (target?.shadowRoot?.activeElement) target = target.shadowRoot.activeElement;
   if (!target || target.disabled || target.readOnly) return false;
@@ -34,6 +35,8 @@ function insert(text) {
     const start = target.selectionStart, end = target.selectionEnd;
     if (start === null || end === null) return false;
     target.focus(); target.setRangeText(text, start, end, 'end');
+    const point = start + [...text].slice(0, Math.max(0, [...text].length - cursorLeft)).join('').length;
+    target.setSelectionRange(point, point);
     target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
     return true;
   }
@@ -41,7 +44,9 @@ function insert(text) {
     const selection = window.getSelection();
     if (!selection?.rangeCount || !target.contains(selection.anchorNode)) return false;
     target.focus(); const range = selection.getRangeAt(0); range.deleteContents();
-    const node = document.createTextNode(text); range.insertNode(node); range.setStartAfter(node); range.collapse(true);
+    const node = document.createTextNode(text); range.insertNode(node);
+    const point = [...text].slice(0, Math.max(0, [...text].length - cursorLeft)).join('').length;
+    range.setStart(node, point); range.collapse(true);
     selection.removeAllRanges(); selection.addRange(range);
     target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
     return true;

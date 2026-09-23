@@ -87,23 +87,26 @@
     }
   }
 
-  function insert(text) {
+  function insert(text, cursorLeft = 0) {
     if (!target?.isConnected) return false;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
       const [start, end] = inputSelection || [target.value.length, target.value.length];
       target.focus(); target.setRangeText(text, start ?? 0, end ?? start ?? 0, 'end');
+      const point = (start ?? 0) + [...text].slice(0, Math.max(0, [...text].length - cursorLeft)).join('').length;
+      target.setSelectionRange(point, point);
       target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text })); return true;
     }
     if (target.isContentEditable && editableRange) {
       target.focus(); editableRange.deleteContents(); const node = document.createTextNode(text); editableRange.insertNode(node);
-      editableRange.setStartAfter(node); editableRange.collapse(true); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(editableRange);
+      const point = [...text].slice(0, Math.max(0, [...text].length - cursorLeft)).join('').length;
+      editableRange.setStart(node, point); editableRange.collapse(true); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(editableRange);
       target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text })); return true;
     }
     return false;
   }
 
   function close() { host?.remove(); host = search = results = status = null; target?.focus(); }
-  function choose(snippet) { const text = content(snippet); close(); insert(text); }
+  function choose(snippet) { const expanded = LinksawDynamic.expandDynamic(content(snippet)); close(); insert(expanded.text, expanded.cursorLeft); }
 
   function open(element) {
     captureTarget(element); selected = 0;
