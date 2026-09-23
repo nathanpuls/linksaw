@@ -9,7 +9,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-12">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-13">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -20,10 +20,12 @@
           <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
         </label>
         <button id="add" class="icon-button" type="button" aria-label="New snippet" title="New snippet"></button>
-        <button id="settings" class="icon-button" type="button" aria-label="Settings" title="Settings"></button>
       </header>
       <div id="status" class="status" role="status" aria-live="polite"></div>
       <section id="results" class="results" aria-label="Snippets"></section>
+      <footer class="sidebar-footer">
+        <button id="settings" class="icon-button" type="button" aria-label="Settings" title="Settings"></button>
+      </footer>
     </section>
 
     <section id="preview" class="viewer-pane" aria-label="Snippet">
