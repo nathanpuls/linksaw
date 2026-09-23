@@ -52,6 +52,9 @@ function setSelected(index, scroll = true) {
   document.querySelectorAll(".result-row").forEach((row, i) => row.classList.toggle("selected", i === state.selected));
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
 }
+function clearSelectedVisual() {
+  document.querySelectorAll(".result-row.selected").forEach(row => row.classList.remove("selected"));
+}
 function render() {
   const query = $("search").value.trim().toLowerCase();
   state.filtered = state.snippets.filter(s => !query || `${s.title}\n${s.body}`.toLowerCase().includes(query));
@@ -75,7 +78,6 @@ function render() {
     main.append(text, key); main.addEventListener("click", () => { setSelected(index); useSnippet(snippet); });
     const copy = document.createElement("button"); copy.type = "button"; copy.className = "icon-button result-action"; copy.ariaLabel = "Copy snippet"; copy.title = "Copy"; copy.innerHTML = icons.copy; copy.addEventListener("click", () => { setSelected(index); copySnippet(snippet).catch(showError); });
     const edit = document.createElement("button"); edit.type = "button"; edit.className = "icon-button result-action"; edit.ariaLabel = "Edit snippet"; edit.title = "Edit"; edit.innerHTML = icons.edit; edit.addEventListener("click", () => { setSelected(index); openEditor(snippet); });
-    row.addEventListener("pointerenter", event => { if (event.pointerType !== "touch") setSelected(index, false); });
     row.append(main, copy, edit); results.append(row);
   });
 }
@@ -123,6 +125,13 @@ $("appearance").value = localStorage.getItem("linksaw-theme") || "system";
 function applyTheme(value) { document.documentElement.dataset.theme = value === "system" ? "" : value; }
 applyTheme($("appearance").value);
 $("appearance").addEventListener("change", event => { localStorage.setItem("linksaw-theme", event.target.value); applyTheme(event.target.value); });
+document.addEventListener("pointermove", event => {
+  if (event.pointerType === "touch") return;
+  const row = event.target.closest?.(".result-row");
+  if (!row) { clearSelectedVisual(); return; }
+  const index = Number(row.dataset.index);
+  if (index !== state.selected || !row.classList.contains("selected")) setSelected(index, false);
+});
 document.addEventListener("keydown", event => {
   const editing = !$("editor").hidden, previewing = !$("preview").hidden, settings = !$("settings-panel").hidden;
   if (event.key === "Escape") { if (editing) closeSurface("editor"); else if (previewing) closeSurface("preview"); else if (settings) closeSurface("settings-panel"); return; }
