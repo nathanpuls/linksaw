@@ -63,6 +63,8 @@ button { color: inherit; }
 .app.reader-mode .preview-body { margin-inline: auto; }
 
 .surface { position: fixed; inset: 0; z-index: 20; overflow: auto; padding: 0; background: var(--paper); }
+#editor { left: 340px; }
+#app.reader-mode + #editor { left: 0; }
 .surface-inner, .settings-inner { width: 100%; min-height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--paper); }
 .surface-header { min-height: 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px; border-bottom: 1px solid var(--line); }
 .surface-header h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
@@ -101,6 +103,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .list-pane { height: 100vh; border-right: 0; }
   .viewer-pane { display: none; position: fixed; inset: 0; z-index: 10; height: 100vh; background: var(--paper); }
   .app.viewer-open .viewer-pane { display: block; }
+  #editor { left: 0; }
   .viewer-content { height: 100vh; }
   .viewer-back { display: inline-grid; }
   .reader-toggle { display: none; }
