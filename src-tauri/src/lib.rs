@@ -394,7 +394,7 @@ fn configure_mac_launcher(window: &tauri::WebviewWindow) -> Result<(), Box<dyn s
         native.setCollectionBehavior(behavior);
         let app = NSApplication::sharedApplication(mtm);
         let icon_data = NSData::with_bytes(include_bytes!("../icons/icon.png"));
-        if let Some(icon) = NSImage::initWithData(NSImage::alloc(mtm), &icon_data) {
+        if let Some(icon) = NSImage::initWithData(NSImage::alloc(), &icon_data) {
             app.setApplicationIconImage(Some(&icon));
         }
         let delegate: *mut AnyObject = msg_send![&app, delegate];

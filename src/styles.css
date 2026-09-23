@@ -175,10 +175,12 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--muted); ou
   #settings-dialog .shortcut-tips { padding: 24px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 }
 
-.app-tooltip { position: fixed; inset: auto; margin: 0; padding: 7px 10px; width: max-content; max-width: min(280px, calc(100vw - 20px)); border: 0; border-radius: 7px; background: #171717; color: #fff; font: inherit; font-size: 12px; line-height: 1.4; box-shadow: 0 3px 12px #0002; z-index: 1000; pointer-events: none; overflow-wrap: anywhere; }
+.app-tooltip { position: fixed; inset: auto; margin: 0; padding: 7px 10px; width: max-content; max-width: min(280px, calc(100vw - 20px)); border: 1px solid #ffffff1a; border-radius: 7px; background: #111111f7; color: #fff; font: inherit; font-size: 12px; font-weight: 500; line-height: 1.4; letter-spacing: .005em; box-shadow: 0 4px 14px #00000038; opacity: 0; transform: translateY(-2px) scale(.985); transform-origin: center top; transition: opacity 90ms ease-out, transform 90ms ease-out; z-index: 1000; pointer-events: none; overflow-wrap: anywhere; }
+.app-tooltip.is-visible { opacity: 1; transform: translateY(0) scale(1); }
 .app-tooltip[hidden] { display: none; }
 .app-tooltip::backdrop { background: transparent; pointer-events: none; }
 .app-tooltip kbd { margin-left: 9px; color: #c4c4c4; font: inherit; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .app-tooltip { transition: none; transform: none; } }
 
 
 .refresh-feedback { display: flex; align-items: center; gap: 12px; padding: 8px 20px; color: var(--muted); font-size: 12px; }

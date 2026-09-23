@@ -1,5 +1,7 @@
 // One shared tooltip handles both static controls and dynamically rendered rows.
 // A manual popover stays above modal dialogs without taking keyboard focus.
+const SHOW_DELAY_MS = 350;
+
 export function setupTooltips() {
   const tooltip = document.createElement('div');
   tooltip.id = 'control-tooltip'; tooltip.className = 'app-tooltip';
@@ -18,6 +20,7 @@ export function setupTooltips() {
   };
   const hide = () => {
     clearTimeout(timer); timer = null;
+    tooltip.classList.remove('is-visible');
     if (described) {
       const ids = (described.getAttribute('aria-describedby') || '').split(/\s+/).filter(id => id && id !== tooltip.id);
       if (ids.length) described.setAttribute('aria-describedby', ids.join(' ')); else described.removeAttribute('aria-describedby');
@@ -48,12 +51,15 @@ export function setupTooltips() {
     tooltip.style.visibility = 'hidden'; tooltip.hidden = false;
     if (popover) tooltip.showPopover();
     place(control); tooltip.style.visibility = 'visible';
+    // Force the concealed starting state to paint before the short entrance.
+    tooltip.getBoundingClientRect();
+    tooltip.classList.add('is-visible');
     const ids = new Set((control.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean));
     ids.add(tooltip.id); control.setAttribute('aria-describedby', [...ids].join(' ')); described = control;
   };
   const schedule = control => {
     hide();
-    if (control) timer = setTimeout(() => { timer = null; show(control); }, 350);
+    if (control) timer = setTimeout(() => { timer = null; show(control); }, SHOW_DELAY_MS);
   };
   // Remove native title bubbles so they do not compete with the styled tooltip.
   const adoptTitles = root => {
