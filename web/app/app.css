@@ -90,6 +90,20 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 #trigger-status:empty { display: none; }
 .account-block { margin-top: 42px; }
 .account-block p { color: var(--muted); overflow-wrap: anywhere; }
+.delete-account-block { margin-top: 42px; padding-top: 32px; border-top: 1px solid var(--line); }
+.delete-account-block p { max-width: 390px; margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.danger-button { color: #b42318; }
+.confirm-dialog { width: min(440px, calc(100% - 32px)); border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--paper); color: var(--ink); box-shadow: 0 18px 60px #0003; }
+.confirm-dialog::backdrop { background: #0005; }
+.confirm-dialog form { padding: 24px; }
+.confirm-dialog h2 { margin: 0 0 10px; font-size: 20px; }
+.confirm-dialog p { margin: 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.confirm-input { width: 100%; border: 1px solid var(--control); border-radius: 9px; padding: 10px 12px; background: var(--paper); color: var(--ink); }
+.confirm-input:focus { outline: 1px solid var(--focus); outline-offset: 1px; }
+.dialog-status { min-height: 20px; margin: 8px 0 0 !important; color: #b42318 !important; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+.delete-button { border: 1px solid #b42318; border-radius: 9px; padding: 9px 14px; background: #b42318; color: #fff; cursor: pointer; }
+.delete-button:disabled { opacity: .45; cursor: default; }
 .shortcuts { padding-left: 28px; border-left: 1px solid var(--line); }
 .shortcuts dl { margin: 0; }
 .shortcuts dl div { display: grid; grid-template-columns: 100px 1fr; gap: 14px; margin: 13px 0; font-size: 13px; }

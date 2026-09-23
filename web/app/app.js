@@ -271,6 +271,30 @@ $("unshare").addEventListener("click", async () => {
   } catch (error) { $("editor-status").textContent = error.message; }
 });
 $("sign-out").addEventListener("click", async () => { try { await api("/auth/logout", { method: "POST" }); } finally { location.replace("/"); } });
+$("delete-account").addEventListener("click", () => {
+  $("delete-account-confirmation").value = "";
+  $("delete-account-status").textContent = "";
+  $("confirm-delete-account").disabled = true;
+  $("delete-account-dialog").showModal();
+  $("delete-account-confirmation").focus();
+});
+$("cancel-delete-account").addEventListener("click", () => $("delete-account-dialog").close());
+$("delete-account-confirmation").addEventListener("input", event => {
+  $("confirm-delete-account").disabled = event.target.value !== "delete";
+  $("delete-account-status").textContent = "";
+});
+$("delete-account-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  if ($("delete-account-confirmation").value !== "delete") return;
+  const button = $("confirm-delete-account"); button.disabled = true; $("delete-account-status").textContent = "Deleting…";
+  try {
+    await api("/me", { method: "DELETE", body: JSON.stringify({ confirmation: "delete" }) });
+    location.replace("/");
+  } catch (error) {
+    $("delete-account-status").textContent = error.message;
+    button.disabled = false;
+  }
+});
 $("appearance").value = localStorage.getItem("linksaw-theme") || "system";
 function applyTheme(value) { document.documentElement.dataset.theme = value === "system" ? "" : value; }
 applyTheme($("appearance").value);
@@ -297,6 +321,7 @@ $("save-trigger").addEventListener("click", async () => {
 });
 addEventListener("popstate", applyUrlState);
 document.addEventListener("keydown", event => {
+  if ($("delete-account-dialog").open) return;
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
   if (event.key === "Escape") { if (editing || settings || viewerOpen) leaveRoutedView(); return; }
   const defaultDraftField = state.editorContext === "default" && [$("snippet-title"), $("snippet-body")].includes(document.activeElement);

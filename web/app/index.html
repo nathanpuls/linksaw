@@ -9,7 +9,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-9">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-10">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -90,6 +90,11 @@
             <p id="account"></p>
             <button id="sign-out" class="text-button" type="button">Sign out</button>
           </div>
+          <div class="delete-account-block">
+            <h2>Delete account</h2>
+            <p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p>
+            <button id="delete-account" class="text-button danger-button" type="button">Delete account</button>
+          </div>
         </div>
         <div class="shortcuts">
           <h2>Shortcuts</h2>
@@ -110,7 +115,21 @@
     </div>
   </section>
 
+  <dialog id="delete-account-dialog" class="confirm-dialog" aria-labelledby="delete-account-title">
+    <form id="delete-account-form">
+      <h2 id="delete-account-title">Confirm account deletion</h2>
+      <p>This permanently deletes your snippets, shared links, preferences, and account.</p>
+      <label class="field-label" for="delete-account-confirmation">Type <strong>delete</strong> to confirm.</label>
+      <input id="delete-account-confirmation" class="confirm-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <p id="delete-account-status" class="dialog-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions">
+        <button id="cancel-delete-account" class="text-button" type="button">Cancel</button>
+        <button id="confirm-delete-account" class="delete-button" type="submit" disabled>Confirm Delete</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
-  <script type="module" src="/app/app.js?v=20260923-11"></script>
+  <script type="module" src="/app/app.js?v=20260923-12"></script>
 </body>
 </html>

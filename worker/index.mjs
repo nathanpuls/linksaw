@@ -223,6 +223,20 @@ export async function handle(request, env) {
     await saveAutocompleteTrigger(env, user.id, trigger);
     return json(request, { autocompleteTrigger: trigger });
   }
+  if (url.pathname === "/me" && request.method === "DELETE") {
+    const input = await bodyJson(request);
+    if (input?.confirmation !== "delete") return fail(request, 'Type "delete" to confirm account deletion');
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM details WHERE snippet_id IN (SELECT id FROM snippets WHERE owner_id = ?)").bind(user.id),
+      env.DB.prepare("DELETE FROM snippet_shares WHERE owner_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM snippets WHERE owner_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM user_preferences WHERE user_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM login_requests WHERE user_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
+    ]);
+    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0) } : {});
+  }
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(session.tokenHash).run();
     return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0) } : {});

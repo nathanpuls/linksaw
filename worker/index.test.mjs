@@ -136,7 +136,7 @@ test('authenticated users can read and update their autocomplete trigger', async
     DB: {
       prepare(sql) {
         const statement = { bind(...values) {
-          if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql.startsWith('SELECT') && sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
           if (sql.includes('SELECT autocomplete_trigger')) return { first: async () => ({ autocomplete_trigger: saved }) };
           if (sql.includes('INSERT INTO user_preferences')) return { run: async () => { saved = values[1]; } };
           throw new Error(`Unexpected SQL: ${sql}`);
@@ -155,4 +155,45 @@ test('authenticated users can read and update their autocomplete trigger', async
   assert.equal(putResponse.status, 200);
   assert.deepEqual(await putResponse.json(), { autocompleteTrigger: '/' });
   assert.equal(saved, '/');
+});
+
+test('account deletion requires typed confirmation and removes all owned data', async () => {
+  let deleted = [];
+  const env = {
+    DB: {
+      prepare(sql) {
+        return { bind(...values) {
+          if (sql.startsWith('SELECT') && sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          return { sql, values };
+        } };
+      },
+      async batch(statements) { deleted = statements; return statements.map(() => ({ success: true })); },
+    },
+  };
+  const headers = {
+    Cookie: `linksaw_session=${'a'.repeat(64)}`,
+    Origin: 'https://linksaw.com',
+    'Content-Type': 'application/json',
+  };
+  const rejected = await handle(new Request('https://linksaw.com/me', {
+    method: 'DELETE', headers, body: JSON.stringify({ confirmation: 'DELETE' }),
+  }), env);
+  assert.equal(rejected.status, 400);
+  assert.equal(deleted.length, 0);
+
+  const response = await handle(new Request('https://linksaw.com/me', {
+    method: 'DELETE', headers, body: JSON.stringify({ confirmation: 'delete' }),
+  }), env);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('Set-Cookie'), /Max-Age=0/);
+  assert.deepEqual(deleted.map(statement => statement.sql), [
+    'DELETE FROM details WHERE snippet_id IN (SELECT id FROM snippets WHERE owner_id = ?)',
+    'DELETE FROM snippet_shares WHERE owner_id = ?',
+    'DELETE FROM snippets WHERE owner_id = ?',
+    'DELETE FROM user_preferences WHERE user_id = ?',
+    'DELETE FROM sessions WHERE user_id = ?',
+    'DELETE FROM login_requests WHERE user_id = ?',
+    'DELETE FROM users WHERE id = ?',
+  ]);
+  assert.ok(deleted.every(statement => statement.values[0] === 'user'));
 });
