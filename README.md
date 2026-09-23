@@ -2,7 +2,7 @@
 
 A separate Mac/Windows desktop app inspired by Trigger Search's Electron launcher. The new app uses a Cloudflare Worker with D1 instead of Google Sheets. Snippets are private per Google account: no API route lists, reads, creates, edits, or deletes snippets without a valid session, and every query is scoped to the signed-in owner.
 
-The responsive web app is served at `https://linksaw.com/app`, uses the same Worker and D1 database, and replaces the desktop app's native paste action with Copy. The existing sheet-driven marketing page remains at `https://linksaw.com`; `/login` starts the shared Google sign-in flow. Browser sessions use a Secure, HttpOnly cookie while desktop sessions continue to use the operating system credential vault.
+The responsive web app is served at `https://linksaw.com/app`, uses the same Worker and D1 database, and replaces the desktop app's native paste action with Copy. A standalone static marketing page is served at `https://linksaw.com`; `/login` starts the shared Google sign-in flow. Browser sessions use a Secure, HttpOnly cookie while desktop sessions continue to use the operating system credential vault.
 
 For the product decisions, settled interaction model, repository transition, and platform roadmap, read [`docs/LINKSAW_HANDOFF.md`](docs/LINKSAW_HANDOFF.md). Recommended instructions for the fresh ChatGPT project are in [`docs/CHATGPT_PROJECT_INSTRUCTIONS.md`](docs/CHATGPT_PROJECT_INSTRUCTIONS.md).
 
@@ -44,7 +44,7 @@ The deployed Google OAuth **Web application** client uses `https://snippets-api.
 
 Use `npm run tauri:dev` for day-to-day development. It starts Vite in the native app window: HTML, CSS, and JavaScript changes appear without making a new app bundle. Tauri watches Rust changes and recompiles/restarts the development app automatically. Quit the installed Linksaw copy first, since only one copy can own the global launcher shortcut. Use `npm test` for logic tests. Run `npm run tauri:build -- --bundles app` and replace the Applications copy only for a deliberate handoff or release, not for each edit. Windows builds need a Windows machine or CI runner and `npm run tauri:build -- --bundles nsis`.
 
-The framework-free web client lives in `web/app`. `wrangler.toml` mounts the existing Worker at `linksaw.com/app*` and `linksaw.com/login*` while preserving `snippets-api.linksaw.com`. A Worker deployment publishes both the API and web assets together. The homepage remains controlled by the existing `LINKSAW` Google Sheet rather than this repository.
+The framework-free web client lives in `web/app`, and the static public homepage and crawl files live directly in `web`. `wrangler.toml` mounts the existing Worker at the required `linksaw.com` paths while preserving `snippets-api.linksaw.com`. A Worker deployment publishes the homepage, app, API, favicon, robots file, and sitemap together. The former `LINKSAW` Google Sheet homepage is retained only as an archive and is marked accordingly in its source cell.
 
 **macOS session-helper limitation:** The current helper requires a signed `.app` parent. The standalone executable launched by `tauri:dev` cannot access the saved session and can report “Caller is not a Mac app.” A signed development bundle has not yet been configured. Until that is in place, use Vite for UI-only previews and the signed installed app for authenticated native testing.
 

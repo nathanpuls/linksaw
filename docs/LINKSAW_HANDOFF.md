@@ -47,7 +47,8 @@ The Mac app is the current interaction reference, but not a pixel-for-pixel temp
 - Private API responses use `Cache-Control: no-store`, and the launcher does not persist a local snippet cache.
 - The responsive browser client lives at `https://linksaw.com/app` and uses the same Worker, OAuth client, user records, sessions table, snippets table, and D1 database as desktop.
 - `https://linksaw.com/login` starts the Google flow. Browser sessions use a Secure, HttpOnly cookie; desktop sessions continue to use the verifier exchange and native credential storage.
-- The existing sheet-driven marketing page remains at the site root. It offers **Continue with Google** and redirects an already signed-in browser to `/app`.
+- A standalone, indexable static marketing page now lives at the site root. It uses the Mac app icon for its favicon and page logo, offers **Continue with Google**, and redirects an already signed-in browser to `/app/` at the Worker layer.
+- The former sheet-driven homepage code remains archived in the `LINKSAW` Google Sheet with a dated note pointing to `web/index.html` as the live source.
 
 ### Data model
 

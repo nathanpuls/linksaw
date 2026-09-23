@@ -15,6 +15,30 @@ zone_name = "linksaw.com"
 pattern = "linksaw.com/login*"
 zone_name = "linksaw.com"
 
+[[routes]]
+pattern = "linksaw.com/"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/favicon.ico"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/icon.png"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/apple-touch-icon.png"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/robots.txt"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/sitemap.xml"
+zone_name = "linksaw.com"
+
 [assets]
 directory = "./web"
 binding = "ASSETS"

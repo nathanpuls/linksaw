@@ -36,3 +36,21 @@ test("app route without a trailing slash has one canonical redirect", async () =
   assert.equal(response.status, 308);
   assert.equal(response.headers.get("Location"), "https://linksaw.com/app/");
 });
+
+test("signed-out homepage is served directly as a static asset", async () => {
+  let assetUrl = "";
+  const env = {
+    DB: {},
+    ASSETS: {
+      async fetch(request) {
+        assetUrl = request.url;
+        return new Response("homepage", { status: 200 });
+      },
+    },
+  };
+
+  const response = await handle(new Request("https://linksaw.com/"), env);
+
+  assert.equal(response.status, 200);
+  assert.equal(assetUrl, "https://linksaw.com/");
+});

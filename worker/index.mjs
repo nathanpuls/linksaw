@@ -50,6 +50,14 @@ export async function handle(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(request) });
   if (!env.DB) return fail(request, "D1 database is not configured", 503);
 
+  if (isWebHost && request.method === "GET" && url.pathname === "/") {
+    const session = await currentSession(request, env);
+    if (session) return Response.redirect("https://linksaw.com/app/", 302);
+    return env.ASSETS.fetch(request);
+  }
+  if (isWebHost && request.method === "GET" && ["/favicon.ico", "/icon.png", "/apple-touch-icon.png", "/robots.txt", "/sitemap.xml"].includes(url.pathname)) {
+    return env.ASSETS.fetch(request);
+  }
   if (isWebHost && request.method === "GET" && (url.pathname === "/login" || url.pathname === "/login/")) {
     const session = await currentSession(request, env);
     if (session) return Response.redirect("https://linksaw.com/app/", 302);
