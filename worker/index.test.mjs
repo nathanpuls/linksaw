@@ -122,3 +122,10 @@ test('private deep links serve the authenticated app and preserve the visible UR
   }
   assert.deepEqual(assets, ['https://linksaw.com/app/', 'https://linksaw.com/app/']);
 });
+
+test('old extension private link redirects to the canonical /app/s route', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  const response = await handle(new Request(`https://linksaw.com/app/snippets/${id}`), { DB: {} });
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('Location'), `https://linksaw.com/app/s/${id}`);
+});
