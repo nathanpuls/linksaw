@@ -1,6 +1,17 @@
 export const nowSeconds = () => Math.floor(Date.now() / 1000);
 export const randomToken = () => crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
 
+export function shareToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+
+export function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character]);
+}
+
 export async function sha256Base64Url(value) {
   const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return btoa(String.fromCharCode(...new Uint8Array(bytes))).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");

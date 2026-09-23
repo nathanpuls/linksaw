@@ -1,4 +1,4 @@
-import { authUrl, cookieValue, nowSeconds, randomToken, sha256Base64Url, validSnippet, webSessionCookie } from "./lib.mjs";
+import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64Url, shareToken, validSnippet, webSessionCookie } from "./lib.mjs";
 
 const allowedOrigins = new Set(["https://linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
 function responseHeaders(request, extra = {}) {
@@ -37,11 +37,20 @@ async function currentSession(request, env) {
 }
 
 async function listSnippets(env, userId) {
-  const { results } = await env.DB.prepare("SELECT id, title, body, created_at, updated_at FROM snippets WHERE owner_id = ? ORDER BY updated_at DESC, id DESC LIMIT 2000")
+  const { results } = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippet_shares.token AS share_token FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.owner_id = ? ORDER BY snippets.updated_at DESC, snippets.id DESC LIMIT 2000")
     .bind(userId).all();
   // Keep an empty compatibility field during the desktop rollout. Details are
   // no longer accepted or returned as content.
   return results.map(row => ({ ...row, details: [] }));
+}
+
+function publicSnippetPage(snippet) {
+  const body = snippet.body || snippet.title;
+  const heading = snippet.body.trim() ? snippet.title.trim() : "";
+  const pageTitle = heading || body.trim().split(/\r?\n/, 1)[0].slice(0, 80) || "Shared snippet";
+  const nonce = randomToken().slice(0, 24);
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><meta name="robots" content="noindex,nofollow"><title>${escapeHtml(pageTitle)} · Linksaw</title><link rel="icon" href="/icon.png" type="image/png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><style nonce="${nonce}">:root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f6f6f6}*{box-sizing:border-box}body{min-height:100vh;margin:0;padding:14px;background:#f6f6f6}.snippet{position:relative;width:min(820px,100%);min-height:calc(100vh - 28px);margin:0 auto;padding:32px 64px 48px 32px;border:1px solid #e5e5e7;border-radius:14px;background:#fff}h1{margin:0 0 28px;font-size:24px;font-weight:600;letter-spacing:-.025em}.content{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:16px;line-height:1.65}.copy{position:absolute;top:22px;right:22px;width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:9px;background:transparent;color:#777;cursor:pointer}.copy:hover,.copy:focus-visible{background:#f4f4f5;color:#171717}.copy svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.status{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:9px 15px;border-radius:9px;background:#171717;color:#fff;font-size:13px}@media(max-width:700px){:root,body{background:#fff}body{padding:0}.snippet{min-height:100vh;padding:26px 58px 36px 22px;border:0;border-radius:0}.copy{top:14px;right:12px}}</style></head><body><main class="snippet">${heading ? `<h1>${escapeHtml(heading)}</h1>` : ""}<pre id="snippet-content" class="content">${escapeHtml(body)}</pre><button id="copy" class="copy" type="button" aria-label="Copy snippet" title="Copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button></main><div id="status" class="status" role="status" hidden>Copied</div><script nonce="${nonce}">document.getElementById("copy").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(document.getElementById("snippet-content").textContent);const s=document.getElementById("status");s.hidden=false;setTimeout(()=>s.hidden=true,1400)}catch{}})</script></body></html>`;
+  return { html, nonce };
 }
 
 export async function handle(request, env) {
@@ -76,6 +85,13 @@ export async function handle(request, env) {
   }
   if (isWebHost && request.method === "GET" && ["/app/app.css", "/app/app.js", "/app/site.webmanifest", "/app/icon-192.png", "/app/icon-512.png"].includes(url.pathname)) {
     return env.ASSETS.fetch(request);
+  }
+  const publicShare = isWebHost ? url.pathname.match(/^\/s\/([A-Za-z0-9_-]{16})\/?$/) : null;
+  if (publicShare && request.method === "GET") {
+    const snippet = await env.DB.prepare("SELECT snippets.title, snippets.body FROM snippet_shares JOIN snippets ON snippets.id = snippet_shares.snippet_id WHERE snippet_shares.token = ?").bind(publicShare[1]).first();
+    if (!snippet) return new Response("Shared snippet not found", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    const page = publicSnippetPage(snippet);
+    return new Response(page.html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": `default-src 'none'; img-src https://linksaw.com; style-src 'nonce-${page.nonce}'; script-src 'nonce-${page.nonce}'; base-uri 'none'; frame-ancestors 'none'`, "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", "X-Robots-Tag": "noindex, nofollow" } });
   }
 
   if (url.pathname === "/health" && request.method === "GET") return json(request, { ok: true });
@@ -178,6 +194,23 @@ export async function handle(request, env) {
     ]);
     return json(request, { id }, 201);
   }
+  const shareMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/share$/);
+  if (shareMatch && request.method === "POST") {
+    const snippet = await env.DB.prepare("SELECT id FROM snippets WHERE id = ? AND owner_id = ?").bind(shareMatch[1], user.id).first();
+    if (!snippet) return fail(request, "Snippet not found", 404);
+    let share = await env.DB.prepare("SELECT token FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).first();
+    for (let attempt = 0; !share && attempt < 3; attempt++) {
+      await env.DB.prepare("INSERT OR IGNORE INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)")
+        .bind(shareToken(), shareMatch[1], user.id, nowSeconds()).run();
+      share = await env.DB.prepare("SELECT token FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).first();
+    }
+    if (!share) return fail(request, "Share link could not be created", 500);
+    return json(request, { token: share.token, url: `https://linksaw.com/s/${share.token}` });
+  }
+  if (shareMatch && request.method === "DELETE") {
+    await env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).run();
+    return json(request, { ok: true });
+  }
   const match = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})$/);
   if (match && request.method === "PUT") {
     const exists = await env.DB.prepare("SELECT id FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id).first();
@@ -195,6 +228,7 @@ export async function handle(request, env) {
     if (!exists) return fail(request, "Snippet not found", 404);
     await env.DB.batch([
       env.DB.prepare("DELETE FROM details WHERE snippet_id = ?").bind(match[1]),
+      env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(match[1], user.id),
       env.DB.prepare("DELETE FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id),
     ]);
     return json(request, { ok: true });

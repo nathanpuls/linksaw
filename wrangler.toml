@@ -16,6 +16,10 @@ pattern = "linksaw.com/login*"
 zone_name = "linksaw.com"
 
 [[routes]]
+pattern = "linksaw.com/s/*"
+zone_name = "linksaw.com"
+
+[[routes]]
 pattern = "linksaw.com/"
 zone_name = "linksaw.com"
 

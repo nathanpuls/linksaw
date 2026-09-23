@@ -74,3 +74,29 @@ test("mobile install assets are public static assets", async () => {
 
   assert.deepEqual(requested, ["/app/site.webmanifest", "/app/icon-192.png", "/app/icon-512.png"]);
 });
+
+test("public share pages render without sign-in and escape snippet content", async () => {
+  const env = {
+    DB: {
+      prepare(sql) {
+        assert.match(sql, /FROM snippet_shares JOIN snippets/);
+        return {
+          bind(token) {
+            assert.equal(token, "Ab3k9Qx7Lm2N4pRs");
+            return { first: async () => ({ title: "Example <title>", body: `<script>alert("no")</script>` }) };
+          },
+        };
+      },
+    },
+  };
+
+  const response = await handle(new Request("https://linksaw.com/s/Ab3k9Qx7Lm2N4pRs"), env);
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("Content-Security-Policy"), /script-src 'nonce-/);
+  assert.equal(response.headers.get("X-Robots-Tag"), "noindex, nofollow");
+  assert.match(html, /Example &lt;title&gt;/);
+  assert.match(html, /&lt;script&gt;alert\(&quot;no&quot;\)&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script>alert/);
+});

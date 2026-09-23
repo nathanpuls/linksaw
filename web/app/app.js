@@ -3,6 +3,7 @@ const icons = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',
   settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  share: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
@@ -42,6 +43,16 @@ async function copySnippet(snippet) {
   await navigator.clipboard.writeText(snippetText(snippet));
   showToast();
 }
+async function shareSnippet(snippet) {
+  const share = await api(`/snippets/${snippet.id}/share`, { method: "POST" });
+  snippet.share_token = share.token;
+  if (navigator.share) {
+    try { await navigator.share({ title: label(snippet), url: share.url }); return; }
+    catch (error) { if (error?.name === "AbortError") return; }
+  }
+  await navigator.clipboard.writeText(share.url);
+  showToast("Link copied");
+}
 function useSnippet(snippet) {
   const url = standaloneUrl(snippet);
   if (url) window.open(url, "_blank", "noopener,noreferrer");
@@ -76,8 +87,9 @@ function render() {
     if (snippet.title.trim() && snippet.body.trim()) text.append(preview);
     main.append(text); main.addEventListener("click", () => { setSelected(index); useSnippet(snippet); });
     const copy = document.createElement("button"); copy.type = "button"; copy.className = "icon-button result-action"; copy.ariaLabel = "Copy snippet"; copy.title = "Copy"; copy.innerHTML = icons.copy; copy.addEventListener("click", () => { setSelected(index); copySnippet(snippet).catch(showError); });
+    const share = document.createElement("button"); share.type = "button"; share.className = "icon-button result-action"; share.ariaLabel = "Share snippet"; share.title = "Share"; share.innerHTML = icons.share; share.addEventListener("click", () => { setSelected(index); shareSnippet(snippet).catch(showError); });
     const edit = document.createElement("button"); edit.type = "button"; edit.className = "icon-button result-action"; edit.ariaLabel = "Edit snippet"; edit.title = "Edit"; edit.innerHTML = icons.edit; edit.addEventListener("click", () => { setSelected(index); openEditor(snippet); });
-    row.append(main, copy, edit); results.append(row);
+    row.append(main, copy, share, edit); results.append(row);
   });
 }
 function showError(error) { $("status").textContent = error.message || String(error); }
@@ -85,7 +97,7 @@ function showSurface(id) { $(id).hidden = false; document.body.style.overflow = 
 function closeSurface(id) { $(id).hidden = true; if (!["editor", "preview", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = ""; $("search").focus(); }
 function openEditor(snippet = null) {
   state.editing = snippet; $("snippet-title").value = snippet?.title || ""; $("snippet-body").value = snippet?.body || "";
-  $("delete").hidden = !snippet; $("editor-status").textContent = ""; showSurface("editor");
+  $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = ""; showSurface("editor");
   setTimeout(() => (snippet?.title ? $("snippet-body") : $("snippet-title")).focus(), 0);
 }
 function openPreview(snippet) {
@@ -118,6 +130,13 @@ $("delete").addEventListener("click", async () => {
   if (!state.editing || !confirm("Delete this snippet?")) return;
   try { await api(`/snippets/${state.editing.id}`, { method: "DELETE" }); state.snippets = state.snippets.filter(s => s.id !== state.editing.id); closeSurface("editor"); render(); }
   catch (error) { $("editor-status").textContent = error.message; }
+});
+$("unshare").addEventListener("click", async () => {
+  if (!state.editing?.share_token || !confirm("Stop sharing this snippet? The current link will no longer work.")) return;
+  try {
+    await api(`/snippets/${state.editing.id}/share`, { method: "DELETE" });
+    state.editing.share_token = null; $("unshare").hidden = true; $("editor-status").textContent = "Sharing stopped.";
+  } catch (error) { $("editor-status").textContent = error.message; }
 });
 $("sign-out").addEventListener("click", async () => { try { await api("/auth/logout", { method: "POST" }); } finally { location.replace("/"); } });
 $("appearance").value = localStorage.getItem("linksaw-theme") || "system";
