@@ -74,6 +74,16 @@
           <h2>Appearance</h2>
           <label for="appearance" class="field-label">Theme</label>
           <select id="appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+          <div class="extension-settings">
+            <h2>Chrome extension</h2>
+            <label for="autocomplete-trigger" class="field-label">Autocomplete trigger</label>
+            <div class="trigger-row">
+              <input id="autocomplete-trigger" class="trigger-input" maxlength="2" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="trigger-help">
+              <button id="save-trigger" class="text-button" type="button">Save</button>
+            </div>
+            <p id="trigger-help" class="field-help">Type this character in an editable field to open Linksaw.</p>
+            <p id="trigger-status" class="field-help" role="status" aria-live="polite"></p>
+          </div>
           <div class="account-block">
             <h2>Account</h2>
             <p id="account"></p>

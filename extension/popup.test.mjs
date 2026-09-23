@@ -37,9 +37,11 @@ test('falls back for protected or unsupported target', () => {
   assert.equal(run('<p>plain text</p>', 'p').result, false);
 });
 
-test('manifest limits site permission to existing API', () => {
+test('manifest limits fetch permission to the API and installs the autocomplete listener', () => {
   const manifest = JSON.parse(readFileSync(new URL('./manifest.json', import.meta.url)));
   assert.deepEqual(manifest.host_permissions, ['https://snippets-api.linksaw.com/*']);
   assert.equal(manifest.permissions.includes('cookies'), false);
   assert.equal(manifest.permissions.includes('storage'), false);
+  assert.deepEqual(manifest.content_scripts[0].matches, ['http://*/*', 'https://*/*']);
+  assert.equal(manifest.background.service_worker, 'background.js');
 });

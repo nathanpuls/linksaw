@@ -129,3 +129,30 @@ test('old extension private link redirects to the canonical /app/s route', async
   assert.equal(response.status, 302);
   assert.equal(response.headers.get('Location'), `https://linksaw.com/app/s/${id}`);
 });
+
+test('authenticated users can read and update their autocomplete trigger', async () => {
+  let saved = ';';
+  const env = {
+    DB: {
+      prepare(sql) {
+        const statement = { bind(...values) {
+          if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql.includes('SELECT autocomplete_trigger')) return { first: async () => ({ autocomplete_trigger: saved }) };
+          if (sql.includes('INSERT INTO user_preferences')) return { run: async () => { saved = values[1]; } };
+          throw new Error(`Unexpected SQL: ${sql}`);
+        } };
+        if (sql.includes('CREATE TABLE IF NOT EXISTS user_preferences')) statement.run = async () => ({});
+        return statement;
+      },
+    },
+  };
+  const auth = { Authorization: `Bearer ${'a'.repeat(64)}` };
+  const getResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', { headers: auth }), env);
+  assert.deepEqual(await getResponse.json(), { autocompleteTrigger: ';' });
+  const putResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', {
+    method: 'PUT', headers: { ...auth, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: '/' }),
+  }), env);
+  assert.equal(putResponse.status, 200);
+  assert.deepEqual(await putResponse.json(), { autocompleteTrigger: '/' });
+  assert.equal(saved, '/');
+});

@@ -79,6 +79,12 @@ button { color: inherit; }
 .settings-grid h2 { margin: 0 0 16px; font-size: 15px; font-weight: 650; }
 .field-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 13px; }
 select { width: min(260px, 100%); border: 1px solid var(--control); border-radius: 9px; padding: 10px; background: var(--paper); color: var(--ink); }
+.extension-settings { margin-top: 42px; }
+.trigger-row { display: flex; align-items: center; gap: 9px; }
+.trigger-input { width: 48px; height: 40px; border: 1px solid var(--control); border-radius: 9px; background: var(--paper); color: var(--ink); text-align: center; font: inherit; font-size: 20px; }
+.trigger-input:focus { outline: 2px solid var(--ink); outline-offset: 2px; }
+.field-help { max-width: 360px; margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+#trigger-status:empty { display: none; }
 .account-block { margin-top: 42px; }
 .account-block p { color: var(--muted); overflow-wrap: anywhere; }
 .shortcuts { padding-left: 28px; border-left: 1px solid var(--line); }

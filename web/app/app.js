@@ -160,8 +160,9 @@ function closePreview(fromHistory = false) {
 }
 async function load() {
   try {
-    const [{ user }, { snippets }] = await Promise.all([api("/me"), api("/snippets")]);
+    const [{ user }, { snippets }, preferences] = await Promise.all([api("/me"), api("/snippets"), api("/preferences")]);
     state.user = user; state.snippets = snippets; $("account").textContent = user.email; $("app").ariaBusy = "false"; render();
+    $("autocomplete-trigger").value = preferences.autocompleteTrigger || ";";
     const route = new URLSearchParams(location.search);
     if (location.pathname === "/app/new" || route.get("new") === "1") openEditor();
     else {
@@ -214,6 +215,18 @@ applyTheme($("appearance").value);
 syncReaderMode();
 matchMedia("(max-width: 900px)").addEventListener("change", syncReaderMode);
 $("appearance").addEventListener("change", event => { localStorage.setItem("linksaw-theme", event.target.value); applyTheme(event.target.value); });
+$("autocomplete-trigger").addEventListener("input", event => {
+  event.target.value = Array.from(event.target.value).slice(-1).join("");
+  $("trigger-status").textContent = "";
+});
+$("save-trigger").addEventListener("click", async () => {
+  const button = $("save-trigger"); button.disabled = true; $("trigger-status").textContent = "Saving…";
+  try {
+    const saved = await api("/preferences", { method: "PUT", body: JSON.stringify({ autocompleteTrigger: $("autocomplete-trigger").value }) });
+    $("autocomplete-trigger").value = saved.autocompleteTrigger; $("trigger-status").textContent = "Saved. New pages will use this trigger.";
+  } catch (error) { $("trigger-status").textContent = error.message; }
+  finally { button.disabled = false; }
+});
 addEventListener("popstate", () => closePreview(true));
 document.addEventListener("keydown", event => {
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");

@@ -44,6 +44,22 @@ async function listSnippets(env, userId) {
   return results.map(row => ({ ...row, details: [] }));
 }
 
+async function autocompleteTrigger(env, userId) {
+  try {
+    const row = await env.DB.prepare("SELECT autocomplete_trigger FROM user_preferences WHERE user_id = ?").bind(userId).first();
+    return row?.autocomplete_trigger || ";";
+  } catch {
+    // Older deployments may not have created the additive preferences table yet.
+    return ";";
+  }
+}
+
+async function saveAutocompleteTrigger(env, userId, trigger) {
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS user_preferences (user_id TEXT PRIMARY KEY, autocomplete_trigger TEXT NOT NULL DEFAULT ';', updated_at INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)").run();
+  await env.DB.prepare("INSERT INTO user_preferences(user_id, autocomplete_trigger, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET autocomplete_trigger = excluded.autocomplete_trigger, updated_at = excluded.updated_at")
+    .bind(userId, trigger, nowSeconds()).run();
+}
+
 function publicLinkedHtml(value) {
   const text = String(value ?? "");
   const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?/gi;
@@ -195,6 +211,18 @@ export async function handle(request, env) {
   }
   const user = session.user;
   if (url.pathname === "/me" && request.method === "GET") return json(request, { user });
+  if (url.pathname === "/preferences" && request.method === "GET") {
+    return json(request, { autocompleteTrigger: await autocompleteTrigger(env, user.id) });
+  }
+  if (url.pathname === "/preferences" && request.method === "PUT") {
+    const input = await bodyJson(request);
+    const trigger = typeof input?.autocompleteTrigger === "string" ? input.autocompleteTrigger : "";
+    if (Array.from(trigger).length !== 1 || /\s|[\u0000-\u001f\u007f]/u.test(trigger)) {
+      return fail(request, "Choose one visible character");
+    }
+    await saveAutocompleteTrigger(env, user.id, trigger);
+    return json(request, { autocompleteTrigger: trigger });
+  }
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(session.tokenHash).run();
     return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0) } : {});
