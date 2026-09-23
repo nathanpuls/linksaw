@@ -89,7 +89,7 @@ function render() {
   const results = $("results"); results.replaceChildren();
   if (!state.filtered.length) {
     const empty = document.createElement("div"); empty.className = "empty";
-    empty.textContent = query ? "No matching snippets" : "No snippets yet";
+    empty.textContent = query ? "No matches" : "No snippets yet";
     if (!query) { const button = document.createElement("button"); button.className = "text-button"; button.textContent = "Create a snippet"; button.addEventListener("click", () => openEditor()); empty.append(button); }
     results.append(empty); renderViewer(null); return;
   }
