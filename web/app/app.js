@@ -6,8 +6,7 @@ const icons = {
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
   externalLink: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
-  panelClose: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18m7-12-3 3 3 3"/></svg>',
-  panelOpen: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18m4 6 3 3-3 3"/></svg>',
+  panelLeft: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
 };
@@ -141,9 +140,9 @@ function narrowLayout() { return matchMedia("(max-width: 900px)").matches; }
 function syncReaderMode() {
   const enabled = sessionStorage.getItem("linksaw-reader-mode") === "true" && !narrowLayout();
   $("app").classList.toggle("reader-mode", enabled);
-  $("reader-toggle").innerHTML = enabled ? icons.panelOpen : icons.panelClose;
-  $("reader-toggle").ariaLabel = enabled ? "Show snippet list" : "Hide snippet list";
-  $("reader-toggle").title = enabled ? "Show snippet list" : "Hide snippet list";
+  $("reader-toggle").innerHTML = icons.panelLeft;
+  $("reader-toggle").ariaLabel = enabled ? "Show list" : "Hide list";
+  $("reader-toggle").title = enabled ? "Show list" : "Hide list";
 }
 function openPreview(snippet, pushHistory = true) {
   if (!snippet) return;
