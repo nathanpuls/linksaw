@@ -53,7 +53,6 @@ button { color: inherit; }
 .reader-toggle { margin-right: 2px; }
 .preview-title { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 21px; font-weight: 600; letter-spacing: -.025em; }
 .viewer-actions { margin-left: auto; display: flex; align-items: center; gap: 3px; }
-.open-website { height: 38px; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; padding-block: 0; white-space: nowrap; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
 .preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 30px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
 .preview-body a { color: inherit; text-decoration-color: var(--control); text-underline-offset: 2px; }
@@ -133,6 +132,5 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 
 @media (max-width: 520px) {
   .viewer-header { gap: 6px; }
-  .open-website { padding-inline: 10px; }
   .viewer-actions .icon-button { width: 36px; }
 }

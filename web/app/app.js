@@ -159,7 +159,6 @@ function renderViewer(snippet) {
   const heading = snippet.body.trim() && snippet.title.trim() !== snippet.body.trim() ? snippet.title.trim() : "";
   $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
   renderLinkedText($("preview-body"), snippet.body || snippet.title);
-  $("preview-open").hidden = !standaloneUrl(snippet);
 }
 function narrowLayout() { return matchMedia("(max-width: 900px)").matches; }
 function syncReaderMode() {
@@ -244,9 +243,6 @@ $("close-settings").addEventListener("click", leaveRoutedView);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showError));
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
-$("preview-open").addEventListener("click", () => {
-  const url = standaloneUrl(state.previewing); if (url) window.open(url, "_blank", "noopener,noreferrer");
-});
 function toggleReaderMode() {
   const enabled = !$("app").classList.contains("reader-mode");
   sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();
