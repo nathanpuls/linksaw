@@ -13,12 +13,15 @@ const icons = {
 
 const $ = id => document.getElementById(id);
 const state = { snippets: [], filtered: [], selected: -1, editing: null, editorContext: null, previewing: null, user: null };
+const isMacPlatform = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || "");
+const sidebarShortcutLabel = isMacPlatform ? "⌘\\" : "Ctrl+\\";
 let toastTimer;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("settings", "settings"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
 icon("editor-reader-toggle", "panelLeft");
+$("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
@@ -168,8 +171,8 @@ function syncReaderMode() {
   $("app").classList.toggle("reader-mode", enabled);
   for (const id of ["reader-toggle", "editor-reader-toggle"]) {
     $(id).innerHTML = icons.panelLeft;
-    $(id).ariaLabel = enabled ? "Show list" : "Hide list";
-    $(id).title = enabled ? "Show list" : "Hide list";
+    $(id).ariaLabel = enabled ? "Show sidebar" : "Hide sidebar";
+    $(id).title = `${enabled ? "Show sidebar" : "Hide sidebar"} (${sidebarShortcutLabel})`;
   }
 }
 function openPreview(snippet, pushHistory = true) {
@@ -246,6 +249,10 @@ $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 function toggleReaderMode() {
   const enabled = !$("app").classList.contains("reader-mode");
   sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();
+}
+function isSidebarShortcut(event) {
+  if (event.key !== "\\" || event.altKey || event.shiftKey) return false;
+  return isMacPlatform ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
 }
 $("reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-reader-toggle").addEventListener("click", toggleReaderMode);
@@ -324,6 +331,7 @@ addEventListener("popstate", applyUrlState);
 document.addEventListener("keydown", event => {
   if ($("delete-account-dialog").open) return;
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
+  if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
   if (event.key === "Escape") { if (editing || settings || viewerOpen) leaveRoutedView(); return; }
   const defaultDraftField = state.editorContext === "default" && [$("snippet-title"), $("snippet-body")].includes(document.activeElement);
   if ((editing && (state.editorContext !== "default" || defaultDraftField)) || settings) return;
