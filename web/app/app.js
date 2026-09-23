@@ -15,7 +15,7 @@ let toastTimer;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("settings", "settings"); icon("close-editor", "close");
-icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("close-settings", "back");
+icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
 
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
@@ -53,18 +53,11 @@ async function shareSnippet(snippet) {
   await navigator.clipboard.writeText(share.url);
   showToast("Link copied");
 }
-function useSnippet(snippet) {
-  const url = standaloneUrl(snippet);
-  if (url) window.open(url, "_blank", "noopener,noreferrer");
-  else openPreview(snippet);
-}
 function setSelected(index, scroll = true) {
   state.selected = Math.max(0, Math.min(index, Math.max(0, state.filtered.length - 1)));
   document.querySelectorAll(".result-row").forEach((row, i) => row.classList.toggle("selected", i === state.selected));
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
-}
-function clearSelectedVisual() {
-  document.querySelectorAll(".result-row.selected").forEach(row => row.classList.remove("selected"));
+  renderViewer(state.filtered[state.selected] || null);
 }
 function render() {
   const query = $("search").value.trim().toLowerCase();
@@ -75,7 +68,7 @@ function render() {
     const empty = document.createElement("div"); empty.className = "empty";
     empty.textContent = query ? "No matching snippets" : "No snippets yet";
     if (!query) { const button = document.createElement("button"); button.className = "text-button"; button.textContent = "Create a snippet"; button.addEventListener("click", () => openEditor()); empty.append(button); }
-    results.append(empty); return;
+    results.append(empty); renderViewer(null); return;
   }
   state.filtered.forEach((snippet, index) => {
     const row = document.createElement("article"); row.className = `result-row${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
@@ -84,28 +77,47 @@ function render() {
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = label(snippet);
     const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim();
     text.append(title);
-    if (snippet.title.trim() && snippet.body.trim()) text.append(preview);
-    main.append(text); main.addEventListener("click", () => { setSelected(index); useSnippet(snippet); });
-    const copy = document.createElement("button"); copy.type = "button"; copy.className = "icon-button result-action"; copy.ariaLabel = "Copy snippet"; copy.title = "Copy"; copy.innerHTML = icons.copy; copy.addEventListener("click", () => { setSelected(index); copySnippet(snippet).catch(showError); });
-    const share = document.createElement("button"); share.type = "button"; share.className = "icon-button result-action"; share.ariaLabel = "Share snippet"; share.title = "Share"; share.innerHTML = icons.share; share.addEventListener("click", () => { setSelected(index); shareSnippet(snippet).catch(showError); });
-    const edit = document.createElement("button"); edit.type = "button"; edit.className = "icon-button result-action"; edit.ariaLabel = "Edit snippet"; edit.title = "Edit"; edit.innerHTML = icons.edit; edit.addEventListener("click", () => { setSelected(index); openEditor(snippet); });
-    row.append(main, copy, share, edit); results.append(row);
+    if (snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim()) text.append(preview);
+    main.append(text); main.addEventListener("click", () => { setSelected(index); openPreview(snippet); });
+    row.append(main); results.append(row);
   });
+  renderViewer(state.filtered[state.selected]);
 }
 function showError(error) { $("status").textContent = error.message || String(error); }
 function showSurface(id) { $(id).hidden = false; document.body.style.overflow = "hidden"; }
-function closeSurface(id) { $(id).hidden = true; if (!["editor", "preview", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = ""; $("search").focus(); }
+function closeSurface(id) {
+  $(id).hidden = true;
+  if (!["editor", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = "";
+  if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
+}
 function openEditor(snippet = null) {
   state.editing = snippet; $("snippet-title").value = snippet?.title || ""; $("snippet-body").value = snippet?.body || "";
   $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = ""; showSurface("editor");
   setTimeout(() => (snippet?.title ? $("snippet-body") : $("snippet-title")).focus(), 0);
 }
-function openPreview(snippet) {
-  if (!snippet) return;
+function renderViewer(snippet) {
   state.previewing = snippet;
-  const heading = snippet.body.trim() ? snippet.title.trim() : "";
+  $("viewer-empty").hidden = Boolean(snippet); $("viewer-content").hidden = !snippet;
+  if (!snippet) return;
+  const heading = snippet.body.trim() && snippet.title.trim() !== snippet.body.trim() ? snippet.title.trim() : "";
   $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
-  $("preview-body").textContent = snippet.body || snippet.title; showSurface("preview");
+  $("preview-body").textContent = snippet.body || snippet.title;
+  $("preview-open").hidden = !standaloneUrl(snippet);
+}
+function narrowLayout() { return matchMedia("(max-width: 900px)").matches; }
+function openPreview(snippet, pushHistory = true) {
+  if (!snippet) return;
+  renderViewer(snippet);
+  if (!narrowLayout()) return;
+  const opening = !$("app").classList.contains("viewer-open");
+  $("app").classList.add("viewer-open");
+  if (opening && pushHistory) history.pushState({ ...(history.state || {}), linksawViewer: true }, "");
+  setTimeout(() => $("close-preview").focus(), 0);
+}
+function closePreview(fromHistory = false) {
+  if (!narrowLayout()) { $("search").focus(); return; }
+  if (!fromHistory && history.state?.linksawViewer) { history.back(); return; }
+  $("app").classList.remove("viewer-open"); $("search").focus();
 }
 async function load() {
   try {
@@ -118,16 +130,21 @@ $("search").addEventListener("input", () => { state.selected = 0; render(); });
 $("add").addEventListener("click", () => openEditor());
 $("settings").addEventListener("click", () => showSurface("settings-panel"));
 $("close-editor").addEventListener("click", () => closeSurface("editor"));
-$("close-preview").addEventListener("click", () => closeSurface("preview"));
+$("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", () => closeSurface("settings-panel"));
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showError));
-$("preview-edit").addEventListener("click", () => { closeSurface("preview"); openEditor(state.previewing); });
+$("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
+$("preview-edit").addEventListener("click", () => openEditor(state.previewing));
+$("preview-open").addEventListener("click", () => {
+  const url = standaloneUrl(state.previewing); if (url) window.open(url, "_blank", "noopener,noreferrer");
+});
 $("editor-form").addEventListener("submit", async event => {
   event.preventDefault(); const submit = event.submitter; submit.disabled = true; $("editor-status").textContent = "Saving…";
   const payload = { title: $("snippet-title").value, body: $("snippet-body").value };
   try {
-    await api(state.editing ? `/snippets/${state.editing.id}` : "/snippets", { method: state.editing ? "PUT" : "POST", body: JSON.stringify(payload) });
-    const data = await api("/snippets"); state.snippets = data.snippets; closeSurface("editor"); render();
+    const saved = await api(state.editing ? `/snippets/${state.editing.id}` : "/snippets", { method: state.editing ? "PUT" : "POST", body: JSON.stringify(payload) });
+    const savedId = state.editing?.id || saved.id;
+    const data = await api("/snippets"); state.snippets = data.snippets; state.selected = Math.max(0, data.snippets.findIndex(snippet => snippet.id === savedId)); closeSurface("editor"); render();
   } catch (error) { $("editor-status").textContent = error.message; } finally { submit.disabled = false; }
 });
 $("delete").addEventListener("click", async () => {
@@ -147,18 +164,11 @@ $("appearance").value = localStorage.getItem("linksaw-theme") || "system";
 function applyTheme(value) { document.documentElement.dataset.theme = value === "system" ? "" : value; }
 applyTheme($("appearance").value);
 $("appearance").addEventListener("change", event => { localStorage.setItem("linksaw-theme", event.target.value); applyTheme(event.target.value); });
-document.addEventListener("pointermove", event => {
-  if (event.pointerType === "touch") return;
-  const row = event.target.closest?.(".result-row");
-  if (!row) { clearSelectedVisual(); return; }
-  const index = Number(row.dataset.index);
-  if (index !== state.selected || !row.classList.contains("selected")) setSelected(index, false);
-});
+addEventListener("popstate", () => closePreview(true));
 document.addEventListener("keydown", event => {
-  const editing = !$("editor").hidden, previewing = !$("preview").hidden, settings = !$("settings-panel").hidden;
-  if (event.key === "Escape") { if (editing) closeSurface("editor"); else if (previewing) closeSurface("preview"); else if (settings) closeSurface("settings-panel"); return; }
+  const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
+  if (event.key === "Escape") { if (editing) closeSurface("editor"); else if (settings) closeSurface("settings-panel"); else if (viewerOpen) closePreview(); return; }
   if (editing || settings) return;
-  if (previewing) return;
   const modifier = event.metaKey || event.ctrlKey;
   if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); openEditor(); return; }
   const selected = state.filtered[state.selected];
@@ -166,13 +176,13 @@ document.addEventListener("keydown", event => {
   if (modifier && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); copySnippet(selected).catch(showError); return; }
   if (modifier && /^[1-9]$/.test(event.key)) {
     const numbered = state.filtered[Number(event.key) - 1];
-    if (numbered) { event.preventDefault(); setSelected(Number(event.key) - 1); useSnippet(numbered); }
+    if (numbered) { event.preventDefault(); setSelected(Number(event.key) - 1); }
     return;
   }
   if (event.key === "ArrowDown") { event.preventDefault(); setSelected(state.selected + 1); }
   else if (event.key === "ArrowUp") { event.preventDefault(); setSelected(state.selected - 1); }
   else if (event.key === "ArrowRight" && selected) { event.preventDefault(); openPreview(selected); }
-  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); useSnippet(selected); }
+  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); openPreview(selected); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });
 

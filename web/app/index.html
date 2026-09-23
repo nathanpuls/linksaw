@@ -8,20 +8,39 @@
   <title>Linksaw</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260922-5">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-1">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
-    <header class="toolbar">
-      <label class="search-wrap">
-        <span class="sr-only">Search snippets</span>
-        <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
-      </label>
-      <button id="add" class="icon-button" type="button" aria-label="New snippet" title="New snippet"></button>
-      <button id="settings" class="icon-button" type="button" aria-label="Settings" title="Settings"></button>
-    </header>
-    <div id="status" class="status" role="status" aria-live="polite"></div>
-    <section id="results" class="results" aria-label="Snippets"></section>
+    <section class="list-pane" aria-label="Snippet library">
+      <header class="toolbar">
+        <label class="search-wrap">
+          <span class="sr-only">Search snippets</span>
+          <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
+        </label>
+        <button id="add" class="icon-button" type="button" aria-label="New snippet" title="New snippet"></button>
+        <button id="settings" class="icon-button" type="button" aria-label="Settings" title="Settings"></button>
+      </header>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <section id="results" class="results" aria-label="Snippets"></section>
+    </section>
+
+    <section id="preview" class="viewer-pane" aria-label="Snippet">
+      <div id="viewer-empty" class="viewer-empty">Select a snippet</div>
+      <article id="viewer-content" class="viewer-content" hidden>
+        <header class="viewer-header">
+          <button id="close-preview" class="icon-button viewer-back" type="button" aria-label="Back to snippets" title="Back"></button>
+          <h1 id="preview-title" class="preview-title"></h1>
+          <div class="viewer-actions">
+            <button id="preview-open" class="text-button open-website" type="button" hidden>Open Website</button>
+            <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" title="Copy"></button>
+            <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" title="Share"></button>
+            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" title="Edit"></button>
+          </div>
+        </header>
+        <pre id="preview-body" class="preview-body"></pre>
+      </article>
+    </section>
   </main>
 
   <section id="editor" class="surface" aria-labelledby="editor-heading" hidden>
@@ -41,20 +60,6 @@
         <button class="save-button" type="submit">Save</button>
       </footer>
     </form>
-  </section>
-
-  <section id="preview" class="surface" aria-label="Snippet" hidden>
-    <div class="surface-inner">
-      <header class="surface-header">
-        <button id="close-preview" class="icon-button" type="button" aria-label="Back to search" title="Back"></button>
-        <h1 id="preview-title" class="preview-title"></h1>
-      </header>
-      <pre id="preview-body" class="preview-body"></pre>
-      <footer class="surface-footer end">
-        <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" title="Edit"></button>
-        <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" title="Copy"></button>
-      </footer>
-    </div>
   </section>
 
   <section id="settings-panel" class="surface" aria-labelledby="settings-title" hidden>
@@ -79,11 +84,11 @@
           <dl>
             <div><dt>⌘/Ctrl N</dt><dd>New snippet</dd></div>
             <div><dt>↑ ↓</dt><dd>Select a snippet</dd></div>
-            <div><dt>Return</dt><dd>Open selected snippet</dd></div>
-            <div><dt>→</dt><dd>Preview selected snippet</dd></div>
+            <div><dt>Return</dt><dd>View selected snippet</dd></div>
+            <div><dt>→</dt><dd>Focus the viewer</dd></div>
             <div><dt>⌘/Ctrl E</dt><dd>Edit selected snippet</dd></div>
             <div><dt>⌘/Ctrl C</dt><dd>Copy selected snippet</dd></div>
-            <div><dt>⌘/Ctrl 1–9</dt><dd>Open a visible snippet</dd></div>
+            <div><dt>⌘/Ctrl 1–9</dt><dd>Select a visible snippet</dd></div>
             <div><dt>Esc</dt><dd>Go back</dd></div>
             <div><dt>/</dt><dd>Focus search</dd></div>
           </dl>
@@ -93,6 +98,6 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
-  <script type="module" src="/app/app.js?v=20260922-6"></script>
+  <script type="module" src="/app/app.js?v=20260923-2"></script>
 </body>
 </html>
