@@ -2,13 +2,13 @@
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --paper: #fff;
-  --canvas: #f4f4f2;
+  --canvas: #f6f6f6;
   --ink: #171717;
   --muted: #777;
-  --line: #e8e8e6;
-  --selected: #f1f1ef;
-  --hover: #f4f4f2;
-  --control: #d3d3d0;
+  --line: #e5e5e7;
+  --selected: #f1f1f2;
+  --hover: #f4f4f5;
+  --control: #d4d4d8;
 }
 :root[data-theme="dark"] { color-scheme: dark; --paper:#202020; --canvas:#151515; --ink:#f2f2f2; --muted:#aaa; --line:#414141; --selected:#363636; --hover:#303030; --control:#5b5b5b; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { color-scheme:dark; --paper:#202020; --canvas:#151515; --ink:#f2f2f2; --muted:#aaa; --line:#414141; --selected:#363636; --hover:#303030; --control:#5b5b5b; } }
@@ -74,9 +74,10 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .shortcuts dd { margin: 0; color: var(--muted); }
 .toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; transform: translateX(-50%); border-radius: 9px; padding: 9px 15px; background: #171717; color: #fff; font-size: 13px; box-shadow: 0 5px 20px #0003; }
 @media (max-width: 700px) {
+  html, body { background: var(--paper); }
   body { padding: 0; }
   .app { min-height: 100vh; border: 0; border-radius: 0; }
-  .surface { padding: 0; }
+  .surface { padding: 0; background: var(--paper); }
   .surface-inner, .settings-inner { min-height: 100vh; border: 0; border-radius: 0; }
   .toolbar { top: 0; min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 0; }
   .surface-header { min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 0; }
