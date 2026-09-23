@@ -67,6 +67,12 @@
         const preview = document.createElement('span'); preview.className = 'preview'; preview.textContent = snippet.body.replace(/\s+/g, ' ').trim(); button.append(preview);
       }
       button.addEventListener('pointerdown', event => event.preventDefault());
+      button.addEventListener('pointerenter', () => {
+        if (selected === index) return;
+        results.querySelector('.selected')?.classList.remove('selected');
+        selected = index;
+        button.classList.add('selected');
+      });
       button.addEventListener('click', () => choose(snippet)); results.append(button);
     });
     results.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });

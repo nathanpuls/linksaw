@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import { JSDOM } from 'jsdom';
 
 const source = readFileSync(new URL('./popup.js', import.meta.url), 'utf8');
+const contentSource = readFileSync(new URL('./content.js', import.meta.url), 'utf8');
 const insertSource = source.match(/function insert\(text\) \{[\s\S]*?\n\}/)?.[0];
 assert.ok(insertSource, 'insert implementation is present');
 function run(html, selector, text = 'Linksaw text') {
@@ -44,4 +45,5 @@ test('manifest limits fetch permission to the API and installs the autocomplete 
   assert.equal(manifest.permissions.includes('storage'), false);
   assert.deepEqual(manifest.content_scripts[0].matches, ['http://*/*', 'https://*/*']);
   assert.equal(manifest.background.service_worker, 'background.js');
+  assert.match(contentSource, /pointerenter[\s\S]*selected = index/);
 });
