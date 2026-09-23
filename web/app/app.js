@@ -56,7 +56,7 @@ async function shareSnippet(snippet) {
 function useSnippet(snippet) {
   const url = standaloneUrl(snippet);
   if (url) window.open(url, "_blank", "noopener,noreferrer");
-  else copySnippet(snippet).catch(showError);
+  else openPreview(snippet);
 }
 function setSelected(index, scroll = true) {
   state.selected = Math.max(0, Math.min(index, Math.max(0, state.filtered.length - 1)));
@@ -101,7 +101,11 @@ function openEditor(snippet = null) {
   setTimeout(() => (snippet?.title ? $("snippet-body") : $("snippet-title")).focus(), 0);
 }
 function openPreview(snippet) {
-  if (!snippet) return; state.previewing = snippet; $("preview-title").textContent = label(snippet); $("preview-body").textContent = snippet.body || snippet.title; showSurface("preview");
+  if (!snippet) return;
+  state.previewing = snippet;
+  const heading = snippet.body.trim() ? snippet.title.trim() : "";
+  $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
+  $("preview-body").textContent = snippet.body || snippet.title; showSurface("preview");
 }
 async function load() {
   try {
