@@ -76,12 +76,12 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .shortcuts dd { margin: 0; color: var(--muted); }
 .toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; transform: translateX(-50%); border-radius: 9px; padding: 9px 15px; background: #171717; color: #fff; font-size: 13px; box-shadow: 0 5px 20px #0003; }
 @media (max-width: 700px) {
-  body { padding: 8px; }
-  .app { min-height: calc(100vh - 16px); border-radius: 12px; }
-  .surface { padding: 8px; }
-  .surface-inner, .settings-inner { min-height: calc(100vh - 16px); border-radius: 12px; }
-  .toolbar { top: 8px; min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 11px 11px 0 0; }
-  .surface-header { min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 11px 11px 0 0; }
+  body { padding: 0; }
+  .app { min-height: 100vh; border: 0; border-radius: 0; }
+  .surface { padding: 0; }
+  .surface-inner, .settings-inner { min-height: 100vh; border: 0; border-radius: 0; }
+  .toolbar { top: 0; min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 0; }
+  .surface-header { min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 0; }
   .results { padding-inline: 5px; }
   .result-row { grid-template-columns: minmax(0,1fr) 38px 38px; }
   .result-key { display: none; }
