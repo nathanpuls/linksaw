@@ -122,7 +122,10 @@ function updateUrl(values, push = true) {
     if (value === null || value === undefined || value === "") url.searchParams.delete(key);
     else url.searchParams.set(key, value);
   }
-  history[push ? "pushState" : "replaceState"]({ linksawRoute: true }, "", `${url.pathname}${url.search}`);
+  const routeState = push
+    ? { ...(history.state || {}), linksawPushed: true }
+    : { ...(history.state || {}), linksawPushed: history.state?.linksawPushed === true };
+  history[push ? "pushState" : "replaceState"](routeState, "", `${url.pathname}${url.search}`);
 }
 function showSurface(id) { $(id).hidden = false; document.body.style.overflow = "hidden"; }
 function closeSurface(id) {
@@ -131,8 +134,10 @@ function closeSurface(id) {
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
 function leaveRoutedView() {
-  if (history.state?.linksawRoute) history.back();
-  else { updateUrl({ view: null, snippet: null }, false); applyUrlState(); }
+  if (history.state?.linksawPushed) { history.back(); return; }
+  const params = new URLSearchParams(location.search);
+  const snippet = params.get("view") === "edit" ? params.get("snippet") : null;
+  updateUrl({ view: null, snippet }, false); applyUrlState();
 }
 function openEditor(snippet = null, pushHistory = true) {
   state.editing = snippet; $("snippet-title").value = snippet?.title || ""; $("snippet-body").value = snippet?.body || "";
