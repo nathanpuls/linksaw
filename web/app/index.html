@@ -47,15 +47,15 @@
   </main>
 
   <section id="editor" class="surface" aria-labelledby="editor-heading" hidden>
-    <form id="editor-form" class="surface-inner">
+    <form id="editor-form" class="surface-inner" autocomplete="off">
       <header class="surface-header editor-header">
         <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
         <label class="sr-only" for="snippet-title">Title</label>
-        <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title">
+        <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title" autocomplete="off">
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" title="Close"></button>
       </header>
       <label class="sr-only" for="snippet-body">Content</label>
-      <textarea id="snippet-body" class="content-input" placeholder="Content"></textarea>
+      <textarea id="snippet-body" class="content-input" placeholder="Content" autocomplete="off"></textarea>
       <p id="editor-status" class="editor-status" role="status" aria-live="polite"></p>
       <footer class="surface-footer">
         <button id="delete" class="text-button danger" type="button" tabindex="-1" hidden>Delete</button>
