@@ -3,7 +3,7 @@ const icons = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',
   settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
-  edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
 };
@@ -28,6 +28,12 @@ function label(snippet) {
   return snippet.title.trim() || snippet.body.trim().split(/\r?\n/, 1)[0].slice(0, 90) || "Untitled";
 }
 function snippetText(snippet) { return snippet.body || snippet.title; }
+function standaloneUrl(snippet) {
+  const text = snippetText(snippet).trim();
+  if (/^https?:\/\/[^\s]+$/i.test(text)) return text;
+  if (/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(text)) return `https://${text}`;
+  return "";
+}
 function showToast(message = "Copied") {
   clearTimeout(toastTimer); $("toast").textContent = message; $("toast").hidden = false;
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 1400);
@@ -36,10 +42,15 @@ async function copySnippet(snippet) {
   await navigator.clipboard.writeText(snippetText(snippet));
   showToast();
 }
-function setSelected(index) {
+function useSnippet(snippet) {
+  const url = standaloneUrl(snippet);
+  if (url) window.open(url, "_blank", "noopener,noreferrer");
+  else copySnippet(snippet).catch(showError);
+}
+function setSelected(index, scroll = true) {
   state.selected = Math.max(0, Math.min(index, Math.max(0, state.filtered.length - 1)));
   document.querySelectorAll(".result-row").forEach((row, i) => row.classList.toggle("selected", i === state.selected));
-  document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
+  if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
 }
 function render() {
   const query = $("search").value.trim().toLowerCase();
@@ -55,11 +66,16 @@ function render() {
   state.filtered.forEach((snippet, index) => {
     const row = document.createElement("article"); row.className = `result-row${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
     const main = document.createElement("button"); main.type = "button"; main.className = "result-main";
+    const text = document.createElement("span"); text.className = "result-text";
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = label(snippet);
-    const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim() || "Title only";
-    main.append(title, preview); main.addEventListener("click", () => { setSelected(index); copySnippet(snippet).catch(showError); });
+    const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim();
+    text.append(title);
+    if (snippet.title.trim() && snippet.body.trim()) text.append(preview);
+    const key = document.createElement("span"); key.className = "result-key"; key.textContent = index < 9 ? `${navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}${index + 1}` : "";
+    main.append(text, key); main.addEventListener("click", () => { setSelected(index); useSnippet(snippet); });
     const copy = document.createElement("button"); copy.type = "button"; copy.className = "icon-button result-action"; copy.ariaLabel = "Copy snippet"; copy.title = "Copy"; copy.innerHTML = icons.copy; copy.addEventListener("click", () => { setSelected(index); copySnippet(snippet).catch(showError); });
     const edit = document.createElement("button"); edit.type = "button"; edit.className = "icon-button result-action"; edit.ariaLabel = "Edit snippet"; edit.title = "Edit"; edit.innerHTML = icons.edit; edit.addEventListener("click", () => { setSelected(index); openEditor(snippet); });
+    row.addEventListener("pointerenter", event => { if (event.pointerType !== "touch") setSelected(index, false); });
     row.append(main, copy, edit); results.append(row);
   });
 }
@@ -117,10 +133,15 @@ document.addEventListener("keydown", event => {
   const selected = state.filtered[state.selected];
   if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); openEditor(selected); return; }
   if (modifier && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); copySnippet(selected).catch(showError); return; }
+  if (modifier && /^[1-9]$/.test(event.key)) {
+    const numbered = state.filtered[Number(event.key) - 1];
+    if (numbered) { event.preventDefault(); setSelected(Number(event.key) - 1); useSnippet(numbered); }
+    return;
+  }
   if (event.key === "ArrowDown") { event.preventDefault(); setSelected(state.selected + 1); }
   else if (event.key === "ArrowUp") { event.preventDefault(); setSelected(state.selected - 1); }
   else if (event.key === "ArrowRight" && selected) { event.preventDefault(); openPreview(selected); }
-  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); copySnippet(selected).catch(showError); }
+  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); useSnippet(selected); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });
 
