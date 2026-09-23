@@ -5,6 +5,9 @@ const icons = {
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
+  externalLink: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
+  panelClose: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18m7-12-3 3 3 3"/></svg>',
+  panelOpen: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18m4 6 3 3-3 3"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
 };
@@ -34,6 +37,27 @@ function standaloneUrl(snippet) {
   if (/^https?:\/\/[^\s]+$/i.test(text)) return text;
   if (/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(text)) return `https://${text}`;
   return "";
+}
+function renderLinkedText(element, text) {
+  const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?/gi;
+  const nodes = []; let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    const full = match[0]; let value = full;
+    while (/[.,;:!?)}\]]$/.test(value)) value = value.slice(0, -1);
+    const suffix = full.slice(value.length);
+    nodes.push(document.createTextNode(text.slice(last, match.index)));
+    const bareDomainInCode = !/^https?:\/\//i.test(value) && (text[match.index - 1] === "`" || text[match.index + full.length] === "`");
+    if (text[match.index - 1] === "@" || bareDomainInCode || !value) nodes.push(document.createTextNode(full));
+    else {
+      const link = document.createElement("a");
+      link.href = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+      link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = value;
+      nodes.push(link, document.createTextNode(suffix));
+    }
+    last = match.index + full.length;
+  }
+  nodes.push(document.createTextNode(text.slice(last)));
+  element.replaceChildren(...nodes);
 }
 function showToast(message = "Copied") {
   clearTimeout(toastTimer); $("toast").textContent = message; $("toast").hidden = false;
@@ -71,7 +95,8 @@ function render() {
     results.append(empty); renderViewer(null); return;
   }
   state.filtered.forEach((snippet, index) => {
-    const row = document.createElement("article"); row.className = `result-row${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
+    const url = standaloneUrl(snippet);
+    const row = document.createElement("article"); row.className = `result-row${url ? " has-url" : ""}${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
     const main = document.createElement("button"); main.type = "button"; main.className = "result-main";
     const text = document.createElement("span"); text.className = "result-text";
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = label(snippet);
@@ -79,7 +104,13 @@ function render() {
     text.append(title);
     if (snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim()) text.append(preview);
     main.append(text); main.addEventListener("click", () => { setSelected(index); openPreview(snippet); });
-    row.append(main); results.append(row);
+    row.append(main);
+    if (url) {
+      const open = document.createElement("a"); open.className = "row-open icon-button"; open.href = url; open.target = "_blank"; open.rel = "noopener noreferrer";
+      open.ariaLabel = `Open ${label(snippet)} website`; open.title = "Open website"; open.innerHTML = icons.externalLink;
+      open.addEventListener("click", () => setSelected(index, false)); row.append(open);
+    }
+    results.append(row);
   });
   renderViewer(state.filtered[state.selected]);
 }
@@ -98,13 +129,22 @@ function openEditor(snippet = null) {
 function renderViewer(snippet) {
   state.previewing = snippet;
   $("viewer-empty").hidden = Boolean(snippet); $("viewer-content").hidden = !snippet;
-  if (!snippet) return;
+  if (!snippet) {
+    sessionStorage.setItem("linksaw-reader-mode", "false"); syncReaderMode(); return;
+  }
   const heading = snippet.body.trim() && snippet.title.trim() !== snippet.body.trim() ? snippet.title.trim() : "";
   $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
-  $("preview-body").textContent = snippet.body || snippet.title;
+  renderLinkedText($("preview-body"), snippet.body || snippet.title);
   $("preview-open").hidden = !standaloneUrl(snippet);
 }
 function narrowLayout() { return matchMedia("(max-width: 900px)").matches; }
+function syncReaderMode() {
+  const enabled = sessionStorage.getItem("linksaw-reader-mode") === "true" && !narrowLayout();
+  $("app").classList.toggle("reader-mode", enabled);
+  $("reader-toggle").innerHTML = enabled ? icons.panelOpen : icons.panelClose;
+  $("reader-toggle").ariaLabel = enabled ? "Show snippet list" : "Hide snippet list";
+  $("reader-toggle").title = enabled ? "Show snippet list" : "Hide snippet list";
+}
 function openPreview(snippet, pushHistory = true) {
   if (!snippet) return;
   renderViewer(snippet);
@@ -138,6 +178,9 @@ $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 $("preview-open").addEventListener("click", () => {
   const url = standaloneUrl(state.previewing); if (url) window.open(url, "_blank", "noopener,noreferrer");
 });
+$("reader-toggle").addEventListener("click", () => {
+  sessionStorage.setItem("linksaw-reader-mode", String(!$("app").classList.contains("reader-mode"))); syncReaderMode();
+});
 $("editor-form").addEventListener("submit", async event => {
   event.preventDefault(); const submit = event.submitter; submit.disabled = true; $("editor-status").textContent = "Saving…";
   const payload = { title: $("snippet-title").value, body: $("snippet-body").value };
@@ -163,6 +206,8 @@ $("sign-out").addEventListener("click", async () => { try { await api("/auth/log
 $("appearance").value = localStorage.getItem("linksaw-theme") || "system";
 function applyTheme(value) { document.documentElement.dataset.theme = value === "system" ? "" : value; }
 applyTheme($("appearance").value);
+syncReaderMode();
+matchMedia("(max-width: 900px)").addEventListener("change", syncReaderMode);
 $("appearance").addEventListener("change", event => { localStorage.setItem("linksaw-theme", event.target.value); applyTheme(event.target.value); });
 addEventListener("popstate", () => closePreview(true));
 document.addEventListener("keydown", event => {
@@ -174,6 +219,10 @@ document.addEventListener("keydown", event => {
   const selected = state.filtered[state.selected];
   if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); openEditor(selected); return; }
   if (modifier && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); copySnippet(selected).catch(showError); return; }
+  if (modifier && event.key === "Enter" && selected) {
+    const url = standaloneUrl(selected); if (url) { event.preventDefault(); window.open(url, "_blank", "noopener,noreferrer"); }
+    return;
+  }
   if (modifier && /^[1-9]$/.test(event.key)) {
     const numbered = state.filtered[Number(event.key) - 1];
     if (numbered) { event.preventDefault(); setSelected(Number(event.key) - 1); }

@@ -83,7 +83,7 @@ test("public share pages render without sign-in and escape snippet content", asy
         return {
           bind(token) {
             assert.equal(token, "Ab3k9Qx7Lm2N4pRs");
-            return { first: async () => ({ title: "Example <title>", body: `<script>alert("no")</script>` }) };
+            return { first: async () => ({ title: "Example <title>", body: `<script>alert("no")</script>\n\`README.md\`\n\`https://example.com/docs\`.` }) };
           },
         };
       },
@@ -99,4 +99,7 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /Example &lt;title&gt;/);
   assert.match(html, /&lt;script&gt;alert\(&quot;no&quot;\)&lt;\/script&gt;/);
   assert.doesNotMatch(html, /<script>alert/);
+  assert.match(html, /href="https:\/\/example\.com\/docs"/);
+  assert.doesNotMatch(html, /href="https:\/\/README\.md"/);
+  assert.doesNotMatch(html, /href="https:\/\/example\.com\/docs`"/);
 });

@@ -8,7 +8,7 @@
   <title>Linksaw</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-1">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-2">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -30,6 +30,7 @@
       <article id="viewer-content" class="viewer-content" hidden>
         <header class="viewer-header">
           <button id="close-preview" class="icon-button viewer-back" type="button" aria-label="Back to snippets" title="Back"></button>
+          <button id="reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide snippet list" title="Hide snippet list"></button>
           <h1 id="preview-title" class="preview-title"></h1>
           <div class="viewer-actions">
             <button id="preview-open" class="text-button open-website" type="button" hidden>Open Website</button>
@@ -38,7 +39,7 @@
             <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" title="Edit"></button>
           </div>
         </header>
-        <pre id="preview-body" class="preview-body"></pre>
+        <div class="viewer-scroll"><pre id="preview-body" class="preview-body"></pre></div>
       </article>
     </section>
   </main>
@@ -85,6 +86,7 @@
             <div><dt>⌘/Ctrl N</dt><dd>New snippet</dd></div>
             <div><dt>↑ ↓</dt><dd>Select a snippet</dd></div>
             <div><dt>Return</dt><dd>View selected snippet</dd></div>
+            <div><dt>⌘/Ctrl Return</dt><dd>Open selected website</dd></div>
             <div><dt>→</dt><dd>Focus the viewer</dd></div>
             <div><dt>⌘/Ctrl E</dt><dd>Edit selected snippet</dd></div>
             <div><dt>⌘/Ctrl C</dt><dd>Copy selected snippet</dd></div>
@@ -98,6 +100,6 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
-  <script type="module" src="/app/app.js?v=20260923-2"></script>
+  <script type="module" src="/app/app.js?v=20260923-3"></script>
 </body>
 </html>
