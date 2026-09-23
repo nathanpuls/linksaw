@@ -40,8 +40,9 @@ button { color: inherit; }
 .result-preview { margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; line-height: 1.3; }
 .result-key { min-width: 34px; color: var(--muted); font-size: 13px; font-weight: 500; text-align: center; white-space: nowrap; }
 .result-key:empty { visibility: hidden; }
-.result-action { visibility: hidden; }
+.result-action { visibility: hidden; color: var(--muted); }
 .result-row.selected .result-action, .result-action:focus-visible { visibility: visible; }
+.result-action:hover, .result-action:focus-visible { color: var(--ink); }
 .empty { padding: 84px 24px; color: var(--muted); text-align: center; }
 .empty button { margin-top: 14px; }
 .surface { position: fixed; inset: 0; z-index: 20; overflow: auto; padding: 14px; background: var(--canvas); }
@@ -84,7 +85,6 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .results { padding-inline: 5px; }
   .result-row { grid-template-columns: minmax(0,1fr) 38px 38px; }
   .result-key { display: none; }
-  .result-action { visibility: visible; }
   .settings-grid { grid-template-columns: 1fr; gap: 36px; padding: 28px 22px; }
   .shortcuts { padding: 28px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 }
