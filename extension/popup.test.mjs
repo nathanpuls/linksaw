@@ -6,6 +6,7 @@ import { JSDOM } from 'jsdom';
 
 const source = readFileSync(new URL('./popup.js', import.meta.url), 'utf8');
 const contentSource = readFileSync(new URL('./content.js', import.meta.url), 'utf8');
+const backgroundSource = readFileSync(new URL('./background.js', import.meta.url), 'utf8');
 const dynamicSource = readFileSync(new URL('./dynamic.js', import.meta.url), 'utf8');
 const insertSource = source.match(/function insert\(text, cursorLeft = 0\) \{[\s\S]*?\n\}/)?.[0];
 assert.ok(insertSource, 'insert implementation is present');
@@ -63,4 +64,11 @@ test('manifest limits fetch permission to the API and installs the autocomplete 
   assert.deepEqual(manifest.content_scripts[0].js, ['dynamic.js', 'content.js']);
   assert.equal(manifest.background.service_worker, 'background.js');
   assert.match(contentSource, /pointerenter[\s\S]*selected = index/);
+});
+
+test('website bridge opens links in an active tab and only accepts Linksaw requests', () => {
+  assert.match(contentSource, /dataset\.linksawExtension = 'ready'/);
+  assert.match(contentSource, /LINKSAW_OPEN_ACTIVE_TAB/);
+  assert.match(backgroundSource, /source\.hostname !== 'linksaw\.com'/);
+  assert.match(backgroundSource, /chrome\.tabs\.create\(\{ url: destination\.href, active: true \}\)/);
 });

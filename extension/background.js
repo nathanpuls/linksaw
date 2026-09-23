@@ -24,7 +24,26 @@ async function linksawData(force = false) {
   return pending;
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === 'LINKSAW_OPEN_ACTIVE_TAB') {
+    let source;
+    let destination;
+    try {
+      source = new URL(sender.url || '');
+      destination = new URL(message.url || '');
+    } catch {
+      sendResponse({ ok: false, error: 'Invalid URL' });
+      return;
+    }
+    if (source.hostname !== 'linksaw.com' || !['http:', 'https:'].includes(destination.protocol)) {
+      sendResponse({ ok: false, error: 'Not allowed' });
+      return;
+    }
+    chrome.tabs.create({ url: destination.href, active: true })
+      .then(tab => sendResponse({ ok: true, tabId: tab.id }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
   if (message?.type !== 'LINKSAW_DATA') return;
   linksawData(Boolean(message.force))
     .then(data => sendResponse({ ok: true, ...data }))

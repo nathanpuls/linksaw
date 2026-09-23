@@ -41,6 +41,16 @@ function standaloneUrl(snippet) {
   if (/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(text)) return `https://${text}`;
   return "";
 }
+function openInNewTab(url) {
+  if (document.documentElement.dataset.linksawExtension === "ready") {
+    window.dispatchEvent(new CustomEvent("LINKSAW_OPEN_ACTIVE_TAB", { detail: url }));
+    return;
+  }
+  const opened = window.open(url, "_blank");
+  if (!opened) return;
+  opened.opener = null;
+  opened.focus();
+}
 function renderLinkedText(element, text) {
   const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?/gi;
   const nodes = []; let last = 0;
@@ -237,7 +247,12 @@ async function load() {
   } catch (error) { showError(error); }
 }
 
-$("search").addEventListener("input", () => { state.selected = -1; render(); });
+$("search").addEventListener("input", () => {
+  const query = $("search").value.trim();
+  state.selected = -1; render();
+  if (query && state.filtered.length) setSelected(0, false);
+  else if (!query && !hasExplicitRoute() && !narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
+});
 $("add").addEventListener("click", () => openEditor());
 $("settings").addEventListener("click", () => openSettings());
 $("close-editor").addEventListener("click", leaveRoutedView);
@@ -341,7 +356,7 @@ document.addEventListener("keydown", event => {
   if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); openEditor(selected); return; }
   if (modifier && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); copySnippet(selected).catch(showError); return; }
   if (modifier && event.key === "Enter" && selected) {
-    const url = standaloneUrl(selected); if (url) { event.preventDefault(); window.open(url, "_blank", "noopener,noreferrer"); }
+    const url = standaloneUrl(selected); if (url) { event.preventDefault(); openInNewTab(url); }
     return;
   }
   if (modifier && /^[1-9]$/.test(event.key)) {

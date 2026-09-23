@@ -2,6 +2,24 @@
   if (window.top !== window || window.__linksawAutocomplete) return;
   window.__linksawAutocomplete = true;
 
+  if (location.hostname === 'linksaw.com') {
+    const markBridgeReady = () => {
+      if (!document.documentElement) return false;
+      document.documentElement.dataset.linksawExtension = 'ready';
+      return true;
+    };
+    if (!markBridgeReady()) {
+      const observer = new MutationObserver(() => {
+        if (markBridgeReady()) observer.disconnect();
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    }
+    window.addEventListener('LINKSAW_OPEN_ACTIVE_TAB', event => {
+      if (typeof event.detail !== 'string') return;
+      chrome.runtime.sendMessage({ type: 'LINKSAW_OPEN_ACTIVE_TAB', url: event.detail }).catch(() => {});
+    });
+  }
+
   let data = { snippets: [], autocompleteTrigger: ';' };
   let loadedAt = 0;
   let host = null;
