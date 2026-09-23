@@ -74,8 +74,7 @@ function render() {
     const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim();
     text.append(title);
     if (snippet.title.trim() && snippet.body.trim()) text.append(preview);
-    const key = document.createElement("span"); key.className = "result-key"; key.textContent = index < 9 ? `${navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}${index + 1}` : "";
-    main.append(text, key); main.addEventListener("click", () => { setSelected(index); useSnippet(snippet); });
+    main.append(text); main.addEventListener("click", () => { setSelected(index); useSnippet(snippet); });
     const copy = document.createElement("button"); copy.type = "button"; copy.className = "icon-button result-action"; copy.ariaLabel = "Copy snippet"; copy.title = "Copy"; copy.innerHTML = icons.copy; copy.addEventListener("click", () => { setSelected(index); copySnippet(snippet).catch(showError); });
     const edit = document.createElement("button"); edit.type = "button"; edit.className = "icon-button result-action"; edit.ariaLabel = "Edit snippet"; edit.title = "Edit"; edit.innerHTML = icons.edit; edit.addEventListener("click", () => { setSelected(index); openEditor(snippet); });
     row.append(main, copy, edit); results.append(row);
