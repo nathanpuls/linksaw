@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Linksaw</title>
+  <link rel="stylesheet" href="/app/app.css">
+</head>
+<body>
+  <main id="app" class="app" aria-busy="true">
+    <header class="toolbar">
+      <label class="search-wrap">
+        <span class="sr-only">Search snippets</span>
+        <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
+      </label>
+      <button id="add" class="icon-button" type="button" aria-label="New snippet" title="New snippet"></button>
+      <button id="settings" class="icon-button" type="button" aria-label="Settings" title="Settings"></button>
+    </header>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <section id="results" class="results" aria-label="Snippets"></section>
+  </main>
+
+  <section id="editor" class="surface" aria-labelledby="editor-heading" hidden>
+    <form id="editor-form" class="surface-inner">
+      <header class="surface-header editor-header">
+        <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
+        <label class="sr-only" for="snippet-title">Title</label>
+        <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title">
+        <button id="close-editor" class="icon-button" type="button" aria-label="Close editor" title="Close"></button>
+      </header>
+      <label class="sr-only" for="snippet-body">Content</label>
+      <textarea id="snippet-body" class="content-input" placeholder="Content"></textarea>
+      <p id="editor-status" class="editor-status" role="status" aria-live="polite"></p>
+      <footer class="surface-footer">
+        <button id="delete" class="text-button danger" type="button" hidden>Delete</button>
+        <button class="save-button" type="submit">Save</button>
+      </footer>
+    </form>
+  </section>
+
+  <section id="preview" class="surface" aria-labelledby="preview-title" hidden>
+    <div class="surface-inner">
+      <header class="surface-header">
+        <button id="close-preview" class="icon-button" type="button" aria-label="Back to search" title="Back"></button>
+        <h1 id="preview-title" class="preview-title"></h1>
+      </header>
+      <pre id="preview-body" class="preview-body"></pre>
+      <footer class="surface-footer end">
+        <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" title="Edit"></button>
+        <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" title="Copy"></button>
+      </footer>
+    </div>
+  </section>
+
+  <section id="settings-panel" class="surface" aria-labelledby="settings-title" hidden>
+    <div class="settings-inner">
+      <header class="surface-header">
+        <button id="close-settings" class="icon-button" type="button" aria-label="Back to search" title="Back"></button>
+        <h1 id="settings-title">Settings</h1>
+      </header>
+      <div class="settings-grid">
+        <div>
+          <h2>Appearance</h2>
+          <label for="appearance" class="field-label">Theme</label>
+          <select id="appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+          <div class="account-block">
+            <h2>Account</h2>
+            <p id="account"></p>
+            <button id="sign-out" class="text-button" type="button">Sign out</button>
+          </div>
+        </div>
+        <div class="shortcuts">
+          <h2>Shortcuts</h2>
+          <dl>
+            <div><dt>⌘/Ctrl N</dt><dd>New snippet</dd></div>
+            <div><dt>↑ ↓</dt><dd>Select a snippet</dd></div>
+            <div><dt>Return</dt><dd>Copy selected snippet</dd></div>
+            <div><dt>→</dt><dd>Preview selected snippet</dd></div>
+            <div><dt>⌘/Ctrl E</dt><dd>Edit selected snippet</dd></div>
+            <div><dt>⌘/Ctrl C</dt><dd>Copy selected snippet</dd></div>
+            <div><dt>Esc</dt><dd>Go back</dd></div>
+            <div><dt>/</dt><dd>Focus search</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
+  <script type="module" src="/app/app.js"></script>
+</body>
+</html>

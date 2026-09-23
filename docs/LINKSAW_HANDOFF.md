@@ -45,6 +45,9 @@ The Mac app is the current interaction reference, but not a pixel-for-pixel temp
 - The Worker stores only a hash of each opaque session token. The desktop app stores the session in macOS Keychain or Windows Credential Manager, not browser local storage.
 - Every snippet read and mutation requires a valid session and is scoped to the authenticated owner.
 - Private API responses use `Cache-Control: no-store`, and the launcher does not persist a local snippet cache.
+- The responsive browser client lives at `https://linksaw.com/app` and uses the same Worker, OAuth client, user records, sessions table, snippets table, and D1 database as desktop.
+- `https://linksaw.com/login` starts the Google flow. Browser sessions use a Secure, HttpOnly cookie; desktop sessions continue to use the verifier exchange and native credential storage.
+- The existing sheet-driven marketing page remains at the site root. It offers **Continue with Google** and redirects an already signed-in browser to `/app`.
 
 ### Data model
 
@@ -66,8 +69,7 @@ Current server limits are a 160-character title, 100,000-character body, and up 
 - Its two fields are **Title** and **Content**.
 - Title is optional. When absent, the first content line is the result label (trimmed to a compact display length).
 - A title-only snippet is accepted and remains usable, although ordinary snippets center on content. CSV import currently requires a Content column.
-- A complete URL opens in the browser. A URL containing `$` becomes a search template and substitutes the encoded query.
-- Supported dynamic placeholders are `{clipboard}`, `{cursor}`, `{date}`, `{time}`, `{datetime}`, and `{day}`, including supported `format` and `offset` attributes. Arbitrary code execution is not a feature.
+- Linksaw's current product model is only an optional Title and Content. Nathan explicitly confirmed that `$` query mode and Trigger Search-style dynamic placeholders are predecessor behavior and must not be carried into the web app. The desktop source still contains some of that legacy behavior and should be cleaned up in a separate, deliberately tested desktop change.
 
 Avoid renaming established concepts without a concrete user need. In particular, do not reintroduce **Details** as a nested content type.
 
@@ -82,6 +84,14 @@ Avoid renaming established concepts without a concrete user need. In particular,
 - Existing results remain usable while a background refresh is loading or has failed.
 - The interface uses native system typography, restrained neutral surfaces, subtle separators, Lucide line icons, and system/light/dark appearance options.
 - Tooltips are near-black with white text, appear after a short delay (currently 350 ms), work on keyboard focus, and include shortcuts when useful.
+
+## Responsive web app
+
+- Canonical signed-in location: `https://linksaw.com/app`.
+- The layout stays close to the Mac launcher: system typography, black-and-white neutral surfaces, search at the top, Lucide line icons, snippet rows, New and Settings beside Search, and restrained separators and selection states.
+- Copy is the browser's primary snippet action. It is represented by a Lucide copy icon, and the selected or hovered row also exposes the Lucide pencil icon for editing.
+- The first release supports search, keyboard selection, copy, create, edit, delete, preview, appearance, account display, and sign-out against the shared private database.
+- `/s/...` is reserved for a later sharing feature. Sharing is not part of this initial web release.
 
 ### Editor
 
@@ -140,6 +150,7 @@ These are not missing requirements for the current release:
 - Calculator behavior.
 - Persistent offline storage/sync.
 - Arbitrary executable snippet scripting.
+- Trigger Search `$` query templates and dynamic placeholder expansion in the web app.
 
 Do not add one of these merely because it existed in Trigger Search or an older Linksaw experiment. Revisit it only when the user explicitly changes product scope and the feature can be reconciled with the focused launcher model.
 
@@ -180,4 +191,3 @@ Deferred features should follow evidence from real use rather than precede the r
 - Use Vite/Tauri development mode for normal UI/native iteration, but use the signed installed app for Keychain, Accessibility, and real paste verification.
 - Keep diagnostics free of snippet contents and authentication tokens.
 - Update this handoff when a product decision is explicitly changed, and identify the evidence for that change.
-

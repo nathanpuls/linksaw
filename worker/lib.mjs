@@ -24,3 +24,17 @@ export function authUrl(clientId, redirectUri, state) {
   url.searchParams.set("prompt", "select_account");
   return url.toString();
 }
+
+export function cookieValue(header, name) {
+  if (!header) return "";
+  for (const part of header.split(";")) {
+    const separator = part.indexOf("=");
+    if (separator < 0) continue;
+    if (part.slice(0, separator).trim() === name) return part.slice(separator + 1).trim();
+  }
+  return "";
+}
+
+export function webSessionCookie(token, maxAge = 30 * 86400) {
+  return `linksaw_session=${token}; Max-Age=${maxAge}; Domain=linksaw.com; Path=/; HttpOnly; Secure; SameSite=Lax`;
+}
