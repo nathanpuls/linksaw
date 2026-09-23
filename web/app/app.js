@@ -114,15 +114,30 @@ function render() {
   renderViewer(state.filtered[state.selected]);
 }
 function showError(error) { $("status").textContent = error.message || String(error); }
+function updateUrl(values, push = true) {
+  const url = new URL(location.href);
+  url.pathname = "/app/";
+  url.searchParams.delete("new");
+  for (const [key, value] of Object.entries(values)) {
+    if (value === null || value === undefined || value === "") url.searchParams.delete(key);
+    else url.searchParams.set(key, value);
+  }
+  history[push ? "pushState" : "replaceState"]({ linksawRoute: true }, "", `${url.pathname}${url.search}`);
+}
 function showSurface(id) { $(id).hidden = false; document.body.style.overflow = "hidden"; }
 function closeSurface(id) {
   $(id).hidden = true;
   if (!["editor", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = "";
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
-function openEditor(snippet = null) {
+function leaveRoutedView() {
+  if (history.state?.linksawRoute) history.back();
+  else { updateUrl({ view: null, snippet: null }, false); applyUrlState(); }
+}
+function openEditor(snippet = null, pushHistory = true) {
   state.editing = snippet; $("snippet-title").value = snippet?.title || ""; $("snippet-body").value = snippet?.body || "";
   $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = ""; showSurface("editor");
+  if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
   setTimeout(() => (snippet?.title ? $("snippet-body") : $("snippet-title")).focus(), 0);
 }
 function renderViewer(snippet) {
@@ -138,7 +153,9 @@ function renderViewer(snippet) {
 }
 function narrowLayout() { return matchMedia("(max-width: 900px)").matches; }
 function syncReaderMode() {
-  const enabled = sessionStorage.getItem("linksaw-reader-mode") === "true" && !narrowLayout();
+  const list = new URLSearchParams(location.search).get("list");
+  const requested = list === "off" || (list !== "on" && sessionStorage.getItem("linksaw-reader-mode") === "true");
+  const enabled = requested && !narrowLayout();
   $("app").classList.toggle("reader-mode", enabled);
   $("reader-toggle").innerHTML = icons.panelLeft;
   $("reader-toggle").ariaLabel = enabled ? "Show list" : "Hide list";
@@ -147,37 +164,59 @@ function syncReaderMode() {
 function openPreview(snippet, pushHistory = true) {
   if (!snippet) return;
   renderViewer(snippet);
+  if (pushHistory) updateUrl({ view: null, snippet: snippet.id });
   if (!narrowLayout()) return;
   const opening = !$("app").classList.contains("viewer-open");
   $("app").classList.add("viewer-open");
-  if (opening && pushHistory) history.pushState({ ...(history.state || {}), linksawViewer: true }, "");
   setTimeout(() => $("close-preview").focus(), 0);
 }
-function closePreview(fromHistory = false) {
-  if (!narrowLayout()) { $("search").focus(); return; }
-  if (!fromHistory && history.state?.linksawViewer) { history.back(); return; }
-  $("app").classList.remove("viewer-open"); $("search").focus();
+function closePreview() {
+  leaveRoutedView();
+}
+function openSettings(pushHistory = true) {
+  showSurface("settings-panel");
+  if (pushHistory) updateUrl({ view: "settings", snippet: null });
+}
+function applyUrlState() {
+  closeSurface("editor"); closeSurface("settings-panel"); $("app").classList.remove("viewer-open");
+  const params = new URLSearchParams(location.search);
+  syncReaderMode();
+  const legacySnippet = location.pathname.match(/^\/app\/s\/([a-f0-9-]{36})\/?$/)?.[1];
+  const snippetId = params.get("snippet") || legacySnippet;
+  const view = params.get("view") || (location.pathname === "/app/new" || params.get("new") === "1" ? "new" : "");
+  if (location.pathname !== "/app/" || params.has("new")) {
+    updateUrl({ view: view || null, snippet: snippetId || null }, false);
+  }
+  if (view === "settings") { openSettings(false); return; }
+  if (view === "new") { openEditor(null, false); return; }
+  if (view === "edit" && snippetId) {
+    const snippet = state.snippets.find(item => item.id === snippetId);
+    if (snippet) { state.selected = state.filtered.findIndex(item => item.id === snippetId); render(); openEditor(snippet, false); }
+    else $("status").textContent = "Snippet not found";
+    return;
+  }
+  if (snippetId) {
+    const index = state.filtered.findIndex(item => item.id === snippetId);
+    const snippet = state.filtered[index];
+    if (snippet) { setSelected(index, false); openPreview(snippet, false); }
+    else $("status").textContent = "Snippet not found";
+  }
 }
 async function load() {
   try {
     const [{ user }, { snippets }, preferences] = await Promise.all([api("/me"), api("/snippets"), api("/preferences")]);
     state.user = user; state.snippets = snippets; $("account").textContent = user.email; $("app").ariaBusy = "false"; render();
     $("autocomplete-trigger").value = preferences.autocompleteTrigger || ";";
-    const route = new URLSearchParams(location.search);
-    if (location.pathname === "/app/new" || route.get("new") === "1") openEditor();
-    else {
-      const id = location.pathname.match(/^\/app\/s\/([a-f0-9-]{36})\/?$/)?.[1] || route.get("snippet");
-      if (id) { const snippet = snippets.find(item => item.id === id); if (snippet) openPreview(snippet); else $("status").textContent = "Snippet not found"; }
-    }
+    applyUrlState();
   } catch (error) { showError(error); }
 }
 
 $("search").addEventListener("input", () => { state.selected = 0; render(); });
 $("add").addEventListener("click", () => openEditor());
-$("settings").addEventListener("click", () => showSurface("settings-panel"));
-$("close-editor").addEventListener("click", () => closeSurface("editor"));
+$("settings").addEventListener("click", () => openSettings());
+$("close-editor").addEventListener("click", leaveRoutedView);
 $("close-preview").addEventListener("click", () => closePreview());
-$("close-settings").addEventListener("click", () => closeSurface("settings-panel"));
+$("close-settings").addEventListener("click", leaveRoutedView);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showError));
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
@@ -185,7 +224,8 @@ $("preview-open").addEventListener("click", () => {
   const url = standaloneUrl(state.previewing); if (url) window.open(url, "_blank", "noopener,noreferrer");
 });
 $("reader-toggle").addEventListener("click", () => {
-  sessionStorage.setItem("linksaw-reader-mode", String(!$("app").classList.contains("reader-mode"))); syncReaderMode();
+  const enabled = !$("app").classList.contains("reader-mode");
+  sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();
 });
 $("editor-form").addEventListener("submit", async event => {
   event.preventDefault(); const submit = event.submitter; submit.disabled = true; $("editor-status").textContent = "Saving…";
@@ -193,12 +233,13 @@ $("editor-form").addEventListener("submit", async event => {
   try {
     const saved = await api(state.editing ? `/snippets/${state.editing.id}` : "/snippets", { method: state.editing ? "PUT" : "POST", body: JSON.stringify(payload) });
     const savedId = state.editing?.id || saved.id;
-    const data = await api("/snippets"); state.snippets = data.snippets; state.selected = Math.max(0, data.snippets.findIndex(snippet => snippet.id === savedId)); closeSurface("editor"); render();
+    const data = await api("/snippets"); state.snippets = data.snippets; state.selected = Math.max(0, data.snippets.findIndex(snippet => snippet.id === savedId)); render();
+    updateUrl({ view: null, snippet: savedId }, false); applyUrlState();
   } catch (error) { $("editor-status").textContent = error.message; } finally { submit.disabled = false; }
 });
 $("delete").addEventListener("click", async () => {
   if (!state.editing || !confirm("Delete this snippet?")) return;
-  try { await api(`/snippets/${state.editing.id}`, { method: "DELETE" }); state.snippets = state.snippets.filter(s => s.id !== state.editing.id); closeSurface("editor"); render(); }
+  try { await api(`/snippets/${state.editing.id}`, { method: "DELETE" }); state.snippets = state.snippets.filter(s => s.id !== state.editing.id); render(); updateUrl({ view: null, snippet: null }, false); applyUrlState(); }
   catch (error) { $("editor-status").textContent = error.message; }
 });
 $("unshare").addEventListener("click", async () => {
@@ -227,10 +268,10 @@ $("save-trigger").addEventListener("click", async () => {
   } catch (error) { $("trigger-status").textContent = error.message; }
   finally { button.disabled = false; }
 });
-addEventListener("popstate", () => closePreview(true));
+addEventListener("popstate", applyUrlState);
 document.addEventListener("keydown", event => {
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
-  if (event.key === "Escape") { if (editing) closeSurface("editor"); else if (settings) closeSurface("settings-panel"); else if (viewerOpen) closePreview(); return; }
+  if (event.key === "Escape") { if (editing || settings || viewerOpen) leaveRoutedView(); return; }
   if (editing || settings) return;
   const modifier = event.metaKey || event.ctrlKey;
   if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); openEditor(); return; }
