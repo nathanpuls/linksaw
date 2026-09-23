@@ -12,7 +12,7 @@ const icons = {
 };
 
 const $ = id => document.getElementById(id);
-const state = { snippets: [], filtered: [], selected: 0, editing: null, previewing: null, user: null };
+const state = { snippets: [], filtered: [], selected: -1, editing: null, editorContext: null, previewing: null, user: null };
 let toastTimer;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
@@ -77,6 +77,7 @@ async function shareSnippet(snippet) {
   showToast("Link copied");
 }
 function setSelected(index, scroll = true) {
+  if (state.editorContext === "default" && !$("editor").hidden) closeSurface("editor");
   state.selected = Math.max(0, Math.min(index, Math.max(0, state.filtered.length - 1)));
   document.querySelectorAll(".result-row").forEach((row, i) => row.classList.toggle("selected", i === state.selected));
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
@@ -85,7 +86,7 @@ function setSelected(index, scroll = true) {
 function render() {
   const query = $("search").value.trim().toLowerCase();
   state.filtered = state.snippets.filter(s => !query || `${s.title}\n${s.body}`.toLowerCase().includes(query));
-  state.selected = Math.min(state.selected, Math.max(0, state.filtered.length - 1));
+  if (state.selected >= state.filtered.length) state.selected = state.filtered.length - 1;
   const results = $("results"); results.replaceChildren();
   if (!state.filtered.length) {
     const empty = document.createElement("div"); empty.className = "empty";
@@ -111,7 +112,7 @@ function render() {
     }
     results.append(row);
   });
-  renderViewer(state.filtered[state.selected]);
+  renderViewer(state.selected >= 0 ? state.filtered[state.selected] : null);
 }
 function showError(error) { $("status").textContent = error.message || String(error); }
 function updateUrl(values, push = true) {
@@ -130,6 +131,7 @@ function updateUrl(values, push = true) {
 function showSurface(id) { $(id).hidden = false; document.body.style.overflow = "hidden"; }
 function closeSurface(id) {
   $(id).hidden = true;
+  if (id === "editor") state.editorContext = null;
   if (!["editor", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = "";
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
@@ -139,18 +141,20 @@ function leaveRoutedView() {
   const snippet = params.get("view") === "edit" ? params.get("snippet") : null;
   updateUrl({ view: null, snippet }, false); applyUrlState();
 }
-function openEditor(snippet = null, pushHistory = true) {
+function openEditor(snippet = null, pushHistory = true, options = {}) {
+  const { defaultDraft = false, focus = true } = options;
   state.editing = snippet; $("snippet-title").value = snippet?.title || ""; $("snippet-body").value = snippet?.body || "";
+  state.editorContext = defaultDraft ? "default" : "routed";
+  $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
+  $("close-editor").hidden = defaultDraft;
   $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = ""; showSurface("editor");
   if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
-  setTimeout(() => (snippet?.title ? $("snippet-body") : $("snippet-title")).focus(), 0);
+  if (focus) setTimeout(() => (snippet?.title ? $("snippet-body") : $("snippet-title")).focus(), 0);
 }
 function renderViewer(snippet) {
   state.previewing = snippet;
   $("viewer-empty").hidden = Boolean(snippet); $("viewer-content").hidden = !snippet;
-  if (!snippet) {
-    sessionStorage.setItem("linksaw-reader-mode", "false"); syncReaderMode(); return;
-  }
+  if (!snippet) return;
   const heading = snippet.body.trim() && snippet.title.trim() !== snippet.body.trim() ? snippet.title.trim() : "";
   $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
   renderLinkedText($("preview-body"), snippet.body || snippet.title);
@@ -182,6 +186,16 @@ function openSettings(pushHistory = true) {
   showSurface("settings-panel");
   if (pushHistory) updateUrl({ view: "settings", snippet: null });
 }
+function hasExplicitRoute() {
+  const params = new URLSearchParams(location.search);
+  return Boolean(params.get("snippet") || params.get("view") || params.has("new") || location.pathname !== "/app/");
+}
+function showDefaultWorkspace() {
+  state.selected = -1;
+  render();
+  if (!narrowLayout()) openEditor(null, false, { defaultDraft: true, focus: false });
+  $("search").focus();
+}
 function applyUrlState() {
   closeSurface("editor"); closeSurface("settings-panel"); $("app").classList.remove("viewer-open");
   const params = new URLSearchParams(location.search);
@@ -205,7 +219,9 @@ function applyUrlState() {
     const snippet = state.filtered[index];
     if (snippet) { setSelected(index, false); openPreview(snippet, false); }
     else $("status").textContent = "Snippet not found";
+    return;
   }
+  showDefaultWorkspace();
 }
 async function load() {
   try {
@@ -216,7 +232,7 @@ async function load() {
   } catch (error) { showError(error); }
 }
 
-$("search").addEventListener("input", () => { state.selected = 0; render(); });
+$("search").addEventListener("input", () => { state.selected = -1; render(); });
 $("add").addEventListener("click", () => openEditor());
 $("settings").addEventListener("click", () => openSettings());
 $("close-editor").addEventListener("click", leaveRoutedView);
@@ -259,7 +275,13 @@ $("appearance").value = localStorage.getItem("linksaw-theme") || "system";
 function applyTheme(value) { document.documentElement.dataset.theme = value === "system" ? "" : value; }
 applyTheme($("appearance").value);
 syncReaderMode();
-matchMedia("(max-width: 900px)").addEventListener("change", syncReaderMode);
+matchMedia("(max-width: 900px)").addEventListener("change", () => {
+  syncReaderMode();
+  if (hasExplicitRoute()) return;
+  if (narrowLayout() && state.editorContext === "default") closeSurface("editor");
+  else if (!narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
+  $("search").focus();
+});
 $("appearance").addEventListener("change", event => { localStorage.setItem("linksaw-theme", event.target.value); applyTheme(event.target.value); });
 $("autocomplete-trigger").addEventListener("input", event => {
   event.target.value = Array.from(event.target.value).slice(-1).join("");
@@ -277,7 +299,8 @@ addEventListener("popstate", applyUrlState);
 document.addEventListener("keydown", event => {
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
   if (event.key === "Escape") { if (editing || settings || viewerOpen) leaveRoutedView(); return; }
-  if (editing || settings) return;
+  const defaultDraftField = state.editorContext === "default" && [$("snippet-title"), $("snippet-body")].includes(document.activeElement);
+  if ((editing && (state.editorContext !== "default" || defaultDraftField)) || settings) return;
   const modifier = event.metaKey || event.ctrlKey;
   if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); openEditor(); return; }
   const selected = state.filtered[state.selected];
