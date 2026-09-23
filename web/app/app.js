@@ -18,6 +18,7 @@ let toastTimer;
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("settings", "settings"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
+icon("editor-reader-toggle", "panelLeft");
 
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
@@ -166,9 +167,11 @@ function syncReaderMode() {
   const requested = list === "off" || (list !== "on" && sessionStorage.getItem("linksaw-reader-mode") === "true");
   const enabled = requested && !narrowLayout();
   $("app").classList.toggle("reader-mode", enabled);
-  $("reader-toggle").innerHTML = icons.panelLeft;
-  $("reader-toggle").ariaLabel = enabled ? "Show list" : "Hide list";
-  $("reader-toggle").title = enabled ? "Show list" : "Hide list";
+  for (const id of ["reader-toggle", "editor-reader-toggle"]) {
+    $(id).innerHTML = icons.panelLeft;
+    $(id).ariaLabel = enabled ? "Show list" : "Hide list";
+    $(id).title = enabled ? "Show list" : "Hide list";
+  }
 }
 function openPreview(snippet, pushHistory = true) {
   if (!snippet) return;
@@ -244,10 +247,12 @@ $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 $("preview-open").addEventListener("click", () => {
   const url = standaloneUrl(state.previewing); if (url) window.open(url, "_blank", "noopener,noreferrer");
 });
-$("reader-toggle").addEventListener("click", () => {
+function toggleReaderMode() {
   const enabled = !$("app").classList.contains("reader-mode");
   sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();
-});
+}
+$("reader-toggle").addEventListener("click", toggleReaderMode);
+$("editor-reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-form").addEventListener("submit", async event => {
   event.preventDefault(); const submit = event.submitter; submit.disabled = true; $("editor-status").textContent = "Saving…";
   const payload = { title: $("snippet-title").value, body: $("snippet-body").value };

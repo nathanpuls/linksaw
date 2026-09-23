@@ -9,7 +9,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-10">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-11">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -49,6 +49,7 @@
     <form id="editor-form" class="surface-inner" autocomplete="off">
       <header class="surface-header editor-header">
         <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
+        <button id="editor-reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" title="Hide list"></button>
         <label class="sr-only" for="snippet-title">Title</label>
         <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title" autocomplete="off">
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" title="Close"></button>
@@ -130,6 +131,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
-  <script type="module" src="/app/app.js?v=20260923-12"></script>
+  <script type="module" src="/app/app.js?v=20260923-13"></script>
 </body>
 </html>
