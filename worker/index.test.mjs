@@ -54,3 +54,23 @@ test("signed-out homepage is served directly as a static asset", async () => {
   assert.equal(response.status, 200);
   assert.equal(assetUrl, "https://linksaw.com/");
 });
+
+test("mobile install assets are public static assets", async () => {
+  const requested = [];
+  const env = {
+    DB: {},
+    ASSETS: {
+      async fetch(request) {
+        requested.push(new URL(request.url).pathname);
+        return new Response("asset", { status: 200 });
+      },
+    },
+  };
+
+  for (const path of ["/app/site.webmanifest", "/app/icon-192.png", "/app/icon-512.png"]) {
+    const response = await handle(new Request(`https://linksaw.com${path}`), env);
+    assert.equal(response.status, 200);
+  }
+
+  assert.deepEqual(requested, ["/app/site.webmanifest", "/app/icon-192.png", "/app/icon-512.png"]);
+});
