@@ -44,7 +44,7 @@ async function listSnippets(env, userId) {
   return results.map(row => ({ ...row, details: [] }));
 }
 
-async function handle(request, env) {
+export async function handle(request, env) {
   const url = new URL(request.url);
   const isWebHost = url.hostname === "linksaw.com";
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(request) });
@@ -52,13 +52,19 @@ async function handle(request, env) {
 
   if (isWebHost && request.method === "GET" && (url.pathname === "/login" || url.pathname === "/login/")) {
     const session = await currentSession(request, env);
-    if (session) return Response.redirect("https://linksaw.com/app", 302);
+    if (session) return Response.redirect("https://linksaw.com/app/", 302);
     return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start`, 302);
   }
-  if (isWebHost && request.method === "GET" && (url.pathname === "/app" || url.pathname === "/app/")) {
+  if (isWebHost && request.method === "GET" && url.pathname === "/app") {
+    return Response.redirect("https://linksaw.com/app/", 308);
+  }
+  if (isWebHost && request.method === "GET" && url.pathname === "/app/") {
     const session = await currentSession(request, env);
     if (!session) return Response.redirect("https://linksaw.com/login", 302);
-    return env.ASSETS.fetch(new Request(new URL("/app/index.html", request.url), request));
+    // Let the asset binding resolve the directory index itself. Requesting
+    // /app/index.html makes Cloudflare canonicalize back to /app/, which would
+    // otherwise create a signed-in redirect loop.
+    return env.ASSETS.fetch(request);
   }
   if (isWebHost && request.method === "GET" && (url.pathname === "/app/app.css" || url.pathname === "/app/app.js")) {
     return env.ASSETS.fetch(request);
@@ -108,7 +114,7 @@ async function handle(request, env) {
         env.DB.prepare("UPDATE login_requests SET user_id = ?, consumed_at = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, timestamp, state),
         env.DB.prepare("INSERT INTO sessions(token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)").bind(await sha256Base64Url(token), profile.sub, timestamp, timestamp + 30 * 86400),
       ]);
-      return new Response(null, { status: 302, headers: { Location: "https://linksaw.com/app", "Set-Cookie": webSessionCookie(token), "Cache-Control": "no-store" } });
+      return new Response(null, { status: 302, headers: { Location: "https://linksaw.com/app/", "Set-Cookie": webSessionCookie(token), "Cache-Control": "no-store" } });
     }
     await env.DB.prepare("UPDATE login_requests SET user_id = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, state).run();
     return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in · Linksaw</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;color:#171717;background:#fafafa}main{text-align:center;padding:32px}h1{font-size:28px;font-weight:500}p{color:#747474;line-height:1.6}.mark{font-size:40px;font-weight:700}</style><main><div class="mark">L</div><h1>You're signed in</h1><p>Linksaw will open automatically.<br>You can close this tab.</p></main></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" } });
