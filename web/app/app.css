@@ -44,9 +44,9 @@ button { color: inherit; }
 .result-row.selected .result-action, .result-action:focus-visible { visibility: visible; }
 .empty { padding: 84px 24px; color: var(--muted); text-align: center; }
 .empty button { margin-top: 14px; }
-.surface { position: fixed; inset: 0; z-index: 20; overflow: auto; background: var(--paper); }
-.surface-inner, .settings-inner { width: min(820px, 100%); min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; border-inline: 1px solid var(--line); }
-.surface-header { min-height: 78px; display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.surface { position: fixed; inset: 0; z-index: 20; overflow: auto; padding: 14px; background: var(--canvas); }
+.surface-inner, .settings-inner { width: min(820px, 100%); min-height: calc(100vh - 28px); margin: 0 auto; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+.surface-header { min-height: 82px; display: flex; align-items: center; gap: 12px; padding: 18px 20px 12px; border-bottom: 1px solid var(--line); border-radius: 13px 13px 0 0; }
 .surface-header h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .editor-header { border-bottom: 0; }
 .title-input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0; background: transparent; color: inherit; font-size: 24px; font-weight: 600; letter-spacing: -.025em; }
@@ -77,8 +77,10 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 @media (max-width: 700px) {
   body { padding: 8px; }
   .app { min-height: calc(100vh - 16px); border-radius: 12px; }
-  .surface-inner, .settings-inner { border-inline: 0; }
+  .surface { padding: 8px; }
+  .surface-inner, .settings-inner { min-height: calc(100vh - 16px); border-radius: 12px; }
   .toolbar { top: 8px; min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 11px 11px 0 0; }
+  .surface-header { min-height: 70px; padding: 14px 12px 10px 16px; border-radius: 11px 11px 0 0; }
   .results { padding-inline: 5px; }
   .result-row { grid-template-columns: minmax(0,1fr) 38px 38px; }
   .result-key { display: none; }
