@@ -1,0 +1,11 @@
+node_modules/
+dist/
+src-tauri/target/
+.cargo/
+.rustup/
+.wrangler/
+.dev.vars
+.env
+*.log
+session-helper/target/
+src-tauri/helper-bin/

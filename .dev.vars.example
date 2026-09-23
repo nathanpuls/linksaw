@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local Worker testing. Never commit real values.
+GOOGLE_CLIENT_ID="YOUR_GOOGLE_WEB_CLIENT_ID"
+GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_WEB_CLIENT_SECRET"
+PUBLIC_BASE_URL="http://127.0.0.1:8799"

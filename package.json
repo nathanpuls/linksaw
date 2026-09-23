@@ -1,0 +1,31 @@
+{
+  "name": "linksaw-snippets",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "test": "node --test src/*.test.mjs worker/*.test.mjs",
+    "build": "vite build",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "mac:sign": "node scripts/sign-local-mac.mjs",
+    "mac:build": "node scripts/prepare-session-helper.mjs && tauri build --bundles app && npm run mac:sign",
+    "worker:dev": "wrangler dev --port 8799",
+    "worker:migrate": "wrangler d1 migrations apply linksaw-snippets --local"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-autostart": "^2.5.1",
+    "@tauri-apps/plugin-global-shortcut": "^2.3.0",
+    "@tauri-apps/plugin-opener": "^2.5.0",
+    "lucide": "^1.46.0",
+    "papaparse": "^5.7.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.8.0",
+    "jsdom": "^29.1.1",
+    "vite": "^7.1.0",
+    "wrangler": "^4.34.0"
+  }
+}

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Linksaw</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <main class="launcher">
+    <header class="search-row" data-tauri-drag-region>
+      <button id="back" class="bare back" aria-label="Back" data-tooltip="Back to search" data-tooltip-shortcut="←" hidden></button>
+      <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
+      <button id="clear-search" class="bare" type="button" aria-label="Clear search" data-tooltip="Clear search" hidden></button>
+      <button id="add" class="bare" aria-label="New snippet" data-tooltip="New snippet" data-tooltip-shortcut="N"></button>
+      <button id="settings" class="bare" aria-label="Settings" data-tooltip="Settings"></button>
+    </header>
+    <div id="status" class="status"></div>
+    <div id="refresh-feedback" class="refresh-feedback" role="status" aria-live="polite" hidden>
+      <span id="refresh-message"></span>
+      <button id="retry-refresh" type="button" class="secondary" data-tooltip="Refresh snippets" data-tooltip-shortcut="R" hidden>Retry</button>
+    </div>
+    <div id="paste-permission" class="paste-permission" hidden>
+      <span>Mac permission needs reconnecting.</span>
+      <div class="permission-actions">
+        <button id="open-paste-settings" type="button">Mac Settings</button>
+      </div>
+    </div>
+    <section id="results" class="results" aria-label="Results"></section>
+  </main>
+
+  <div id="copy-toast" class="copy-toast" role="status" aria-live="polite" hidden>Copied</div>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <form id="settings-form">
+      <div class="settings-header">
+        <button id="close-settings" type="button" class="bare" aria-label="Back to search" data-tooltip="Back to search" data-tooltip-shortcut="Esc"></button>
+        <h2 id="settings-title">Settings</h2>
+      </div>
+      <div class="settings-columns">
+        <section class="settings-preferences" aria-label="Preferences and account">
+          <label for="launch-shortcut">Launch shortcut</label>
+          <select id="launch-shortcut"><option value="right-command">Right Command</option><option value="default">Default shortcut</option><option value="custom">Custom shortcut…</option></select>
+          <button id="record-shortcut" type="button" class="secondary" hidden>Record shortcut</button>
+          <p id="shortcut-help" class="setting-help"></p>
+          <label class="check-setting"><input id="launch-login" type="checkbox" disabled> Launch at login</label>
+          <label for="appearance">Appearance</label>
+          <select id="appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+          <div class="permission-setting"><span id="permission-status">Checking pasting permission…</span><button id="settings-permission" type="button" class="secondary" hidden>Open Settings</button></div>
+          <p id="settings-feedback" role="status" aria-live="polite" class="setting-help"></p>
+          <button id="open-import" type="button" class="secondary">Import CSV…</button>
+          <div class="account-actions">
+            <div id="account" class="account"></div>
+            <button id="sign-out" type="button" class="secondary">Sign out</button>
+          </div>
+        </section>
+        <section class="shortcut-tips" aria-labelledby="shortcuts-title">
+          <h3 id="shortcuts-title">Shortcuts</h3>
+          <ul class="shortcut-list">
+            <li><kbd data-shortcut="N"></kbd><span>New snippet</span></li>
+            <li><kbd>↑ ↓</kbd><span>Select a snippet</span></li>
+            <li><kbd>Return</kbd><span>Paste text or open a link</span></li>
+            <li><kbd>→</kbd><span>Preview snippet</span></li>
+            <li><kbd>←</kbd><span>Go back</span></li>
+            <li><kbd id="edit-hint"></kbd><span>Edit the selected snippet</span></li>
+            <li><kbd data-shortcut="1–9"></kbd><span>Select and act</span></li>
+            <li><kbd data-shortcut="K"></kbd><span>Snippet actions</span></li>
+            <li><kbd data-shortcut="P"></kbd><span>Preview selected snippet</span></li>
+            <li><kbd data-shortcut="S"></kbd><span>Save in the editor</span></li>
+            <li><kbd data-shortcut="R"></kbd><span>Refresh snippets</span></li>
+            <li><kbd>Esc</kbd><span>Go back or close</span></li>
+            <li><kbd>/</kbd><span>Focus search</span></li>
+          </ul>
+          <p>Click a snippet to paste text or open its link. Delete is inside the editor.</p>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="import-dialog" aria-labelledby="import-title">
+    <div class="import-content">
+      <h2 id="import-title">Import snippets</h2>
+      <p>Choose Title, Content, or Ignore for each column.</p>
+      <label for="csv-file">CSV file (UTF-8, up to 5 MB)</label>
+      <input id="csv-file" type="file" accept=".csv,text/csv">
+      <label class="check-setting"><input id="csv-headers" type="checkbox"> First row contains headers</label>
+      <div id="import-mapping"></div>
+      <p id="import-status" role="status" aria-live="polite"></p>
+      <div id="import-preview" aria-label="Import preview"></div>
+      <p class="setting-help">Nothing is uploaded until you click Import. Import adds new snippets; importing the same file again creates another copy.</p>
+      <div class="dialog-actions"><button id="import-close" type="button" class="secondary">Close</button><button id="import-confirm" type="button" class="primary" disabled>Import snippets</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="editor-dialog">
+    <form id="editor-form">
+      <div class="editor-header">
+        <h2 id="editor-title" class="visually-hidden">New snippet</h2>
+        <label class="visually-hidden" for="snippet-title">Title</label>
+        <input id="snippet-title" maxlength="160" placeholder="Title">
+        <button id="cancel-editor" type="button" class="bare" aria-label="Close editor" data-tooltip="Close editor" data-tooltip-shortcut="Esc"></button>
+      </div>
+      <div class="editor-workspace">
+        <div class="editor-scroll note-fields">
+          <label class="visually-hidden" for="snippet-body">Content</label>
+          <textarea id="snippet-body" rows="8" placeholder="Content"></textarea>
+        </div>
+      </div>
+      <p id="editor-feedback" role="status" aria-live="polite"></p>
+      <div id="delete-confirmation" hidden><p>Delete this snippet?</p><button id="confirm-delete" class="danger" type="button">Delete snippet</button><button id="cancel-delete" class="secondary" type="button">Keep snippet</button></div>
+      <div class="dialog-actions editor-actions">
+        <button id="delete-snippet" type="button" class="bare" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
+        <div id="unsaved-confirmation" role="group" aria-label="Unsaved changes" hidden>
+          <p>Save your changes?</p>
+          <div><button type="button" class="secondary" data-discard>Discard</button><button type="button" class="secondary" data-keep>Keep editing</button></div>
+        </div>
+        <button type="submit" class="primary" data-tooltip="Save snippet" data-tooltip-shortcut="S">Save</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="snippet-actions" aria-label="Snippet actions"><div id="snippet-action-list"></div></dialog>
+  <dialog id="snippet-preview" aria-labelledby="preview-title" tabindex="-1">
+    <div class="preview-header"><h2 id="preview-title"></h2><button id="close-preview" type="button" class="bare" aria-label="Close preview" data-tooltip="Close preview" data-tooltip-shortcut="Esc"></button></div>
+    <div class="preview-content"><pre id="preview-body"></pre></div>
+    <div class="preview-actions"><span id="preview-feedback" role="status" aria-live="polite"></span><button id="preview-edit" type="button" class="bare" aria-label="Edit snippet" data-tooltip="Edit snippet"></button><button id="preview-copy" type="button" class="bare" aria-label="Copy snippet" data-tooltip="Copy snippet"></button></div>
+  </dialog>
+  <script type="module" src="/src/main.mjs"></script>
+</body>
+</html>

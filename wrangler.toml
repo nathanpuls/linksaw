@@ -1,0 +1,17 @@
+name = "linksaw-snippets-api"
+main = "worker/index.mjs"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+[[routes]]
+pattern = "snippets-api.linksaw.com"
+custom_domain = true
+
+[vars]
+PUBLIC_BASE_URL = "https://snippets-api.linksaw.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "linksaw-snippets"
+database_id = "35196b4d-a086-4053-b16b-6d78ef3f6028"
+migrations_dir = "worker/migrations"

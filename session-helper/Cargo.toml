@@ -1,0 +1,10 @@
+[package]
+name = "linksaw-session-helper"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+[profile.release]
+strip = true
