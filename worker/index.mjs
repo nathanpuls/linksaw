@@ -126,7 +126,7 @@ export async function handle(request, env) {
     // otherwise create a signed-in redirect loop.
     return env.ASSETS.fetch(request);
   }
-  if (isWebHost && request.method === "GET" && ["/app/app.css", "/app/app.js", "/app/site.webmanifest", "/app/icon-192.png", "/app/icon-512.png"].includes(url.pathname)) {
+  if (isWebHost && request.method === "GET" && ["/app/app.css", "/app/app.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"].includes(url.pathname)) {
     return env.ASSETS.fetch(request);
   }
   const publicShare = isWebHost ? url.pathname.match(/^\/s\/([A-Za-z0-9_-]{16})\/?$/) : null;

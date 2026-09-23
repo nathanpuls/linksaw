@@ -67,12 +67,12 @@ test("mobile install assets are public static assets", async () => {
     },
   };
 
-  for (const path of ["/app/site.webmanifest", "/app/icon-192.png", "/app/icon-512.png"]) {
+  for (const path of ["/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"]) {
     const response = await handle(new Request(`https://linksaw.com${path}`), env);
     assert.equal(response.status, 200);
   }
 
-  assert.deepEqual(requested, ["/app/site.webmanifest", "/app/icon-192.png", "/app/icon-512.png"]);
+  assert.deepEqual(requested, ["/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"]);
 });
 
 test("public share pages render without sign-in and escape snippet content", async () => {
