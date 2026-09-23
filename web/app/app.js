@@ -349,8 +349,16 @@ document.addEventListener("keydown", event => {
     if (numbered) { event.preventDefault(); setSelected(Number(event.key) - 1); }
     return;
   }
-  if (event.key === "ArrowDown") { event.preventDefault(); setSelected(state.selected + 1); }
-  else if (event.key === "ArrowUp") { event.preventDefault(); setSelected(state.selected - 1); }
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
+    setSelected(state.selected + 1);
+  }
+  else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
+    setSelected(state.selected - 1);
+  }
   else if (event.key === "ArrowRight" && selected) { event.preventDefault(); openPreview(selected); }
   else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); openPreview(selected); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
