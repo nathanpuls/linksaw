@@ -55,12 +55,11 @@ button { color: inherit; }
 .viewer-actions { margin-left: auto; display: flex; align-items: center; gap: 3px; }
 .open-website { height: 38px; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; padding-block: 0; white-space: nowrap; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
-.preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 30px 36px 48px; font: inherit; font-size: 16px; line-height: 1.65; }
+.preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 30px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
 .preview-body a { color: inherit; text-decoration-color: var(--control); text-underline-offset: 2px; }
 .preview-body a:hover, .preview-body a:focus-visible { text-decoration-color: currentColor; }
 .app.reader-mode { grid-template-columns: minmax(0, 1fr); }
 .app.reader-mode .list-pane { display: none; }
-.app.reader-mode .preview-body { margin-inline: auto; }
 
 .surface { position: fixed; inset: 0; z-index: 20; overflow: auto; padding: 0; background: var(--paper); }
 #editor { left: 340px; }
@@ -110,7 +109,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .viewer-header, .surface-header { height: 64px; min-height: 64px; padding: 8px 12px 7px 16px; }
   .viewer-actions { gap: 0; }
   .preview-title { font-size: 19px; }
-  .preview-body { padding: 24px 22px 40px; }
+  .preview-body { padding: 24px 22px 40px 66px; }
   .toolbar { height: 64px; padding: 8px 12px 7px 16px; }
   .results { padding-inline: 5px; }
   .settings-grid { grid-template-columns: 1fr; gap: 36px; padding: 28px 22px; }
