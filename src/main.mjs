@@ -9,6 +9,7 @@ import { setupSettingsWindow } from './settings-window.mjs';
 import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { expandDynamic, rankedSnippets, searchTemplate, snippetLabel, standaloneUrl, trim } from "./lib.mjs";
+import linksawLogo from "../web/icon.png?url";
 
 const native = Boolean(window.__TAURI_INTERNALS__);
 setupIcons();
@@ -121,7 +122,7 @@ function render() {
   ui.results.replaceChildren();
   if (!state.user) {
     const box = document.createElement("div"); box.className = "login";
-    const mark = document.createElement("div"); mark.className = "login-mark"; mark.textContent = "L";
+    const mark = document.createElement("img"); mark.className = "login-mark"; mark.src = linksawLogo; mark.alt = "Linksaw";
     const heading = document.createElement("h1"); heading.textContent = "Sign in to Linksaw";
     const caption = document.createElement("p"); caption.textContent = state.token ? "Your sign-in is saved. Try connecting again." : "Your snippets, on every device.";
     box.append(mark, heading, caption);
