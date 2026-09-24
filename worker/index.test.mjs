@@ -75,6 +75,21 @@ test("mobile install assets are public static assets", async () => {
   assert.deepEqual(requested, ["/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"]);
 });
 
+test("every browser module is served as a static asset", async () => {
+  const requested = [];
+  const env = {
+    DB: {},
+    ASSETS: { async fetch(request) { requested.push(new URL(request.url).pathname); return new Response("module", { status: 200 }); } },
+  };
+
+  for (const path of ["/app/app.js", "/app/transfers.js"]) {
+    const response = await handle(new Request(`https://linksaw.com${path}`), env);
+    assert.equal(response.status, 200);
+  }
+
+  assert.deepEqual(requested, ["/app/app.js", "/app/transfers.js"]);
+});
+
 test("public share pages render without sign-in and escape snippet content", async () => {
   const env = {
     DB: {
