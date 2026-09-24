@@ -65,7 +65,7 @@ document.addEventListener("pointerover", event => {
 document.addEventListener("pointerout", event => {
   const target = event.target.closest?.("[data-tooltip]");
   if (!target || target.contains(event.relatedTarget)) return;
-  queueMicrotask(() => { if (!target.matches(":hover") && document.activeElement !== target) hideTooltip(); });
+  queueMicrotask(() => { if (!target.matches(":hover")) hideTooltip(); });
 });
 document.addEventListener("focusin", event => showTooltip(event.target.closest?.("[data-tooltip]")));
 document.addEventListener("focusout", event => {
