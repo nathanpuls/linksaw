@@ -9,7 +9,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-25">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-26">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -94,6 +94,18 @@
             <p id="trigger-help" class="field-help">Type this character in an editable field to open Linksaw.</p>
             <p id="trigger-status" class="field-help" role="status" aria-live="polite"></p>
           </div>
+          <div class="transfer-settings">
+            <h2>Import and export</h2>
+            <div class="transfer-actions">
+              <button id="import-csv" class="transfer-button" type="button">Import CSV</button>
+              <button id="import-json" class="transfer-button" type="button">Import JSON</button>
+              <button id="export-csv" class="transfer-button" type="button">Export CSV</button>
+              <button id="export-json" class="transfer-button" type="button">Export JSON</button>
+            </div>
+            <input id="import-csv-file" type="file" accept=".csv,text/csv" hidden>
+            <input id="import-json-file" type="file" accept=".json,application/json" hidden>
+            <p id="transfer-status" class="field-help" role="status" aria-live="polite"></p>
+          </div>
           <div class="account-block">
             <h2>Account</h2>
             <p id="account"></p>
@@ -141,6 +153,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-29"></script>
+  <script type="module" src="/app/app.js?v=20260923-30"></script>
 </body>
 </html>

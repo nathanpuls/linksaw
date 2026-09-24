@@ -115,6 +115,11 @@ button { color: inherit; }
 .field-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 13px; }
 select { width: min(260px, 100%); border: 1px solid var(--control); border-radius: 9px; padding: 10px; background: var(--paper); color: var(--ink); }
 .extension-settings { margin-top: 42px; }
+.transfer-settings { margin-top: 42px; }
+.transfer-actions { width: min(260px, 100%); border-top: 1px solid var(--line); }
+.transfer-button { width: 100%; border: 0; border-bottom: 1px solid var(--line); padding: 10px 1px; background: transparent; color: var(--ink); text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
+.transfer-button:hover, .transfer-button:focus-visible { outline: 0; color: var(--muted); }
+.transfer-button:disabled { color: var(--muted); cursor: default; }
 .trigger-row { display: flex; align-items: center; gap: 9px; }
 .trigger-input { width: 48px; height: 40px; border: 1px solid var(--control); border-radius: 9px; background: var(--paper); color: var(--ink); text-align: center; font: inherit; font-size: 20px; }
 .trigger-input:focus { outline: 1px solid var(--focus); outline-offset: 1px; }

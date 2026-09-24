@@ -38,3 +38,11 @@ test("viewing and editing use the same text scale and vertical rhythm", () => {
   assert.match(css, /\.content-input \{[^}]*padding: 30px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
   assert.match(css, /\.preview-title, \.title-input \{ font-size: 19px; \}/);
 });
+
+test("settings offers working CSV and JSON transfer controls", () => {
+  for (const label of ["Import CSV", "Import JSON", "Export CSV", "Export JSON"]) assert.match(html, new RegExp(`>${label}<`));
+  assert.match(source, /importLibrary\(event\.target, parseCsvSnippets\)/);
+  assert.match(source, /importLibrary\(event\.target, parseJsonSnippets\)/);
+  assert.match(source, /downloadLibrary\(snippetsToCsv\(state\.snippets\)/);
+  assert.match(source, /downloadLibrary\(snippetsToJson\(state\.snippets\)/);
+});

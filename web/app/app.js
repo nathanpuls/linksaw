@@ -1,3 +1,5 @@
+import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-1";
+
 const API = "https://snippets-api.linksaw.com";
 const icons = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',
@@ -414,6 +416,55 @@ $("unshare").addEventListener("click", async () => {
     state.editing.share_token = null; $("unshare").hidden = true; $("editor-status").textContent = "Sharing stopped.";
   } catch (error) { $("editor-status").textContent = error.message; }
 });
+
+let transferBusy = false;
+function setTransferBusy(value) {
+  transferBusy = value;
+  document.querySelectorAll(".transfer-button").forEach(button => { button.disabled = value; });
+}
+function downloadLibrary(text, type, extension) {
+  const date = new Date().toISOString().slice(0, 10);
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const link = document.createElement("a");
+  link.href = url; link.download = `linksaw-snippets-${date}.${extension}`; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  $("transfer-status").textContent = `Exported ${state.snippets.length} snippet${state.snippets.length === 1 ? "" : "s"}.`;
+}
+async function importLibrary(input, parser) {
+  const file = input.files?.[0];
+  if (!file || transferBusy) return;
+  setTransferBusy(true); $("transfer-status").textContent = `Reading ${file.name}…`;
+  let completed = 0;
+  try {
+    const snippets = parser(await file.text());
+    for (const snippet of snippets) {
+      $("transfer-status").textContent = `Importing ${completed + 1} of ${snippets.length}…`;
+      await api("/snippets", { method: "POST", body: JSON.stringify({ ...snippet, importId: crypto.randomUUID() }) });
+      completed++;
+    }
+    const data = await api("/snippets"); state.snippets = data.snippets; state.selected = -1; render();
+    $("transfer-status").textContent = `Imported ${completed} snippet${completed === 1 ? "" : "s"}. Existing snippets were not changed.`;
+  } catch (error) {
+    if (completed) {
+      const data = await api("/snippets").catch(() => null);
+      if (data) { state.snippets = data.snippets; state.selected = -1; render(); }
+    }
+    $("transfer-status").textContent = `${completed ? `${completed} imported. ` : ""}${error.message || error}`;
+  } finally {
+    input.value = "";
+    setTransferBusy(false);
+  }
+}
+function chooseImport(id) {
+  const input = $(id); input.value = ""; input.click();
+}
+$("import-csv").addEventListener("click", () => chooseImport("import-csv-file"));
+$("import-json").addEventListener("click", () => chooseImport("import-json-file"));
+$("import-csv-file").addEventListener("change", event => importLibrary(event.target, parseCsvSnippets));
+$("import-json-file").addEventListener("change", event => importLibrary(event.target, parseJsonSnippets));
+$("export-csv").addEventListener("click", () => downloadLibrary(snippetsToCsv(state.snippets), "text/csv;charset=utf-8", "csv"));
+$("export-json").addEventListener("click", () => downloadLibrary(snippetsToJson(state.snippets), "application/json;charset=utf-8", "json"));
+
 $("sign-out").addEventListener("click", async () => { try { await api("/auth/logout", { method: "POST" }); } finally { location.replace("/"); } });
 $("delete-account").addEventListener("click", () => {
   $("delete-account-confirmation").value = "";
