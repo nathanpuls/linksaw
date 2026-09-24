@@ -9,7 +9,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-16">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-17">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -75,6 +75,7 @@
       <header class="surface-header">
         <button id="close-settings" class="icon-button" type="button" aria-label="Back to search" title="Back"></button>
         <h1 id="settings-title">Settings</h1>
+        <button id="sign-out" class="settings-sign-out" type="button">Sign out</button>
       </header>
       <div class="settings-grid">
         <div>
@@ -94,12 +95,6 @@
           <div class="account-block">
             <h2>Account</h2>
             <p id="account"></p>
-            <button id="sign-out" class="text-button" type="button">Sign out</button>
-          </div>
-          <div class="delete-account-block">
-            <h2>Delete account</h2>
-            <p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p>
-            <button id="delete-account" class="text-button danger-button" type="button">Delete account</button>
           </div>
         </div>
         <div class="shortcuts">
@@ -119,6 +114,11 @@
           </dl>
         </div>
       </div>
+      <section class="delete-account-block" aria-labelledby="danger-zone-title">
+        <h2 id="danger-zone-title">Danger zone</h2>
+        <p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p>
+        <button id="delete-account" class="text-button danger-button" type="button">Delete account</button>
+      </section>
     </div>
   </section>
 

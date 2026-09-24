@@ -90,7 +90,9 @@ button { color: inherit; }
 .text-button { border: 1px solid var(--control); border-radius: 9px; padding: 9px 14px; background: transparent; cursor: pointer; }
 .text-button:hover { background: var(--hover); }
 .danger { border-color: transparent; color: var(--muted); }
-.settings-inner { padding-bottom: 40px; }
+.settings-inner { overflow: visible; padding-bottom: 40px; }
+.settings-sign-out { margin-left: auto; border: 0; border-radius: 9px; padding: 9px 12px; background: transparent; color: var(--muted); cursor: pointer; }
+.settings-sign-out:hover, .settings-sign-out:focus-visible { outline: 0; background: var(--selected); color: var(--ink); }
 .settings-grid { width: min(900px, 100%); display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,1fr); gap: 56px; padding: 32px 28px; }
 .settings-grid h2 { margin: 0 0 16px; font-size: 15px; font-weight: 600; }
 .field-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 13px; }
@@ -103,7 +105,8 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 #trigger-status:empty { display: none; }
 .account-block { margin-top: 42px; }
 .account-block p { color: var(--muted); overflow-wrap: anywhere; }
-.delete-account-block { margin-top: 42px; padding-top: 32px; border-top: 1px solid var(--line); }
+.delete-account-block { width: min(900px, 100%); margin-top: 18px; padding: 32px 28px 0; border-top: 1px solid var(--line); }
+.delete-account-block h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
 .delete-account-block p { max-width: 390px; margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .danger-button { color: #b42318; }
 .confirm-dialog { width: min(440px, calc(100% - 32px)); border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--paper); color: var(--ink); box-shadow: 0 18px 60px #0003; }
@@ -141,6 +144,8 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .toolbar { height: 64px; padding: 8px 12px 7px 16px; }
   .results { padding-inline: 5px; }
   .settings-grid { grid-template-columns: 1fr; gap: 36px; padding: 28px 22px; }
+  .settings-inner > .surface-header { position: sticky; top: 0; z-index: 2; background: var(--paper); }
+  .delete-account-block { margin-top: 4px; padding: 28px 22px 0; }
   .shortcuts { padding: 28px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 }
 
