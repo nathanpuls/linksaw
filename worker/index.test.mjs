@@ -359,9 +359,11 @@ test('undo restores identity, position timestamps, custom name, content, and sha
 
   assert.equal(response.status, 200);
   assert.deepEqual(restoredStatements.map(statement => statement.sql), [
-    'INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     'INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)',
   ]);
-  assert.deepEqual(restoredStatements[0].values, [id, 'user', stored.title, stored.body, stored.created_at, stored.updated_at]);
-  assert.deepEqual(restoredStatements[1].values, [stored.share_token, id, 'user', stored.created_at]);
+  assert.deepEqual(restoredStatements[0].values, [id, 'user', stored.title, stored.body, stored.created_at, stored.updated_at, 0]);
+  assert.deepEqual(restoredStatements[1].values, [id, 'user', 0, stored.title, stored.body, stored.updated_at]);
+  assert.deepEqual(restoredStatements[2].values, [stored.share_token, id, 'user', stored.created_at]);
 });

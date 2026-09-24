@@ -66,6 +66,10 @@
         <button id="editor-name" class="editor-name-action" type="button" aria-label="Rename" data-tooltip="Rename"></button>
         <label class="sr-only" for="editor-name-input">Custom display name</label>
         <input id="editor-name-input" class="editor-name-input" type="text" maxlength="160" autocomplete="off" hidden>
+        <div class="editor-actions">
+          <button id="editor-undo" class="icon-button" type="button" aria-label="Undo" data-tooltip="Undo" disabled></button>
+          <button id="editor-redo" class="icon-button" type="button" aria-label="Redo" data-tooltip="Redo" disabled></button>
+        </div>
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
       </header>
       <label class="sr-only" for="snippet-body">Snippet text</label>
@@ -73,8 +77,7 @@
       <footer class="surface-footer">
         <button id="delete" class="icon-button delete-action" type="button" tabindex="-1" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
         <button id="unshare" class="text-button danger" type="button" tabindex="-1" hidden>Unshare</button>
-        <p id="editor-status" class="editor-status" role="status" aria-live="polite"></p>
-        <button id="save-snippet" class="save-button" type="submit" data-tooltip="Save" disabled>Save</button>
+        <p id="editor-status" class="editor-status" role="status" aria-live="polite"><span id="editor-status-text"></span><button id="editor-retry" class="editor-retry" type="button" hidden>Retry</button></p>
       </footer>
     </form>
   </section>
@@ -128,7 +131,9 @@
             <div><dt id="toggle-sidebar-shortcut">⌘\</dt><dd>Toggle sidebar</dd></div>
             <div><dt>→</dt><dd>Focus the viewer</dd></div>
             <div><dt>⌘/Ctrl E</dt><dd>Edit selected snippet</dd></div>
-            <div><dt>⌘/Ctrl S</dt><dd>Save snippet</dd></div>
+            <div><dt>⌘/Ctrl S</dt><dd>Save now</dd></div>
+            <div><dt>⌘/Ctrl Z</dt><dd>Undo</dd></div>
+            <div><dt>⌘⇧Z / Ctrl Y</dt><dd>Redo</dd></div>
             <div><dt>⌘/Ctrl C</dt><dd>Copy selected snippet</dd></div>
             <div><dt>⌘/Ctrl 1–9</dt><dd>Select a visible snippet</dd></div>
             <div><dt>Esc</dt><dd>Go back</dd></div>
@@ -155,17 +160,6 @@
     </form>
   </dialog>
 
-  <dialog id="unsaved-dialog" class="confirm-dialog" aria-labelledby="unsaved-title" aria-describedby="unsaved-message">
-    <form method="dialog">
-      <h2 id="unsaved-title">Save changes?</h2>
-      <p id="unsaved-message">Your changes will be lost if you close without saving.</p>
-      <div class="dialog-actions">
-        <button id="unsaved-discard" class="text-button" type="submit" value="discard">Discard</button>
-        <button id="unsaved-save" class="confirm-action" type="submit" value="save">Save changes</button>
-      </div>
-    </form>
-  </dialog>
-
   <dialog id="delete-account-dialog" class="confirm-dialog" aria-labelledby="delete-account-title">
     <form id="delete-account-form">
       <h2 id="delete-account-title">Confirm account deletion</h2>
@@ -186,6 +180,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260924-7"></script>
+  <script type="module" src="/app/app.js?v=20260924-8"></script>
 </body>
 </html>

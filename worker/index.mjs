@@ -71,11 +71,17 @@ async function currentSession(request, env) {
 }
 
 async function listSnippets(env, userId) {
-  const { results } = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippet_shares.token AS share_token FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.owner_id = ? ORDER BY snippets.updated_at DESC, snippets.id DESC LIMIT 2000")
+  const { results } = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippets.version, snippet_shares.token AS share_token, EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version < snippets.version) AS can_undo, EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version > snippets.version) AS can_redo FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.owner_id = ? ORDER BY snippets.updated_at DESC, snippets.id DESC LIMIT 2000")
     .bind(userId).all();
   // Keep an empty compatibility field during the desktop rollout. Details are
   // no longer accepted or returned as content.
-  return results.map(row => ({ ...row, details: [] }));
+  return results.map(row => ({ ...row, can_undo: Boolean(row.can_undo), can_redo: Boolean(row.can_redo), details: [] }));
+}
+
+async function storedSnippet(env, userId, snippetId) {
+  const row = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippets.version, snippet_shares.token AS share_token, EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version < snippets.version) AS can_undo, EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version > snippets.version) AS can_redo FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.id = ? AND snippets.owner_id = ?")
+    .bind(snippetId, userId).first();
+  return row ? { ...row, can_undo: Boolean(row.can_undo), can_redo: Boolean(row.can_redo), details: [] } : null;
 }
 
 async function autocompleteTrigger(env, userId) {
@@ -351,9 +357,10 @@ export async function handle(request, env) {
     }
     const id = input.importId || crypto.randomUUID(), timestamp = nowSeconds();
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)").bind(id, user.id, value.title, value.body, timestamp, timestamp),
+      env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, 0)").bind(id, user.id, value.title, value.body, timestamp, timestamp),
+      env.DB.prepare("INSERT INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, 0, ?, ?, ?)").bind(id, user.id, value.title, value.body, timestamp),
     ]);
-    return json(request, { id }, 201);
+    return json(request, { id, snippet: { id, title: value.title, body: value.body, created_at: timestamp, updated_at: timestamp, version: 0, share_token: null, can_undo: false, can_redo: false, details: [] } }, 201);
   }
   const shareMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/share$/);
   if (shareMatch && request.method === "POST") {
@@ -383,8 +390,10 @@ export async function handle(request, env) {
     const exists = await env.DB.prepare("SELECT id FROM snippets WHERE id = ?").bind(restoreMatch[1]).first();
     if (exists) return fail(request, "Snippet already exists", 409);
     const statements = [
-      env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
-        .bind(input.id, user.id, value.title, value.body, input.created_at, input.updated_at),
+      env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .bind(input.id, user.id, value.title, value.body, input.created_at, input.updated_at, Number.isSafeInteger(input.version) ? input.version : 0),
+      env.DB.prepare("INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(input.id, user.id, Number.isSafeInteger(input.version) ? input.version : 0, value.title, value.body, input.updated_at),
     ];
     if (input.share_token) {
       statements.push(env.DB.prepare("INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)")
@@ -393,20 +402,41 @@ export async function handle(request, env) {
     await env.DB.batch(statements);
     return json(request, { ok: true });
   }
+  const revisionMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/revisions\/(undo|redo)$/);
+  if (revisionMatch && request.method === "POST") {
+    const current = await env.DB.prepare("SELECT id, title, body, version FROM snippets WHERE id = ? AND owner_id = ?").bind(revisionMatch[1], user.id).first();
+    if (!current) return fail(request, "Snippet not found", 404);
+    await env.DB.prepare("INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(current.id, user.id, current.version, current.title, current.body, nowSeconds()).run();
+    const comparison = revisionMatch[2] === "undo" ? "<" : ">";
+    const order = revisionMatch[2] === "undo" ? "DESC" : "ASC";
+    const target = await env.DB.prepare(`SELECT version, title, body FROM snippet_revisions WHERE snippet_id = ? AND owner_id = ? AND version ${comparison} ? ORDER BY version ${order} LIMIT 1`)
+      .bind(current.id, user.id, current.version).first();
+    if (!target) return json(request, { snippet: await storedSnippet(env, user.id, current.id) });
+    await env.DB.prepare("UPDATE snippets SET title = ?, body = ?, version = ?, updated_at = ? WHERE id = ? AND owner_id = ?")
+      .bind(target.title, target.body, target.version, nowSeconds(), current.id, user.id).run();
+    return json(request, { snippet: await storedSnippet(env, user.id, current.id) });
+  }
   const match = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})$/);
   if (match && request.method === "PUT") {
-    const exists = await env.DB.prepare("SELECT id FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id).first();
-    if (!exists) return fail(request, "Snippet not found", 404);
+    const existing = await env.DB.prepare("SELECT id, title, body, version FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id).first();
+    if (!existing) return fail(request, "Snippet not found", 404);
     const value = validSnippet(await bodyJson(request));
     if (!value) return fail(request, "Enter content or a title");
+    if (existing.title === value.title && existing.body === value.body) return json(request, { snippet: await storedSnippet(env, user.id, existing.id) });
+    const nextVersion = existing.version + 1;
+    const timestamp = nowSeconds();
     await env.DB.batch([
-      env.DB.prepare("UPDATE snippets SET title = ?, body = ?, updated_at = ? WHERE id = ? AND owner_id = ?").bind(value.title, value.body, nowSeconds(), match[1], user.id),
+      env.DB.prepare("INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(existing.id, user.id, existing.version, existing.title, existing.body, timestamp),
+      env.DB.prepare("DELETE FROM snippet_revisions WHERE snippet_id = ? AND owner_id = ? AND version > ?").bind(existing.id, user.id, existing.version),
+      env.DB.prepare("UPDATE snippets SET title = ?, body = ?, updated_at = ?, version = ? WHERE id = ? AND owner_id = ?").bind(value.title, value.body, timestamp, nextVersion, match[1], user.id),
+      env.DB.prepare("INSERT INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(existing.id, user.id, nextVersion, value.title, value.body, timestamp),
       env.DB.prepare("DELETE FROM details WHERE snippet_id = ?").bind(match[1]),
     ]);
-    return json(request, { ok: true });
+    return json(request, { snippet: await storedSnippet(env, user.id, existing.id) });
   }
   if (match && request.method === "DELETE") {
-    const deleted = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippet_shares.token AS share_token FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.id = ? AND snippets.owner_id = ?")
+    const deleted = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippets.version, snippet_shares.token AS share_token FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.id = ? AND snippets.owner_id = ?")
       .bind(match[1], user.id).first();
     if (!deleted) return fail(request, "Snippet not found", 404);
     await env.DB.batch([

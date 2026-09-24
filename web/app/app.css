@@ -109,11 +109,14 @@ button { color: inherit; }
 .editor-name-action:hover, .editor-name-action:focus-visible { outline: 0; background: var(--hover); color: var(--ink); }
 .editor-name-input { min-width: 0; flex: 1; margin-left: -12px; border: 1px solid var(--control); border-radius: 6px; padding: 7px 11px; background: var(--hover); color: var(--ink); font: inherit; font-size: 16px; font-weight: 550; box-shadow: none; }
 .editor-name-input:focus { border-color: var(--focus); outline: 0; box-shadow: none; }
+.editor-actions { display: flex; align-items: center; gap: 1px; }
+.icon-button:disabled { color: var(--control); cursor: default; }
+.icon-button:disabled:hover { color: var(--control); }
 .content-input { flex: 1; min-height: 260px; width: 100%; resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
-.editor-status { min-width: 0; flex: 1; margin: 0; padding: 0 4px; color: var(--muted); font-size: 13px; }
+.editor-status { min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 0 4px; color: var(--muted); font-size: 13px; }
+.editor-retry { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.editor-retry:hover, .editor-retry:focus-visible { outline: 0; text-decoration-thickness: 2px; }
 .surface-footer { min-height: 76px; display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 0; }
-.save-button { margin-left: auto; border: 1px solid #171717; border-radius: 10px; padding: 10px 20px; background: #171717; color: #fff; cursor: pointer; }
-.save-button:disabled { border-color: #9a9a9a; background: #9a9a9a; color: #fff; opacity: 1; cursor: default; }
 .text-button { border: 1px solid var(--control); border-radius: 9px; padding: 9px 14px; background: transparent; cursor: pointer; }
 .text-button:hover { background: var(--hover); }
 .danger { border-color: transparent; color: var(--muted); }

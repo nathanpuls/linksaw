@@ -6,26 +6,18 @@ const source = readFileSync(new URL("../web/app/app.js", import.meta.url), "utf8
 const html = readFileSync(new URL("../web/app/index.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../web/app/app.css", import.meta.url), "utf8");
 
-test("empty snippets are rejected before the saving state begins", () => {
-  const submitHandler = source.match(/\$\("editor-form"\)\.addEventListener\("submit",[\s\S]*?\n\}\);/)?.[0];
-  assert.ok(submitHandler, "editor submit handler is present");
-  assert.match(submitHandler, /!payload\.body\.trim\(\)/);
-  assert.ok(submitHandler.indexOf("Enter snippet text") < submitHandler.indexOf("Saving…"));
+test("autosave waits for settled meaningful text and has no permanent save button", () => {
+  assert.doesNotMatch(html, /id="save-snippet"/);
+  assert.match(source, /autosaveTimer = setTimeout\(\(\) => \{ void saveEditorNow\(\); \}, 700\)/);
+  assert.match(source, /if \(!state\.editing && !value\.body\.trim\(\)\) \{ setEditorStatus\(""\); return true; \}/);
+  assert.match(source, /setEditorStatus\("Saving…"\)[\s\S]*?await api[\s\S]*?setEditorStatus\("Saved"\)/);
+  assert.match(html, /id="editor-status-text"[\s\S]*id="editor-retry"[^>]*hidden>Retry/);
 });
 
-test("save button is gray and disabled until the snippet has a value", () => {
-  assert.match(html, /id="save-snippet" class="save-button" type="submit" data-tooltip="Save" disabled/);
-  assert.match(css, /\.save-button:disabled \{[^}]*background: #9a9a9a;[^}]*color: #fff;[^}]*opacity: 1;[^}]*cursor: default;/);
-  assert.match(source, /function syncSaveButton\(\)[\s\S]*?editorSaving \|\| !hasValue/);
-  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("input", \(\) => \{ syncSaveButton\(\);/);
-});
-
-test("command save reuses form validation and suppresses browser save", () => {
-  assert.match(source, /\$\("save-snippet"\)\.dataset\.shortcut = commandShortcut\("S"\)/);
+test("command save runs autosave immediately and suppresses browser save", () => {
   assert.match(source, /const saveShortcut = event\.key\.toLowerCase\(\) === "s"[\s\S]*?isMacPlatform \? event\.metaKey && !event\.ctrlKey : event\.ctrlKey && !event\.metaKey/);
-  assert.match(source, /if \(saveShortcut\)[\s\S]*?event\.preventDefault\(\)[\s\S]*?!\$\("save-snippet"\)\.disabled[\s\S]*?\$\("editor-form"\)\.requestSubmit\(\)/);
-  assert.match(source, /if \(editorSaving \|\| \$\("save-snippet"\)\.disabled\) return;/);
-  assert.match(html, /<dt>⌘\/Ctrl S<\/dt><dd>Save snippet<\/dd>/);
+  assert.match(source, /if \(saveShortcut\)[\s\S]*?event\.preventDefault\(\)[\s\S]*?void saveEditorNow\(\)/);
+  assert.match(html, /<dt>⌘\/Ctrl S<\/dt><dd>Save now<\/dd>/);
 });
 
 test("default workspace tabs directly between search and content", () => {
@@ -47,7 +39,7 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.doesNotMatch(html, /<textarea[^>]*placeholder=/);
   assert.doesNotMatch(source, /routeEmptySnippetPaste/);
   assert.match(source, /function openEditor[\s\S]*?\$\("snippet-body"\)\.value = snippet\?\.body \|\| ""; editorCustomName = snippet\?\.title \|\| "";[\s\S]*?setSelectionRange\(0, 0\)/);
-  assert.match(source, /const payload = \{ title: editorCustomName, body: \$\("snippet-body"\)\.value \}/);
+  assert.match(source, /function editorSnapshot\(\)[\s\S]*?JSON\.stringify\(\{ title, body: \$\("snippet-body"\)\.value \}\)/);
   assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| ""; \}/);
   assert.match(source, /function derivedLabel\(body\)[\s\S]*?find\(line => line\.trim\(\)\)/);
   assert.match(source, /function label\(snippet\) \{ return snippet\.title\.trim\(\) \|\| derivedLabel\(snippet\.body\); \}/);
@@ -106,14 +98,34 @@ test("destructive actions use branded cancellable dialogs", () => {
   assert.match(source, /requestConfirmation\(\{ title: "Stop sharing\?"/);
 });
 
-test("closing a dirty editor offers save or discard", () => {
-  assert.match(html, /id="unsaved-dialog" class="confirm-dialog"[\s\S]*?>Discard<\/button>[\s\S]*?>Save changes<\/button>/);
-  assert.match(source, /function editorSnapshot\(\)[\s\S]*?JSON\.stringify\(\{ title, body:/);
-  assert.match(source, /editorBaseline = editorSnapshot\(\)/);
-  assert.match(source, /async function closeEditorWithWarning\(\)[\s\S]*?editorHasUnsavedChanges\(\)[\s\S]*?choice === "save"[\s\S]*?requestSubmit\(\)[\s\S]*?choice === "discard"[\s\S]*?leaveRoutedView\(\)/);
-  assert.match(source, /\$\("close-editor"\)\.addEventListener\("click", closeEditorWithWarning\)/);
-  assert.match(source, /event\.key === "Escape"[\s\S]*?editing\) \{ event\.preventDefault\(\); void closeEditorWithWarning\(\); \}/);
-  assert.match(source, /cancelDialogOnBackdrop\(\$\("unsaved-dialog"\)\)/);
+test("navigation flushes autosave and retry preserves the intended destination", () => {
+  assert.doesNotMatch(html, /id="unsaved-dialog"/);
+  assert.match(source, /async function navigateAfterSave\(destination\)[\s\S]*?pendingNavigation = destination[\s\S]*?await flushEditorSave\(\)[\s\S]*?destination\(\)/);
+  assert.match(source, /\$\("close-editor"\)\.addEventListener\("click", \(\) => \{ void navigateAfterSave\(leaveRoutedView\); \}\)/);
+  assert.match(source, /\$\("settings"\)\.addEventListener\("click", \(\) => \{ void navigateAfterSave\(\(\) => openSettings\(\)\); \}\)/);
+  assert.match(source, /\$\("editor-retry"\)\.addEventListener[\s\S]*?saved && pendingNavigation[\s\S]*?destination\(\)/);
+  assert.match(source, /addEventListener\("beforeunload"[\s\S]*?saveInFlight[\s\S]*?saveFailed/);
+});
+
+test("autosave queues newer edits behind active requests", () => {
+  assert.match(source, /if \(saveInFlight\) \{[\s\S]*?saveAgain = true;[\s\S]*?await saveInFlight[\s\S]*?editorSnapshot\(\) !== editorBaseline[\s\S]*?saveEditorNow\(\)/);
+  assert.match(source, /const snapshot = editorSnapshot\(\)[\s\S]*?editorBaseline = snapshot[\s\S]*?if \(editorSnapshot\(\) === editorBaseline\) setEditorStatus\("Saved"\)/);
+});
+
+test("new snippet creation is idempotent across a lost response", () => {
+  assert.match(source, /editorCreateId = snippet \? "" : crypto\.randomUUID\(\)/);
+  assert.match(source, /body: JSON\.stringify\(creating \? \{ \.\.\.value, importId: editorCreateId \} : value\)/);
+  assert.match(source, /if \(!savedSnippet\) \{[\s\S]*?api\("\/snippets"\)[\s\S]*?snippet\.id === result\.id/);
+});
+
+test("editor provides local and persistent undo and redo", () => {
+  assert.match(html, /id="editor-undo"[^>]*aria-label="Undo"[^>]*data-tooltip="Undo"[^>]*disabled/);
+  assert.match(html, /id="editor-redo"[^>]*aria-label="Redo"[^>]*data-tooltip="Redo"[^>]*disabled/);
+  assert.match(source, /undo: '<svg[\s\S]*?redo: '<svg/);
+  assert.match(source, /function rememberLocalState[\s\S]*?localUndo\.push\(snapshot\)[\s\S]*?localRedo = \[\]/);
+  assert.match(source, /async function performEditorHistory\(direction\)[\s\S]*?\/revisions\/\$\{direction\}/);
+  assert.match(source, /const undoShortcut[\s\S]*?const redoShortcut[\s\S]*?performEditorHistory\(undoShortcut \? "undo" : "redo"\)/);
+  assert.match(css, /\.icon-button:disabled \{ color: var\(--control\); cursor: default; \}/);
 });
 
 test("icon-only controls use delayed custom tooltips with shortcut badges", () => {

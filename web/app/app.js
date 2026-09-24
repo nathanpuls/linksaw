@@ -12,6 +12,8 @@ const icons = {
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',
+  redo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>',
 };
 
 const $ = id => document.getElementById(id);
@@ -28,20 +30,29 @@ let tooltipTarget;
 let undoTimer;
 let pendingUndo;
 let deletingSnippetId = "";
-let editorSaving = false;
 let editorCustomName = "";
 let inlineRenameBaseline = "";
 let editorBaseline = "";
-let unsavedResolver;
+let autosaveTimer;
+let saveInFlight;
+let saveAgain = false;
+let saveFailed = false;
+let pendingNavigation;
+let editorSessionId = 0;
+let editorCreateId = "";
+let localUndo = [];
+let localRedo = [];
+let localInputGroup = null;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "back");
-icon("editor-reader-toggle", "panelLeft"); icon("delete", "trash");
+icon("editor-reader-toggle", "panelLeft"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
 $("preview-copy").dataset.shortcut = commandShortcut("C");
-$("save-snippet").dataset.shortcut = commandShortcut("S");
+$("editor-undo").dataset.shortcut = commandShortcut("Z");
+$("editor-redo").dataset.shortcut = isMacPlatform ? "⌘⇧Z" : "Ctrl+Y";
 
 function hideTooltip() {
   clearTimeout(tooltipTimer);
@@ -232,7 +243,6 @@ async function shareSnippet(snippet) {
   showToast("Link copied");
 }
 function setSelected(index, scroll = true) {
-  if (state.editorContext === "default" && !$("editor").hidden) closeSurface("editor");
   state.selected = Math.max(0, Math.min(index, Math.max(0, state.filtered.length - 1)));
   document.querySelectorAll(".result-row").forEach((row, i) => row.classList.toggle("selected", i === state.selected));
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
@@ -251,7 +261,7 @@ function render() {
   if (!state.filtered.length) {
     const empty = document.createElement("div"); empty.className = "empty";
     empty.textContent = query ? "No matches" : "No snippets yet";
-    if (!query) { const button = document.createElement("button"); button.className = "text-button"; button.textContent = "Create a snippet"; button.addEventListener("click", () => openEditor()); empty.append(button); }
+    if (!query) { const button = document.createElement("button"); button.className = "text-button"; button.textContent = "Create a snippet"; button.addEventListener("click", () => { void navigateAfterSave(() => openEditor()); }); empty.append(button); }
     results.append(empty); renderViewer(null); return;
   }
   state.filtered.forEach((snippet, index) => {
@@ -270,12 +280,12 @@ function render() {
     main.append(text);
     if (url) main.ariaLabel = `Open ${label(snippet)} website`;
     main.addEventListener("focus", () => setSelected(index, false));
-    main.addEventListener("click", () => { if (!$("editor").hidden) closeSurface("editor"); setSelected(index); activateSnippet(snippet); });
+    main.addEventListener("click", () => navigateAfterSave(() => { setSelected(index); activateSnippet(snippet); }));
     row.append(main);
     const edit = document.createElement("button"); edit.type = "button"; edit.className = "result-edit icon-button";
     edit.ariaLabel = "Edit"; edit.dataset.tooltip = "Edit"; edit.innerHTML = icons.edit;
     edit.addEventListener("focus", () => setSelected(index, false));
-    edit.addEventListener("click", event => { event.stopPropagation(); setSelected(index, false); openEditor(snippet); });
+    edit.addEventListener("click", event => { event.stopPropagation(); void navigateAfterSave(() => { setSelected(index, false); openEditor(snippet); }); });
     row.append(edit);
     results.append(row);
   });
@@ -302,10 +312,6 @@ function closeSurface(id) {
   if (!["editor", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = "";
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
-function syncSaveButton() {
-  const hasValue = $("snippet-body").value.trim();
-  $("save-snippet").disabled = editorSaving || !hasValue;
-}
 function syncEditorName() {
   $("editor-name").textContent = editorCustomName.trim() || derivedLabel($("snippet-body").value);
 }
@@ -313,7 +319,131 @@ function editorSnapshot() {
   const title = $("editor-name-input").hidden ? editorCustomName : $("editor-name-input").value.trim();
   return JSON.stringify({ title, body: $("snippet-body").value });
 }
-function editorHasUnsavedChanges() { return editorSnapshot() !== editorBaseline; }
+function editorValue() { return JSON.parse(editorSnapshot()); }
+function setEditorStatus(status) {
+  $("editor-status-text").textContent = status;
+  $("editor-retry").hidden = status !== "Couldn’t save ·";
+}
+function syncHistoryControls() {
+  $("editor-undo").disabled = !localUndo.length && !state.editing?.can_undo;
+  $("editor-redo").disabled = !localRedo.length && !state.editing?.can_redo;
+}
+function rememberLocalState(target) {
+  const now = Date.now();
+  if (!localInputGroup || localInputGroup.target !== target || now - localInputGroup.time > 700) {
+    const snapshot = editorSnapshot();
+    if (localUndo.at(-1) !== snapshot) localUndo.push(snapshot);
+    if (localUndo.length > 100) localUndo.shift();
+    localRedo = [];
+  }
+  localInputGroup = { target, time: now };
+  syncHistoryControls();
+}
+function applyEditorSnapshot(snapshot) {
+  const value = JSON.parse(snapshot);
+  editorCustomName = value.title;
+  $("snippet-body").value = value.body;
+  $("editor-name-input").hidden = true;
+  $("editor-name").hidden = false;
+  syncEditorName();
+  scheduleAutosave();
+  syncHistoryControls();
+}
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+  saveFailed = false;
+  $("editor-retry").hidden = true;
+  if (saveInFlight) saveAgain = true;
+  autosaveTimer = setTimeout(() => { void saveEditorNow(); }, 700);
+}
+function upsertSavedSnippet(snippet) {
+  const index = state.snippets.findIndex(item => item.id === snippet.id);
+  if (index >= 0) state.snippets[index] = snippet;
+  else state.snippets.unshift(snippet);
+  state.snippets.sort((a, b) => b.updated_at - a.updated_at || b.id.localeCompare(a.id));
+  state.editing = snippet;
+  render();
+  state.selected = Math.max(0, state.filtered.findIndex(item => item.id === snippet.id));
+  document.querySelectorAll(".result-row").forEach((row, rowIndex) => row.classList.toggle("selected", rowIndex === state.selected));
+  syncHistoryControls();
+}
+async function runSaveLoop(sessionId) {
+  do {
+    saveAgain = false;
+    const snapshot = editorSnapshot();
+    const value = JSON.parse(snapshot);
+    if (snapshot === editorBaseline) return true;
+    if (!state.editing && !value.body.trim()) { setEditorStatus(""); return true; }
+    if (!value.title.trim() && !value.body.trim()) { setEditorStatus("Couldn’t save ·"); saveFailed = true; return false; }
+    setEditorStatus("Saving…");
+    try {
+      const creating = !state.editing;
+      const result = await api(creating ? "/snippets" : `/snippets/${state.editing.id}`, {
+        method: creating ? "POST" : "PUT",
+        body: JSON.stringify(creating ? { ...value, importId: editorCreateId } : value),
+      });
+      if (sessionId !== editorSessionId) return true;
+      const wasNew = creating;
+      let savedSnippet = result.snippet;
+      // A create may have reached the server even if its response was lost. The
+      // stable create ID makes the retry idempotent; fetch its canonical row
+      // when the retry response only needs to return the existing ID.
+      if (!savedSnippet) {
+        const { snippets } = await api("/snippets");
+        savedSnippet = snippets.find(snippet => snippet.id === result.id);
+        if (!savedSnippet) throw new Error("Saved snippet could not be loaded");
+      }
+      editorBaseline = snapshot;
+      saveFailed = false;
+      upsertSavedSnippet(savedSnippet);
+      $("delete").hidden = false;
+      $("unshare").hidden = !savedSnippet.share_token;
+      if (wasNew && state.editorContext !== "default") updateUrl({ view: "edit", snippet: savedSnippet.id }, false);
+      if (editorSnapshot() === editorBaseline) setEditorStatus("Saved");
+    } catch {
+      if (sessionId !== editorSessionId) return false;
+      saveFailed = true;
+      setEditorStatus("Couldn’t save ·");
+      return false;
+    }
+  } while (saveAgain || editorSnapshot() !== editorBaseline);
+  return true;
+}
+async function saveEditorNow() {
+  clearTimeout(autosaveTimer);
+  if ($("editor").hidden) return true;
+  const sessionId = editorSessionId;
+  if (saveInFlight) {
+    saveAgain = true;
+    await saveInFlight;
+    if (sessionId !== editorSessionId) return true;
+    if (!saveFailed && editorSnapshot() !== editorBaseline) return saveEditorNow();
+    return !saveFailed;
+  }
+  saveInFlight = runSaveLoop(sessionId);
+  const result = await saveInFlight;
+  saveInFlight = null;
+  if (sessionId === editorSessionId && !saveFailed && editorSnapshot() !== editorBaseline) return saveEditorNow();
+  return result && !saveFailed;
+}
+async function flushEditorSave() {
+  clearTimeout(autosaveTimer);
+  if ($("editor").hidden) return true;
+  if (!$("editor-name-input").hidden) finishInlineRename();
+  const value = editorValue();
+  if (!state.editing && !value.body.trim()) return true;
+  const saved = await saveEditorNow();
+  return saved && editorSnapshot() === editorBaseline;
+}
+async function navigateAfterSave(destination) {
+  if ($("editor").hidden) { destination(); return true; }
+  pendingNavigation = destination;
+  const saved = await flushEditorSave();
+  if (!saved || pendingNavigation !== destination) return false;
+  pendingNavigation = null;
+  destination();
+  return true;
+}
 function beginInlineRename() {
   hideTooltip();
   inlineRenameBaseline = editorCustomName;
@@ -331,6 +461,7 @@ function finishInlineRename({ cancel = false } = {}) {
   $("editor-name-input").hidden = true;
   $("editor-name").hidden = false;
   syncEditorName();
+  if (!cancel && editorSnapshot() !== editorBaseline) scheduleAutosave();
 }
 function leaveRoutedView() {
   if (history.state?.linksawPushed) { history.back(); return; }
@@ -340,15 +471,19 @@ function leaveRoutedView() {
 }
 function openEditor(snippet = null, pushHistory = true, options = {}) {
   hideTooltip();
+  clearTimeout(autosaveTimer);
+  editorSessionId++;
   const { defaultDraft = false, focus = true } = options;
   state.editing = snippet; $("snippet-body").value = snippet?.body || ""; editorCustomName = snippet?.title || "";
-  editorSaving = false; syncSaveButton();
+  editorCreateId = snippet ? "" : crypto.randomUUID();
+  saveFailed = false; saveAgain = false; pendingNavigation = null; localUndo = []; localRedo = []; localInputGroup = null;
   state.editorContext = defaultDraft ? "default" : "routed";
   $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
   $("close-editor").hidden = defaultDraft;
-  $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = "";
+  $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; setEditorStatus("");
   $("editor-name-input").hidden = true; $("editor-name").hidden = false; syncEditorName(); showSurface("editor");
   editorBaseline = editorSnapshot();
+  syncHistoryControls();
   if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
   if (focus) setTimeout(() => { $("snippet-body").focus(); if (!snippet) $("snippet-body").setSelectionRange(0, 0); }, 0);
 }
@@ -469,24 +604,9 @@ function clearSearch() {
   $("search").focus();
 }
 $("clear-search").addEventListener("click", clearSearch);
-$("add").addEventListener("click", () => openEditor());
-$("settings").addEventListener("click", () => openSettings());
-function requestUnsavedChoice() {
-  const dialog = $("unsaved-dialog");
-  dialog.returnValue = "cancel";
-  $("unsaved-save").disabled = $("save-snippet").disabled;
-  dialog.showModal();
-  ($("unsaved-save").disabled ? $("unsaved-discard") : $("unsaved-save")).focus();
-  return new Promise(resolve => { unsavedResolver = resolve; });
-}
-async function closeEditorWithWarning() {
-  if (!editorHasUnsavedChanges()) { leaveRoutedView(); return; }
-  const choice = await requestUnsavedChoice();
-  if (choice === "save" && !$("save-snippet").disabled) $("editor-form").requestSubmit();
-  else if (choice === "discard") leaveRoutedView();
-}
-$("unsaved-dialog").addEventListener("close", () => { unsavedResolver?.($("unsaved-dialog").returnValue); unsavedResolver = null; });
-$("close-editor").addEventListener("click", closeEditorWithWarning);
+$("add").addEventListener("click", () => { void navigateAfterSave(() => openEditor()); });
+$("settings").addEventListener("click", () => { void navigateAfterSave(() => openSettings()); });
+$("close-editor").addEventListener("click", () => { void navigateAfterSave(leaveRoutedView); });
 $("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", leaveRoutedView);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showCopyError));
@@ -509,23 +629,58 @@ function isSidebarShortcut(event) {
 }
 $("reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-reader-toggle").addEventListener("click", toggleReaderMode);
-$("snippet-body").addEventListener("input", () => { syncSaveButton(); if (!editorCustomName.trim()) syncEditorName(); });
-$("editor-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  if (editorSaving || $("save-snippet").disabled) return;
-  if (!$("editor-name-input").hidden) finishInlineRename();
-  const payload = { title: editorCustomName, body: $("snippet-body").value };
-  if (!payload.body.trim()) {
-    $("editor-status").textContent = "Enter snippet text";
+for (const input of [$("snippet-body"), $("editor-name-input")]) {
+  input.addEventListener("beforeinput", event => {
+    if (!event.inputType.startsWith("history")) rememberLocalState(input.id);
+  });
+}
+$("snippet-body").addEventListener("input", () => {
+  if (!editorCustomName.trim()) syncEditorName();
+  scheduleAutosave();
+});
+$("editor-name-input").addEventListener("input", scheduleAutosave);
+$("editor-form").addEventListener("submit", event => { event.preventDefault(); void saveEditorNow(); });
+async function performEditorHistory(direction) {
+  if ($("editor").hidden || saveInFlight) return;
+  const from = direction === "undo" ? localUndo : localRedo;
+  const to = direction === "undo" ? localRedo : localUndo;
+  if (from.length) {
+    to.push(editorSnapshot());
+    localInputGroup = null;
+    applyEditorSnapshot(from.pop());
+    $("snippet-body").focus();
     return;
   }
-  editorSaving = true; syncSaveButton(); $("editor-status").textContent = "Saving…";
+  if (!state.editing?.[direction === "undo" ? "can_undo" : "can_redo"]) return;
+  if (!await flushEditorSave()) return;
+  setEditorStatus("Saving…");
   try {
-    const saved = await api(state.editing ? `/snippets/${state.editing.id}` : "/snippets", { method: state.editing ? "PUT" : "POST", body: JSON.stringify(payload) });
-    const savedId = state.editing?.id || saved.id;
-    const data = await api("/snippets"); state.snippets = data.snippets; state.selected = Math.max(0, data.snippets.findIndex(snippet => snippet.id === savedId)); render();
-    updateUrl({ view: null, snippet: savedId }, false); applyUrlState();
-  } catch (error) { $("editor-status").textContent = error.message; } finally { editorSaving = false; syncSaveButton(); }
+    const { snippet } = await api(`/snippets/${state.editing.id}/revisions/${direction}`, { method: "POST" });
+    state.editing = snippet;
+    editorCustomName = snippet.title;
+    $("snippet-body").value = snippet.body;
+    $("editor-name-input").hidden = true;
+    $("editor-name").hidden = false;
+    syncEditorName();
+    editorBaseline = editorSnapshot();
+    upsertSavedSnippet(snippet);
+    setEditorStatus("Saved");
+    $("snippet-body").focus();
+  } catch {
+    saveFailed = true;
+    setEditorStatus("Couldn’t save ·");
+  }
+}
+$("editor-undo").addEventListener("click", () => { void performEditorHistory("undo"); });
+$("editor-redo").addEventListener("click", () => { void performEditorHistory("redo"); });
+$("editor-retry").addEventListener("click", async () => {
+  saveFailed = false;
+  const saved = await saveEditorNow();
+  if (saved && pendingNavigation) {
+    const destination = pendingNavigation;
+    pendingNavigation = null;
+    destination();
+  }
 });
 let confirmationResolver;
 let confirmationReturnFocus;
@@ -550,10 +705,10 @@ function cancelDialogOnBackdrop(dialog) {
   dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close("cancel"); });
 }
 cancelDialogOnBackdrop($("action-confirm-dialog"));
-cancelDialogOnBackdrop($("unsaved-dialog"));
 cancelDialogOnBackdrop($("delete-account-dialog"));
 async function deleteSnippet(snippet) {
   if (!snippet || deletingSnippetId === snippet.id) return;
+  if (!$("editor").hidden && state.editing?.id === snippet.id && !await flushEditorSave()) return;
   deletingSnippetId = snippet.id;
   hideTooltip();
   const filteredIndex = state.filtered.findIndex(item => item.id === snippet.id);
@@ -563,14 +718,14 @@ async function deleteSnippet(snippet) {
     const { deleted } = await api(`/snippets/${snippet.id}`, { method: "DELETE" });
     state.snippets = state.snippets.filter(item => item.id !== snippet.id);
     state.selected = filteredCount > 1 ? Math.min(Math.max(filteredIndex, 0), filteredCount - 2) : -1;
-    if (!$("editor").hidden) closeSurface("editor");
+    if (!$("editor").hidden) { editorSessionId++; clearTimeout(autosaveTimer); closeSurface("editor"); }
     render();
     const next = state.filtered[state.selected] || null;
     if (narrowLayout()) $("app").classList.toggle("viewer-open", Boolean(viewerWasOpen && next));
     updateUrl({ view: null, snippet: next?.id || null }, false);
     showDeleteUndo(deleted, viewerWasOpen);
   } catch (error) {
-    if (!$("editor").hidden) $("editor-status").textContent = error.message;
+    if (!$("editor").hidden) setEditorStatus("Couldn’t save ·");
     else showError(error);
   } finally {
     deletingSnippetId = "";
@@ -602,8 +757,8 @@ $("unshare").addEventListener("click", async () => {
   if (!state.editing?.share_token || !await requestConfirmation({ title: "Stop sharing?", message: "Anyone using the current link will no longer be able to view this snippet.", action: "Stop sharing" })) return;
   try {
     await api(`/snippets/${state.editing.id}/share`, { method: "DELETE" });
-    state.editing.share_token = null; $("unshare").hidden = true; $("editor-status").textContent = "Sharing stopped.";
-  } catch (error) { $("editor-status").textContent = error.message; }
+    state.editing.share_token = null; $("unshare").hidden = true; setEditorStatus("Sharing stopped.");
+  } catch (error) { setEditorStatus(error.message); }
 });
 
 let transferBusy = false;
@@ -686,7 +841,7 @@ syncReaderMode();
 matchMedia("(max-width: 900px)").addEventListener("change", () => {
   syncReaderMode();
   if (hasExplicitRoute()) return;
-  if (narrowLayout() && state.editorContext === "default") closeSurface("editor");
+  if (narrowLayout() && state.editorContext === "default") { void navigateAfterSave(() => closeSurface("editor")); }
   else if (!narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
   $("search").focus();
 });
@@ -703,31 +858,48 @@ $("save-trigger").addEventListener("click", async () => {
   } catch (error) { $("trigger-status").textContent = error.message; }
   finally { button.disabled = false; }
 });
-addEventListener("popstate", applyUrlState);
+addEventListener("popstate", () => {
+  if ($("editor").hidden || editorSnapshot() === editorBaseline) { applyUrlState(); return; }
+  const intendedUrl = location.href;
+  history.forward();
+  void navigateAfterSave(() => { location.href = intendedUrl; });
+});
+addEventListener("beforeunload", event => {
+  if ($("editor").hidden || (!saveInFlight && !saveFailed && editorSnapshot() === editorBaseline)) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
 document.addEventListener("keydown", event => {
   const modifier = event.metaKey || event.ctrlKey;
   const saveShortcut = event.key.toLowerCase() === "s" && !event.altKey && !event.shiftKey
     && (isMacPlatform ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey);
   if (saveShortcut) {
     event.preventDefault();
-    if ($("delete-account-dialog").open || $("action-confirm-dialog").open || $("unsaved-dialog").open) return;
-    if (!$("editor").hidden && !$("save-snippet").disabled) $("editor-form").requestSubmit();
+    if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
+    if (!$("editor").hidden) void saveEditorNow();
     return;
   }
-  if ($("delete-account-dialog").open || $("action-confirm-dialog").open || $("unsaved-dialog").open) return;
+  if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
+  const undoShortcut = editing && !event.altKey && event.key.toLowerCase() === "z"
+    && (isMacPlatform ? event.metaKey && !event.ctrlKey && !event.shiftKey : event.ctrlKey && !event.metaKey && !event.shiftKey);
+  const redoShortcut = editing && !event.altKey && (
+    (isMacPlatform && event.metaKey && !event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "z")
+    || (!isMacPlatform && event.ctrlKey && !event.metaKey && (event.key.toLowerCase() === "y" || (event.shiftKey && event.key.toLowerCase() === "z")))
+  );
+  if (undoShortcut || redoShortcut) { event.preventDefault(); void performEditorHistory(undoShortcut ? "undo" : "redo"); return; }
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
   if (event.key === "Escape") {
-    if (editing) { event.preventDefault(); void closeEditorWithWarning(); }
+    if (editing) { event.preventDefault(); void navigateAfterSave(leaveRoutedView); }
     else if (settings || viewerOpen) leaveRoutedView();
     else if ($("search").value) { event.preventDefault(); clearSearch(); }
     return;
   }
   const defaultDraftField = state.editorContext === "default" && document.activeElement === $("snippet-body");
   if ((editing && (state.editorContext !== "default" || defaultDraftField)) || settings) return;
-  if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); openEditor(); return; }
+  if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); void navigateAfterSave(() => openEditor()); return; }
   const selected = state.filtered[state.selected];
-  if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); openEditor(selected); return; }
+  if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); void navigateAfterSave(() => openEditor(selected)); return; }
   if (modifier && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); copySnippet(selected).catch(showCopyError); return; }
   if (modifier && event.key === "Enter" && selected) {
     const url = standaloneUrl(selected); if (url) { event.preventDefault(); openInNewTab(url); }
