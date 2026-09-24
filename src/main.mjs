@@ -156,9 +156,9 @@ function render() {
     if (editable) {
       const edit = document.createElement("button"); edit.type = "button"; edit.className = "result-edit";
       edit.append(icon('edit', 16));
-      edit.setAttribute("aria-label", `Edit ${snippetLabel(editable)}`);
-      edit.dataset.tooltip = 'Edit snippet'; edit.dataset.tooltipShortcut = 'E';
-      edit.addEventListener("click", () => openEditor(editable));
+      edit.setAttribute("aria-label", `Edit options for ${snippetLabel(editable)}`);
+      edit.dataset.tooltip = 'Edit options';
+      edit.addEventListener("click", () => openActions(editable));
       wrapper.append(edit);
     }
     ui.results.append(wrapper);
@@ -196,8 +196,7 @@ async function act(item) {
     if (native) await openUrl(url); else window.open(url, "_blank", "noopener");
     await hide(); return;
   }
-  // A title-only snippet is still usable.
-  const body = item.type === "snippet" ? (item.body || item.title) : item.body;
+  const body = item.body || "";
   if (item.type === "snippet") {
     const template = searchTemplate(body);
     if (template) { state.searchService = { ...item, template }; resetSearch(); return; }
@@ -354,7 +353,7 @@ function openEditor(snippet = null) {
   editorSafety.reset();
   ui.editordialog.showModal();
   resizeEditorArea(ui.snippetbody);
-  ui.snippettitle.focus();
+  ui.snippetbody.focus();
 }
 async function saveEditor(event) {
   event.preventDefault();
@@ -396,29 +395,6 @@ ui.editordialog.addEventListener('click', event => {
 
 ui.search.addEventListener("input", () => { state.query = ui.search.value; state.selected = 0; render(); });
 ui.snippetbody.addEventListener('input', () => resizeEditorArea(ui.snippetbody));
-ui.snippettitle.addEventListener('keydown', event => {
-  if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); ui.snippetbody.focus(); }
-});
-ui.snippetbody.addEventListener('keydown', event => {
-  if (event.key !== 'ArrowUp' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-  if (ui.snippetbody.value || ui.snippetbody.selectionStart !== 0 || ui.snippetbody.selectionEnd !== 0) return;
-  event.preventDefault();
-  ui.snippettitle.focus();
-  const end = ui.snippettitle.value.length;
-  ui.snippettitle.setSelectionRange(end, end);
-});
-function routeEmptySnippetPaste(event) {
-  if (ui.snippettitle.value.length || ui.snippetbody.value.length) return;
-  const text = event.clipboardData?.getData('text/plain');
-  if (!text) return;
-  event.preventDefault();
-  ui.snippetbody.value = text;
-  ui.snippetbody.focus();
-  ui.snippetbody.setSelectionRange(text.length, text.length);
-  ui.snippetbody.dispatchEvent(new Event('input', { bubbles: true }));
-}
-ui.snippettitle.addEventListener('paste', routeEmptySnippetPaste);
-ui.snippetbody.addEventListener('paste', routeEmptySnippetPaste);
 ui.clearsearch.addEventListener("click", resetSearch);
 ui.back.addEventListener("click", goBack);
 ui.add.addEventListener("click", () => openEditor());
@@ -530,14 +506,14 @@ function openPreview(item) {
   previewDialog.showModal();
   previewDialog.focus();
 }
-document.getElementById('preview-edit').onclick = () => { previewDialog.close(); openEditor(previewItem); };
+document.getElementById('preview-edit').onclick = () => { previewDialog.close(); openActions(previewItem); };
 async function copyItem(item) {
-  try { await copyText(item.body || item.title || ''); status('Copied'); }
+  try { await copyText(item.body || ''); status('Copied'); }
   catch (error) { status(errorMessage(error)); }
 }
 async function copyPreview() {
   const feedback = document.getElementById('preview-feedback');
-  try { await copyText(previewItem.body || previewItem.title || ''); feedback.textContent = 'Copied'; }
+  try { await copyText(previewItem.body || ''); feedback.textContent = 'Copied'; }
   catch (error) { feedback.textContent = errorMessage(error); }
 }
 document.getElementById('preview-copy').onclick = copyPreview;
@@ -560,7 +536,8 @@ function openActions(item) {
   const editable = item;
   const actions = [
     ['Preview', 'preview', () => openPreview(item)],
-    ['Edit', 'edit', () => openEditor(editable)],
+    ['Edit content', 'edit', () => openEditor(editable)],
+    ['Rename', 'edit', () => openRename(editable)],
     ['Copy', 'copy', () => copyItem(item)],
     ['Delete snippet…', 'trash', () => { openEditor(editable); ui.deletesnippet.click(); }],
   ];
@@ -575,6 +552,31 @@ actionDialog.addEventListener('keydown', event => {
   if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
   event.preventDefault(); const buttons = [...actionDialog.querySelectorAll('button')];
   const index = buttons.indexOf(document.activeElement); buttons[(index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length].focus();
+});
+
+let renamingSnippet = null;
+function openRename(item) {
+  if (!item || item.type === 'search-query') return;
+  renamingSnippet = item;
+  const input = document.getElementById('rename-input');
+  input.value = item.title || '';
+  document.getElementById('rename-feedback').textContent = '';
+  document.getElementById('rename-dialog').showModal();
+  input.focus(); input.select();
+}
+document.getElementById('cancel-rename').addEventListener('click', () => document.getElementById('rename-dialog').close());
+document.getElementById('rename-dialog').addEventListener('click', event => { if (event.target === event.currentTarget) event.currentTarget.close(); });
+document.getElementById('rename-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!renamingSnippet) return;
+  const title = document.getElementById('rename-input').value;
+  const feedback = document.getElementById('rename-feedback');
+  if (!title.trim() && !renamingSnippet.body.trim()) { feedback.textContent = 'A snippet without content needs a name.'; return; }
+  feedback.textContent = 'Saving…';
+  try {
+    await api(`/snippets/${renamingSnippet.id}`, { method: 'PUT', body: { title, body: renamingSnippet.body } });
+    document.getElementById('rename-dialog').close(); await refresh();
+  } catch (error) { feedback.textContent = errorMessage(error); }
 });
 
 async function boot() {

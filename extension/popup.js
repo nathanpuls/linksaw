@@ -23,7 +23,7 @@ document.addEventListener('focusin', event => showTooltip(event.target.closest?.
 document.addEventListener('focusout', event => { const target = event.target.closest?.('[data-tooltip]'); queueMicrotask(() => { if (target && !target.matches(':hover') && document.activeElement !== target) hideTooltip(); }); });
 document.addEventListener('click', hideTooltip);
 addEventListener('scroll', hideTooltip, true);
-const content = snippet => snippet.body || snippet.title;
+const content = snippet => snippet.body || '';
 const label = snippet => snippet.title.trim() || snippet.body.trim().split(/\r?\n/, 1)[0].slice(0, 80) || 'Untitled';
 function urlFor(text) { const value = text.trim(); if (/^https?:\/\/[^\s]+$/i.test(value)) return value; if (/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(value)) return `https://${value}`; return ''; }
 function filtered() { const q = $('search').value.trim().toLowerCase(); return snippets.map((item, order) => ({ item, order, rank: !q ? 0 : label(item).toLowerCase() === q ? 0 : label(item).toLowerCase().startsWith(q) ? 1 : label(item).toLowerCase().includes(q) ? 2 : item.body.toLowerCase().includes(q) ? 3 : 99 })).filter(x => x.rank < 99).sort((a,b) => a.rank - b.rank || a.order - b.order).map(x => x.item); }

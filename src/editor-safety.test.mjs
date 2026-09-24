@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 import { setupEditorSafety } from './editor-safety.mjs';
 
 test('quit waits for draft resolution and successful save, including an in-flight save', () => {
-  const dom = new JSDOM('<dialog open><input id="snippet-title"><button id="cancel-editor"></button><div id="prompt" hidden><p></p><button data-keep></button><button data-discard></button></div></dialog>');
+  const dom = new JSDOM('<dialog open><textarea id="snippet-body"></textarea><button id="cancel-editor"></button><div id="prompt" hidden><p></p><button data-keep></button><button data-discard></button></div></dialog>');
   const d = dom.window.document, dialog = d.querySelector('dialog'), prompt = d.getElementById('prompt');
   let draft = 'changed', busy = false, exits = 0, saves = 0, closes = 0;
   const safety = setupEditorSafety({ dialog, prompt, snapshot: () => draft, baseline: () => 'original', saving: () => busy, save: () => { saves++; }, close: () => { closes++; }, quit: () => { exits++; } });

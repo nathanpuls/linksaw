@@ -155,7 +155,8 @@ test("title-only public shares do not repeat the title as content", async () => 
 
   assert.match(html, /<h1 class="title">Only a title<\/h1>/);
   assert.match(html, /<pre id="snippet-content" class="content" hidden><\/pre>/);
-  assert.match(html, /snippet-content"\)\.textContent\|\|document\.querySelector\("\.title"\)\.textContent/);
+  assert.match(html, /const content=document\.getElementById\("snippet-content"\)\.textContent;/);
+  assert.doesNotMatch(html, /textContent\|\|document\.querySelector\("\.title"\)/);
 });
 
 test('private deep links serve the authenticated app and preserve the visible URL', async () => {

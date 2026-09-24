@@ -84,7 +84,7 @@ button { color: inherit; }
 .viewer-back { display: none; }
 .reader-toggle { margin-right: 2px; }
 .preview-title { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.preview-title, .title-input { font-size: 21px; font-weight: 550; letter-spacing: -.025em; }
+.preview-title { font-size: 21px; font-weight: 550; letter-spacing: -.025em; }
 .viewer-actions { margin-left: auto; display: flex; align-items: center; gap: 3px; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
 .preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
@@ -100,7 +100,7 @@ button { color: inherit; }
 .surface-header { min-height: 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px; border-bottom: 1px solid var(--line); }
 .surface-header h1 { margin: 0; font-size: 20px; font-weight: 550; letter-spacing: -.02em; }
 .editor-header { border-bottom: 0; }
-.title-input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0; background: transparent; color: inherit; }
+.editor-header-spacer { flex: 1; }
 .content-input { flex: 1; min-height: 260px; width: 100%; resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
 .editor-status { min-width: 0; flex: 1; margin: 0; padding: 0 4px; color: var(--muted); font-size: 13px; }
 .surface-footer { min-height: 76px; display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 0; }
@@ -141,6 +141,10 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .confirm-dialog form { padding: 24px; }
 .confirm-dialog h2 { margin: 0 0 10px; font-size: 20px; }
 .confirm-dialog p { margin: 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.action-menu { width: min(260px, calc(100% - 32px)); border: 1px solid var(--line); border-radius: 14px; padding: 6px; background: var(--paper); color: var(--ink); box-shadow: 0 18px 60px #0003; }
+.action-menu::backdrop { background: #0002; }
+.action-menu button { width: 100%; border: 0; border-radius: 9px; padding: 11px 12px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.action-menu button:hover, .action-menu button:focus-visible { outline: 0; background: var(--selected); }
 .confirm-input { width: 100%; border: 1px solid var(--control); border-radius: 9px; padding: 10px 12px; background: var(--paper); color: var(--ink); }
 .confirm-input:focus { outline: 1px solid var(--focus); outline-offset: 1px; }
 .dialog-status { min-height: 20px; margin: 8px 0 0 !important; color: #b42318 !important; }
@@ -180,7 +184,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .reader-toggle { display: none; }
   .viewer-header, .surface-header { height: 64px; min-height: 64px; padding: 8px 12px 7px 16px; }
   .viewer-actions { gap: 0; }
-  .preview-title, .title-input { font-size: 19px; }
+  .preview-title { font-size: 19px; }
   .preview-body { padding: 8px 22px 40px 66px; }
   .content-input { padding: 8px 22px 40px 16px; }
   .toolbar { height: 64px; padding: 8px 12px 7px 16px; }

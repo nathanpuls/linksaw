@@ -71,12 +71,11 @@ dialog input:focus, dialog textarea:focus { border-color: color-mix(in srgb, var
 #editor-dialog::backdrop { background: transparent; backdrop-filter: none; }
 #editor-form { height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 18px 22px 20px; }
 .editor-header { display: flex; align-items: center; gap: 12px; }
+.editor-header-spacer { flex: 1; }
 .editor-header .bare { font-size: 25px; }
 .editor-scroll { min-height: 0; overflow-y: auto; padding-right: 18px; }
 .note-fields { min-width: 0; padding-bottom: 12px; }
-#editor-dialog #snippet-title, #editor-dialog #snippet-body { border: 0; border-radius: 0; box-shadow: none; padding: 0; background: transparent; }
-#editor-dialog #snippet-title { flex: 1; min-width: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
-#editor-dialog #snippet-body { min-height: 190px; margin-top: 12px; overflow: hidden; font-size: 15px; line-height: 1.55; resize: none; }
+#editor-dialog #snippet-body { min-height: 190px; margin-top: 0; overflow: hidden; border: 0; border-radius: 0; box-shadow: none; padding: 0; background: transparent; font-size: 15px; font-weight: 400; line-height: 1.55; resize: none; }
 #editor-dialog .dialog-actions { flex: 0 0 auto; margin-top: 12px; padding-top: 16px; border-top: 1px solid var(--line); background: var(--surface); }
 .editor-actions { display: flex; align-items: center; justify-content: space-between; }
 .editor-actions #delete-snippet { grid-column: 1; justify-self: start; }

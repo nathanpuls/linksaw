@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260924-1">
+  <link rel="stylesheet" href="/app/app.css?v=20260924-2">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -49,7 +49,7 @@
           <div class="viewer-actions">
             <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
             <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" data-tooltip="Share snippet"></button>
-            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" data-tooltip="Edit snippet"></button>
+            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit options" data-tooltip="Edit options"></button>
           </div>
         </header>
         <div class="viewer-scroll"><pre id="preview-body" class="preview-body"></pre></div>
@@ -62,12 +62,11 @@
       <header class="surface-header editor-header">
         <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
         <button id="editor-reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
-        <label class="sr-only" for="snippet-title">Title</label>
-        <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title (optional)" autocomplete="off">
+        <span class="editor-header-spacer" aria-hidden="true"></span>
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
       </header>
-      <label class="sr-only" for="snippet-body">Content</label>
-      <textarea id="snippet-body" class="content-input" placeholder="Type or paste a snippet" autocomplete="off"></textarea>
+      <label class="sr-only" for="snippet-body">Snippet text</label>
+      <textarea id="snippet-body" class="content-input" autocomplete="off"></textarea>
       <footer class="surface-footer">
         <button id="delete" class="icon-button delete-action" type="button" tabindex="-1" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
         <button id="unshare" class="text-button danger" type="button" tabindex="-1" hidden>Unshare</button>
@@ -141,6 +140,26 @@
     </div>
   </section>
 
+  <dialog id="edit-actions-dialog" class="action-menu" aria-label="Edit options">
+    <div>
+      <button id="edit-content" type="button">Edit content</button>
+      <button id="rename-snippet" type="button">Rename</button>
+    </div>
+  </dialog>
+
+  <dialog id="rename-dialog" class="confirm-dialog" aria-labelledby="rename-title">
+    <form id="rename-form">
+      <h2 id="rename-title">Rename snippet</h2>
+      <label class="sr-only" for="rename-input">Name</label>
+      <input id="rename-input" class="confirm-input" type="text" maxlength="160" autocomplete="off" placeholder="Name (optional)">
+      <p id="rename-status" class="dialog-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions">
+        <button id="cancel-rename" class="text-button" type="button">Cancel</button>
+        <button class="confirm-action" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="action-confirm-dialog" class="confirm-dialog" aria-labelledby="action-confirm-title" aria-describedby="action-confirm-message">
     <form method="dialog">
       <h2 id="action-confirm-title"></h2>
@@ -169,6 +188,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-40"></script>
+  <script type="module" src="/app/app.js?v=20260924-1"></script>
 </body>
 </html>

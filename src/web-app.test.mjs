@@ -9,32 +9,32 @@ const css = readFileSync(new URL("../web/app/app.css", import.meta.url), "utf8")
 test("empty snippets are rejected before the saving state begins", () => {
   const submitHandler = source.match(/\$\("editor-form"\)\.addEventListener\("submit",[\s\S]*?\n\}\);/)?.[0];
   assert.ok(submitHandler, "editor submit handler is present");
-  assert.match(submitHandler, /!payload\.title\.trim\(\) && !payload\.body\.trim\(\)/);
-  assert.ok(submitHandler.indexOf("Enter content or a title") < submitHandler.indexOf("Saving…"));
+  assert.match(submitHandler, /!payload\.body\.trim\(\)/);
+  assert.ok(submitHandler.indexOf("Enter snippet text") < submitHandler.indexOf("Saving…"));
 });
 
 test("save button is gray and disabled until the snippet has a value", () => {
   assert.match(html, /id="save-snippet" class="save-button" type="submit" disabled/);
   assert.match(css, /\.save-button:disabled \{[^}]*background: #9a9a9a;[^}]*color: #fff;[^}]*opacity: 1;[^}]*cursor: default;/);
   assert.match(source, /function syncSaveButton\(\)[\s\S]*?editorSaving \|\| !hasValue/);
-  assert.match(source, /\$\("snippet-title"\)\.addEventListener\("input", syncSaveButton\)/);
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("input", syncSaveButton\)/);
 });
 
-test("default workspace tabs directly between search and title", () => {
-  assert.match(source, /\$\("search"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && !event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("snippet-title"\)\.focus\(\)/);
-  assert.match(source, /\$\("snippet-title"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("search"\)\.focus\(\)/);
+test("default workspace tabs directly between search and content", () => {
+  assert.match(source, /\$\("search"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && !event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("snippet-body"\)\.focus\(\)/);
+  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("search"\)\.focus\(\)/);
 });
 
-test("editor treats title as optional metadata and paste as exact content", () => {
-  assert.match(html, /id="snippet-title"[^>]*placeholder="Title \(optional\)"/);
-  assert.match(html, /id="snippet-body"[^>]*placeholder="Type or paste a snippet"/);
-  assert.match(source, /event\.key === "Enter" && !event\.isComposing[\s\S]*?\$\("snippet-body"\)\.focus\(\)/);
-  assert.match(source, /event\.key !== "ArrowUp"[\s\S]*?if \(body\.value \|\| body\.selectionStart !== 0 \|\| body\.selectionEnd !== 0\) return;[\s\S]*?\$\("snippet-title"\)\.focus\(\)/);
-  assert.match(source, /function routeEmptySnippetPaste\(event\)[\s\S]*?clipboardData\?\.getData\("text\/plain"\)[\s\S]*?\$\("snippet-body"\)\.value = text/);
-  assert.match(source, /\$\("snippet-title"\)\.addEventListener\("paste", routeEmptySnippetPaste\)/);
-  assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| snippet\.title; \}/);
+test("primary editor is content-only and private names use Rename", () => {
+  assert.doesNotMatch(html, /id="snippet-title"/);
+  assert.match(html, /<textarea id="snippet-body" class="content-input" autocomplete="off"><\/textarea>/);
+  assert.doesNotMatch(source, /routeEmptySnippetPaste/);
+  assert.match(source, /function openEditor[\s\S]*?\$\("snippet-body"\)\.value = snippet\?\.body \|\| "";[\s\S]*?\$\("snippet-body"\)\.focus\(\)/);
+  assert.match(source, /const payload = \{ title: state\.editing\?\.title \|\| "", body: \$\("snippet-body"\)\.value \}/);
+  assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| ""; \}/);
   assert.match(source, /return snippet\.title\.trim\(\) \|\| snippet\.body\.trim\(\)\.split/);
+  assert.match(html, /id="edit-actions-dialog"[\s\S]*?>Edit content<[\s\S]*?>Rename</);
+  assert.match(source, /body: JSON\.stringify\(\{ title, body: renamingSnippet\.body \}\)/);
 });
 
 test("mobile editor keeps destructive and save actions inside the viewport", () => {
@@ -79,11 +79,9 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
   assert.match(source, /event\.key === "Escape"[\s\S]*?else if \(\$\("search"\)\.value\) \{ event\.preventDefault\(\); clearSearch\(\); \}/);
 });
 
-test("viewing and editing use the same text scale and vertical rhythm", () => {
-  assert.match(css, /\.preview-title, \.title-input \{ font-size: 21px; font-weight: 550;/);
+test("content editing keeps the same plain-text scale and vertical rhythm", () => {
   assert.match(css, /\.preview-body \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
   assert.match(css, /\.content-input \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
-  assert.match(css, /\.preview-title, \.title-input \{ font-size: 19px; \}/);
 });
 
 test("sidebar Linksaw mark links home before the account control", () => {

@@ -32,7 +32,7 @@
   let editableRange = null;
 
   const label = snippet => snippet.title?.trim() || snippet.body?.trim().split(/\r?\n/, 1)[0].slice(0, 80) || 'Untitled';
-  const content = snippet => snippet.body || snippet.title || '';
+  const content = snippet => snippet.body || '';
 
   function editable(element) {
     if (!element || element.disabled || element.readOnly) return null;

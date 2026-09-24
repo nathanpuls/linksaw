@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { build } from 'vite';
 import { JSDOM } from 'jsdom';
 
-test('title/content editor protects drafts and preview remains literal', async () => {
+test('content editor preserves private names, protects drafts and previews literally', async () => {
   const compiled = await build({ configFile:false, logLevel:'silent', build:{ write:false, minify:false, lib:{ entry:'src/main.mjs', formats:['iife'], name:'LinksawTest' } } });
   const output = Array.isArray(compiled) ? compiled[0] : compiled;
   const code = output.output.find(item => item.type === 'chunk').code;
@@ -19,7 +19,7 @@ test('title/content editor protects drafts and preview remains literal', async (
   w.sessionStorage.setItem('linksaw-demo-token','test-only-token');
   w.fetch=async(url,options={})=>{const path=new URL(url).pathname;
     if(path==='/details'&&options.method==='DELETE'){detailDeletes++;return{ok:true,status:200,json:async()=>({ok:true})};}
-    if(options.method==='PUT'){writes++;return{ok:!failSave,status:failSave?500:200,json:async()=>failSave?{error:'Simulated failure'}:{ok:true}};}
+    if(options.method==='PUT'){writes++;if(!failSave)Object.assign(snippet,JSON.parse(options.body));return{ok:!failSave,status:failSave?500:200,json:async()=>failSave?{error:'Simulated failure'}:{ok:true}};}
     return{ok:true,status:200,json:async()=>path==='/me'?{user:{email:'test@example.com'}}:{snippets:[snippet]}};};
   const flush=async()=>{for(let i=0;i<6;i++)await new Promise(resolve=>setImmediate(resolve));};
   const key=(target,value,extras={})=>target.dispatchEvent(new w.KeyboardEvent('keydown',{key:value,bubbles:true,cancelable:true,...extras}));
@@ -30,13 +30,26 @@ test('title/content editor protects drafts and preview remains literal', async (
     const preview=d.getElementById('snippet-preview');assert.equal(preview.open,true);
     assert.equal(d.getElementById('preview-body').textContent,snippet.body);assert.equal(d.querySelector('#preview-body b'),null);
     d.getElementById('preview-copy').click();await flush();assert.equal(copied,snippet.body);
-    d.getElementById('preview-edit').click();const editor=d.getElementById('editor-dialog');
+    d.getElementById('preview-edit').click();
+    assert.equal(d.getElementById('snippet-actions').open,true,'the pencil opens edit options');
+    [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Edit content').click();
+    const editor=d.getElementById('editor-dialog');
     d.getElementById('snippet-body').value='Changed draft';d.getElementById('cancel-editor').click();
     assert.equal(d.getElementById('unsaved-confirmation').hidden,false);d.querySelector('[data-keep]').click();
     key(editor,'s',{ctrlKey:true});await flush();assert.equal(editor.open,true);assert.match(d.getElementById('editor-feedback').textContent,/Simulated failure/);
     failSave=false;key(editor,'s',{metaKey:true});await flush();assert.equal(editor.open,false);assert.equal(writes,2);
-    d.querySelector('.result-edit').click();d.getElementById('snippet-body').value='Another change';editor.dispatchEvent(new w.Event('cancel',{cancelable:true}));
+    d.querySelector('.result-edit').click();
+    [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Edit content').click();
+    d.getElementById('snippet-body').value='Another change';editor.dispatchEvent(new w.Event('cancel',{cancelable:true}));
     d.querySelector('[data-discard]').click();assert.equal(editor.open,false);assert.equal(writes,2);
+
+    d.querySelector('.result-edit').click();
+    [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Rename').click();
+    d.getElementById('rename-input').value='Private name';
+    d.getElementById('rename-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await flush();
+    assert.equal(snippet.title,'Private name','Rename updates the private label');
+    assert.equal(snippet.body,'Changed draft','Rename preserves the complete content');
+    assert.equal(writes,3);
 
     snippet.body='';key(search,'ArrowRight');
     assert.equal(d.getElementById('preview-title').textContent,snippet.title);
@@ -46,17 +59,12 @@ test('title/content editor protects drafts and preview remains literal', async (
 
     d.getElementById('add').click();
     const title=d.getElementById('snippet-title'),body=d.getElementById('snippet-body');
-    assert.equal(d.activeElement,title,'a new snippet starts in the optional title');
-    assert.equal(title.placeholder,'Title (optional)');
-    assert.equal(body.placeholder,'Type or paste a snippet');
-    key(title,'Enter');assert.equal(d.activeElement,body,'Return moves from title to content');
-    key(body,'ArrowUp');assert.equal(d.activeElement,title,'Up from empty content returns to title');
-    const pasted='First line\nSecond line {cursor} {day}';
+    assert.equal(title.type,'hidden','the private name is not part of everyday editing');
+    assert.equal(d.activeElement,body,'a new snippet starts directly in content');
+    assert.equal(body.hasAttribute('placeholder'),false,'content has no instructional placeholder');
     const paste=new w.Event('paste',{bubbles:true,cancelable:true});
-    Object.defineProperty(paste,'clipboardData',{value:{getData:type=>type==='text/plain'?pasted:''}});
-    title.dispatchEvent(paste);
-    assert.equal(title.value,'','pasted text never becomes the title');
-    assert.equal(body.value,pasted,'the complete paste is preserved as content');
-    assert.equal(d.activeElement,body,'paste continues in the content field');
+    Object.defineProperty(paste,'clipboardData',{value:{getData:()=> 'First line\nSecond line'}});
+    body.dispatchEvent(paste);
+    assert.equal(paste.defaultPrevented,false,'paste uses the browser\'s normal plain-text field behavior');
   }finally{await new Promise(resolve=>setTimeout(resolve,100));dom.window.close();}
 });

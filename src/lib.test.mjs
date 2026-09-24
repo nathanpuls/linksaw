@@ -4,6 +4,7 @@ import { expandDynamic, rankedSnippets, searchTemplate, snippetLabel, standalone
 
 test("title is optional; first content line becomes the result name", () => {
   assert.equal(snippetLabel({ title: "", body: "First line\nSecond line" }), "First line");
+  assert.equal(snippetLabel({ title: "", body: "\n  \nFirst nonempty line\nSecond line" }), "First nonempty line");
 });
 test("search covers title and content while retaining server order", () => {
   const items = [{ title: "Zulu", body: "match" }, { title: "Alpha", body: "match" }, { title: "match exact", body: "other" }];
