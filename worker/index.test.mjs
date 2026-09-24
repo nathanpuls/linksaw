@@ -74,7 +74,7 @@ test("signed-out homepage is served directly as a static asset", async () => {
   assert.equal(assetUrl, "https://linksaw.com/");
 });
 
-test("privacy is a dedicated public page and the homepage links to it", async () => {
+test("privacy and terms are dedicated public pages linked from the homepage", async () => {
   let assetUrl = "";
   const env = {
     DB: {},
@@ -94,11 +94,13 @@ test("privacy is a dedicated public page and the homepage links to it", async ()
 
   const homepage = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
   const privacy = readFileSync(new URL("../web/privacy/index.html", import.meta.url), "utf8");
+  const terms = readFileSync(new URL("../web/terms/index.html", import.meta.url), "utf8");
   assert.match(homepage, /<h1 id="linksaw-title">Linksaw<\/h1>/);
   assert.match(homepage, /Linksaw saves and syncs your snippets, notes, and links/);
   assert.match(homepage, /<a href="\/privacy">Privacy<\/a>/);
+  assert.match(homepage, /<a href="\/terms">Terms<\/a>/);
   assert.doesNotMatch(homepage, /data-legal="privacy"/);
-  assert.match(homepage, /data-legal="terms"/);
+  assert.doesNotMatch(homepage, /data-legal="terms"/);
   assert.match(privacy, /Account information/);
   assert.match(privacy, /How Linksaw uses Google user data/);
   assert.match(privacy, /does not request access to your Gmail/);
@@ -108,6 +110,20 @@ test("privacy is a dedicated public page and the homepage links to it", async ()
   assert.match(privacy, /Cookies and sessions/);
   assert.match(privacy, /Cloudflare/);
   assert.match(privacy, /delete your account/);
+  assert.match(terms, /<h1>Terms of Service<\/h1>/);
+  assert.match(terms, /Your content/);
+  assert.match(terms, /Shared content/);
+  assert.match(terms, /Acceptable use/);
+  assert.match(terms, /Third-party services/);
+
+  assetUrl = "";
+  const termsResponse = await handle(new Request("https://linksaw.com/terms"), env);
+  assert.equal(termsResponse.status, 200);
+  assert.equal(assetUrl, "https://linksaw.com/terms/");
+
+  const termsCanonical = await handle(new Request("https://linksaw.com/terms/", { method: "HEAD" }), env);
+  assert.equal(termsCanonical.status, 308);
+  assert.equal(termsCanonical.headers.get("Location"), "https://linksaw.com/terms");
 });
 
 test("mobile install assets are public static assets", async () => {

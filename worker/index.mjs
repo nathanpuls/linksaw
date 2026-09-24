@@ -187,6 +187,12 @@ export async function handle(request, env) {
   if (isWebHost && ["GET", "HEAD"].includes(request.method) && url.pathname === "/privacy") {
     return env.ASSETS.fetch(new Request("https://linksaw.com/privacy/", request));
   }
+  if (isWebHost && ["GET", "HEAD"].includes(request.method) && url.pathname === "/terms/") {
+    return Response.redirect("https://linksaw.com/terms", 308);
+  }
+  if (isWebHost && ["GET", "HEAD"].includes(request.method) && url.pathname === "/terms") {
+    return env.ASSETS.fetch(new Request("https://linksaw.com/terms/", request));
+  }
   if (isWebHost && request.method === "GET" && ["/favicon.ico", "/icon.png", "/apple-touch-icon.png", "/robots.txt", "/sitemap.xml"].includes(url.pathname)) {
     return env.ASSETS.fetch(request);
   }
