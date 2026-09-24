@@ -353,11 +353,12 @@ $("search").addEventListener("input", () => {
   else if (!query && !hasExplicitRoute() && !narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
 });
 $("clear-search").addEventListener("pointerdown", event => event.preventDefault());
-$("clear-search").addEventListener("click", () => {
+function clearSearch() {
   $("search").value = "";
   $("search").dispatchEvent(new Event("input", { bubbles: true }));
   $("search").focus();
-});
+}
+$("clear-search").addEventListener("click", clearSearch);
 $("add").addEventListener("click", () => openEditor());
 $("settings").addEventListener("click", () => openSettings());
 $("close-editor").addEventListener("click", leaveRoutedView);
@@ -457,7 +458,11 @@ document.addEventListener("keydown", event => {
   if ($("delete-account-dialog").open) return;
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
-  if (event.key === "Escape") { if (editing || settings || viewerOpen) leaveRoutedView(); return; }
+  if (event.key === "Escape") {
+    if (editing || settings || viewerOpen) leaveRoutedView();
+    else if ($("search").value) { event.preventDefault(); clearSearch(); }
+    return;
+  }
   const defaultDraftField = state.editorContext === "default" && [$("snippet-title"), $("snippet-body")].includes(document.activeElement);
   if ((editing && (state.editorContext !== "default" || defaultDraftField)) || settings) return;
   const modifier = event.metaKey || event.ctrlKey;
