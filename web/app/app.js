@@ -2,6 +2,7 @@ const API = "https://snippets-api.linksaw.com";
 const icons = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>',
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
   externalLink: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5h6v6"/><path d="M19 5 5 19"/></svg>',
@@ -15,6 +16,7 @@ const state = { snippets: [], filtered: [], selected: -1, editing: null, editorC
 const isMacPlatform = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || "");
 const sidebarShortcutLabel = isMacPlatform ? "⌘\\" : "Ctrl+\\";
 let toastTimer;
+let copyFeedbackTimer;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("close-editor", "close");
@@ -92,9 +94,28 @@ function showToast(message = "Copied") {
   clearTimeout(toastTimer); $("toast").textContent = message; $("toast").hidden = false;
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 1400);
 }
+function showCopySuccess() {
+  clearTimeout(copyFeedbackTimer);
+  const button = $("preview-copy");
+  button.innerHTML = icons.check;
+  button.ariaLabel = "Copied";
+  button.title = "Copied";
+  const announcement = $("copy-announcement");
+  announcement.textContent = "";
+  requestAnimationFrame(() => { announcement.textContent = "Copied to clipboard"; });
+  copyFeedbackTimer = setTimeout(() => {
+    button.innerHTML = icons.copy;
+    button.ariaLabel = "Copy snippet";
+    button.title = "Copy";
+  }, 1800);
+}
+function showCopyError(error) {
+  showError(error);
+  showToast("Could not copy to clipboard");
+}
 async function copySnippet(snippet) {
   await navigator.clipboard.writeText(snippetText(snippet));
-  showToast();
+  showCopySuccess();
 }
 async function shareSnippet(snippet) {
   const share = await api(`/snippets/${snippet.id}/share`, { method: "POST" });
@@ -278,7 +299,7 @@ $("settings").addEventListener("click", () => openSettings());
 $("close-editor").addEventListener("click", leaveRoutedView);
 $("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", leaveRoutedView);
-$("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showError));
+$("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showCopyError));
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 function toggleReaderMode() {
@@ -374,7 +395,7 @@ document.addEventListener("keydown", event => {
   if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); openEditor(); return; }
   const selected = state.filtered[state.selected];
   if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); openEditor(selected); return; }
-  if (modifier && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); copySnippet(selected).catch(showError); return; }
+  if (modifier && event.key.toLowerCase() === "c" && selected) { event.preventDefault(); copySnippet(selected).catch(showCopyError); return; }
   if (modifier && event.key === "Enter" && selected) {
     const url = standaloneUrl(selected); if (url) { event.preventDefault(); openInNewTab(url); }
     return;

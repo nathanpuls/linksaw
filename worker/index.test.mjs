@@ -102,6 +102,10 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /<article class="snippet-container"><h1 class="title"[\s\S]*<pre id="snippet-content" class="content">/);
   assert.match(html, /\.snippet-container\{width:min\(900px,100%\);margin:0 auto;padding:8px 36px 48px\}/);
   assert.doesNotMatch(html, /border-bottom/);
+  assert.match(html, /aria-live="polite"[\s\S]*Copied to clipboard/);
+  assert.match(html, /m20 6-11 11-5/);
+  assert.match(html, /Could not copy to clipboard/);
+  assert.doesNotMatch(html, />Copied<\/div>/);
   assert.match(html, /Example &lt;title&gt;/);
   assert.match(html, /&lt;script&gt;alert\(&quot;no&quot;\)&lt;\/script&gt;/);
   assert.doesNotMatch(html, /<script>alert/);
