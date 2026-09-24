@@ -42,7 +42,7 @@ test("signed-in root visits enter the app unless the website override is present
   const user = { id: "user", email: "user@example.com" };
   const env = {
     DB: { prepare() { return { bind() { return { first: async () => user }; } }; } },
-    ASSETS: { async fetch() { return new Response('<a id="primary-cta" class="primary-cta" href="/login"><svg class="google-g"></svg><span>Continue with Google</span></a>', { headers: { "Content-Type": "text/html" } }); } },
+    ASSETS: { async fetch() { return new Response('<a id="primary-cta" class="login" href="/login"><svg class="google-g"></svg><span>Continue with Google</span></a>', { headers: { "Content-Type": "text/html" } }); } },
   };
   const headers = { Cookie: `linksaw_session=${"a".repeat(64)}` };
   const redirect = await handle(new Request("https://linksaw.com/", { headers }), env);

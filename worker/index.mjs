@@ -177,7 +177,7 @@ export async function handle(request, env) {
     const response = await env.ASSETS.fetch(new Request("https://linksaw.com/", request));
     if (!session) return response;
     const html = (await response.text())
-      .replace('id="primary-cta" class="primary-cta" href="/login"', 'id="primary-cta" class="primary-cta" href="/home/"')
+      .replace('id="primary-cta" class="login" href="/login"', 'id="primary-cta" class="login" href="/home/"')
       .replace(/<svg class="google-g"[\s\S]*?<\/svg><span>Continue with Google<\/span>/, "<span>Open Linksaw</span>");
     return new Response(html, { status: response.status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   }
