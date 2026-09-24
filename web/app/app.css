@@ -104,9 +104,9 @@ button { color: inherit; }
 .surface-header { min-height: 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px; border-bottom: 1px solid var(--line); }
 .surface-header h1 { margin: 0; font-size: 20px; font-weight: 550; letter-spacing: -.02em; }
 .editor-header { border-bottom: 0; }
-.editor-name-action { min-width: 0; flex: 1; overflow: hidden; border: 0; border-radius: 7px; padding: 6px 8px; background: transparent; color: var(--muted); text-align: left; text-overflow: ellipsis; white-space: nowrap; font: inherit; font-size: 16px; font-weight: 550; cursor: text; }
+.editor-name-action { min-width: 0; flex: 1; overflow: hidden; border: 0; border-radius: 7px; padding: 6px 0; background: transparent; color: var(--muted); text-align: left; text-overflow: ellipsis; white-space: nowrap; font: inherit; font-size: 16px; font-weight: 550; cursor: text; }
 .editor-name-action:hover, .editor-name-action:focus-visible { outline: 0; background: var(--hover); color: var(--ink); }
-.editor-name-input { min-width: 0; flex: 1; border: 1px solid var(--control); border-radius: 7px; padding: 5px 7px; background: transparent; color: var(--ink); font: inherit; font-size: 16px; font-weight: 550; }
+.editor-name-input { min-width: 0; flex: 1; margin-left: -8px; border: 1px solid var(--control); border-radius: 7px; padding: 5px 7px; background: transparent; color: var(--ink); font: inherit; font-size: 16px; font-weight: 550; }
 .editor-name-input:focus { outline: 1px solid var(--focus); outline-offset: 1px; }
 .content-input { flex: 1; min-height: 260px; width: 100%; resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
 .editor-status { min-width: 0; flex: 1; margin: 0; padding: 0 4px; color: var(--muted); font-size: 13px; }

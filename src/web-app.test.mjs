@@ -33,6 +33,13 @@ test("default workspace tabs directly between search and content", () => {
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("search"\)\.focus\(\)/);
 });
 
+test("editor label and content share one exact text gutter", () => {
+  assert.match(css, /\.viewer-header \{[^}]*padding: 9px 22px;/);
+  assert.match(css, /\.editor-name-action \{[^}]*padding: 6px 0;/);
+  assert.match(css, /\.editor-name-input \{[^}]*margin-left: -8px;[^}]*padding: 5px 7px;/);
+  assert.match(css, /\.content-input \{[^}]*padding: 8px 36px 48px 74px;/);
+});
+
 test("primary editor is content-only and supports quiet inline custom names", () => {
   assert.doesNotMatch(html, /id="snippet-title"/);
   assert.match(html, /<textarea id="snippet-body" class="content-input" autocomplete="off"><\/textarea>/);
@@ -85,6 +92,16 @@ test("destructive actions use branded cancellable dialogs", () => {
   assert.match(source, /function cancelDialogOnBackdrop\(dialog\)[\s\S]*?event\.target === dialog[\s\S]*?dialog\.close\("cancel"\)/);
   assert.match(source, /requestConfirmation\(\{ title: "Delete snippet\?"/);
   assert.match(source, /requestConfirmation\(\{ title: "Stop sharing\?"/);
+});
+
+test("closing a dirty editor offers save or discard", () => {
+  assert.match(html, /id="unsaved-dialog" class="confirm-dialog"[\s\S]*?>Discard<\/button>[\s\S]*?>Save changes<\/button>/);
+  assert.match(source, /function editorSnapshot\(\)[\s\S]*?JSON\.stringify\(\{ title, body:/);
+  assert.match(source, /editorBaseline = editorSnapshot\(\)/);
+  assert.match(source, /async function closeEditorWithWarning\(\)[\s\S]*?editorHasUnsavedChanges\(\)[\s\S]*?choice === "save"[\s\S]*?requestSubmit\(\)[\s\S]*?choice === "discard"[\s\S]*?leaveRoutedView\(\)/);
+  assert.match(source, /\$\("close-editor"\)\.addEventListener\("click", closeEditorWithWarning\)/);
+  assert.match(source, /event\.key === "Escape"[\s\S]*?editing\) \{ event\.preventDefault\(\); void closeEditorWithWarning\(\); \}/);
+  assert.match(source, /cancelDialogOnBackdrop\(\$\("unsaved-dialog"\)\)/);
 });
 
 test("icon-only controls use delayed custom tooltips with shortcut badges", () => {

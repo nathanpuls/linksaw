@@ -28,6 +28,8 @@ let tooltipTarget;
 let editorSaving = false;
 let editorCustomName = "";
 let inlineRenameBaseline = "";
+let editorBaseline = "";
+let unsavedResolver;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
@@ -279,6 +281,11 @@ function syncSaveButton() {
 function syncEditorName() {
   $("editor-name").textContent = editorCustomName.trim() || derivedLabel($("snippet-body").value);
 }
+function editorSnapshot() {
+  const title = $("editor-name-input").hidden ? editorCustomName : $("editor-name-input").value.trim();
+  return JSON.stringify({ title, body: $("snippet-body").value });
+}
+function editorHasUnsavedChanges() { return editorSnapshot() !== editorBaseline; }
 function beginInlineRename() {
   hideTooltip();
   inlineRenameBaseline = editorCustomName;
@@ -313,6 +320,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   $("close-editor").hidden = defaultDraft;
   $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = "";
   $("editor-name-input").hidden = true; $("editor-name").hidden = false; syncEditorName(); showSurface("editor");
+  editorBaseline = editorSnapshot();
   if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
   if (focus) setTimeout(() => { $("snippet-body").focus(); if (!snippet) $("snippet-body").setSelectionRange(0, 0); }, 0);
 }
@@ -435,7 +443,22 @@ function clearSearch() {
 $("clear-search").addEventListener("click", clearSearch);
 $("add").addEventListener("click", () => openEditor());
 $("settings").addEventListener("click", () => openSettings());
-$("close-editor").addEventListener("click", leaveRoutedView);
+function requestUnsavedChoice() {
+  const dialog = $("unsaved-dialog");
+  dialog.returnValue = "cancel";
+  $("unsaved-save").disabled = $("save-snippet").disabled;
+  dialog.showModal();
+  ($("unsaved-save").disabled ? $("unsaved-discard") : $("unsaved-save")).focus();
+  return new Promise(resolve => { unsavedResolver = resolve; });
+}
+async function closeEditorWithWarning() {
+  if (!editorHasUnsavedChanges()) { leaveRoutedView(); return; }
+  const choice = await requestUnsavedChoice();
+  if (choice === "save" && !$("save-snippet").disabled) $("editor-form").requestSubmit();
+  else if (choice === "discard") leaveRoutedView();
+}
+$("unsaved-dialog").addEventListener("close", () => { unsavedResolver?.($("unsaved-dialog").returnValue); unsavedResolver = null; });
+$("close-editor").addEventListener("click", closeEditorWithWarning);
 $("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", leaveRoutedView);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showCopyError));
@@ -498,6 +521,7 @@ function cancelDialogOnBackdrop(dialog) {
   dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close("cancel"); });
 }
 cancelDialogOnBackdrop($("action-confirm-dialog"));
+cancelDialogOnBackdrop($("unsaved-dialog"));
 cancelDialogOnBackdrop($("delete-account-dialog"));
 $("delete").addEventListener("click", async () => {
   if (!state.editing || !await requestConfirmation({ title: "Delete snippet?", message: "This permanently removes this snippet.", action: "Delete" })) return;
@@ -616,15 +640,16 @@ document.addEventListener("keydown", event => {
     && (isMacPlatform ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey);
   if (saveShortcut) {
     event.preventDefault();
-    if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
+    if ($("delete-account-dialog").open || $("action-confirm-dialog").open || $("unsaved-dialog").open) return;
     if (!$("editor").hidden && !$("save-snippet").disabled) $("editor-form").requestSubmit();
     return;
   }
-  if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
+  if ($("delete-account-dialog").open || $("action-confirm-dialog").open || $("unsaved-dialog").open) return;
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
   if (event.key === "Escape") {
-    if (editing || settings || viewerOpen) leaveRoutedView();
+    if (editing) { event.preventDefault(); void closeEditorWithWarning(); }
+    else if (settings || viewerOpen) leaveRoutedView();
     else if ($("search").value) { event.preventDefault(); clearSearch(); }
     return;
   }
