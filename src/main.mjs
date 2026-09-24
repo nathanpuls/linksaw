@@ -140,6 +140,9 @@ function render() {
     wrapper.dataset.index = index;
     const row = document.createElement("button"); row.type = "button";
     row.className = `result${index === state.selected ? " selected" : ""}`;
+    row.setAttribute("aria-current", index === state.selected ? "true" : "false");
+    if (item.type === "search-query") row.setAttribute("aria-label", item.label);
+    else row.setAttribute("aria-label", standaloneUrl(item.body) ? `Open ${item.label} website` : `Paste ${item.label}`);
     const left = document.createElement("span");
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = item.label;
     const meta = document.createElement("div"); meta.className = "result-meta";
@@ -168,7 +171,11 @@ function render() {
 }
 
 function updateSelection(scroll = true) {
-  [...ui.results.querySelectorAll(".result")].forEach((row, index) => row.classList.toggle("selected", index === state.selected));
+  [...ui.results.querySelectorAll(".result")].forEach((row, index) => {
+    const selected = index === state.selected;
+    row.classList.toggle("selected", selected);
+    row.setAttribute("aria-current", selected ? "true" : "false");
+  });
   [...ui.results.querySelectorAll(".result-row")].forEach((row, index) => row.classList.toggle("selected", index === state.selected));
   if (scroll) ui.results.querySelector(".result.selected")?.scrollIntoView({ block: "nearest" });
 }

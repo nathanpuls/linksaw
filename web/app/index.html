@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260924-8">
+  <link rel="stylesheet" href="/app/app.css?v=20260924-9">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -19,7 +19,7 @@
       <header class="toolbar">
         <div class="search-wrap">
           <label class="sr-only" for="search">Search snippets</label>
-          <label id="search-icon" class="search-icon" for="search" aria-hidden="true"></label>
+          <button id="search-icon" class="search-icon" type="button" tabindex="-1" aria-label="Focus search" data-tooltip="Focus search"></button>
           <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
           <button id="clear-search" class="search-clear" type="button" aria-label="Clear search" data-tooltip="Clear search" data-shortcut="Esc" hidden></button>
         </div>
@@ -39,7 +39,7 @@
       </footer>
     </section>
 
-    <section id="preview" class="viewer-pane" aria-label="Snippet">
+    <section id="preview" class="viewer-pane" aria-label="Snippet viewer">
       <div id="viewer-empty" class="viewer-empty" aria-hidden="true"></div>
       <article id="viewer-content" class="viewer-content" hidden>
         <header class="viewer-header">
@@ -181,6 +181,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260924-9"></script>
+  <script type="module" src="/app/app.js?v=20260924-10"></script>
 </body>
 </html>

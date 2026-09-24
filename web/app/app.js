@@ -231,7 +231,11 @@ async function shareSnippet(snippet) {
 }
 function setSelected(index, scroll = true) {
   state.selected = Math.max(0, Math.min(index, Math.max(0, state.filtered.length - 1)));
-  document.querySelectorAll(".result-row").forEach((row, i) => row.classList.toggle("selected", i === state.selected));
+  document.querySelectorAll(".result-row").forEach((row, i) => {
+    const selected = i === state.selected;
+    row.classList.toggle("selected", selected);
+    row.querySelector(".result-main")?.setAttribute("aria-current", selected ? "true" : "false");
+  });
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
   renderViewer(state.filtered[state.selected] || null);
 }
@@ -263,6 +267,7 @@ function render() {
     const hasPreview = hasTitle && snippet.body.trim() && (url || snippet.title.trim() !== snippet.body.trim());
     const row = document.createElement("article"); row.className = `result-row${url ? " has-url" : ""}${hasPreview ? " has-preview" : ""}${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
     const main = document.createElement("button"); main.type = "button"; main.className = "result-main";
+    main.setAttribute("aria-current", index === state.selected ? "true" : "false");
     const text = document.createElement("span"); text.className = "result-text";
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = label(snippet);
     const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim();
@@ -271,7 +276,7 @@ function render() {
     text.append(title);
     if (hasPreview) text.append(preview);
     main.append(text);
-    if (url) main.ariaLabel = `Open ${label(snippet)} website`;
+    main.ariaLabel = url ? `Open ${label(snippet)} website` : `View ${label(snippet)}`;
     main.addEventListener("focus", () => setSelected(index, false));
     main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); activateSnippet(snippet); }));
     row.append(main);
@@ -675,6 +680,7 @@ function clearSearch() {
   $("search").focus();
 }
 $("clear-search").addEventListener("click", clearSearch);
+$("search-icon").addEventListener("click", () => $("search").focus());
 $("add").addEventListener("click", () => { void navigateAfterSave(() => openEditor()); });
 $("settings").addEventListener("click", () => { void navigateAfterSave(() => openSettings()); });
 $("close-editor").addEventListener("click", () => { void navigateAfterSave(leaveRoutedView); });

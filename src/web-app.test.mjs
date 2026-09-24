@@ -57,7 +57,7 @@ test("rows provide one-click link, viewer, and edit actions", () => {
   assert.doesNotMatch(source, /row-open|icons\.externalLink/);
   assert.match(source, /function activateSnippet\(snippet\)[\s\S]*?if \(url\) openInNewTab\(url\);[\s\S]*?else openPreview\(snippet\);/);
   assert.match(source, /function runListActionAfterSave\(action\)[\s\S]*?navigateAfterSave[\s\S]*?closeSurface\("editor"\)[\s\S]*?action\(\)/);
-  assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} website`/);
+  assert.match(source, /main\.ariaLabel = url \? `Open \$\{label\(snippet\)\} website` : `View \$\{label\(snippet\)\}`/);
   assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?activateSnippet\(snippet\)/);
   assert.match(source, /edit\.ariaLabel = "Edit"; edit\.dataset\.tooltip = "Edit"/);
   assert.match(source, /edit\.addEventListener\("click", event => \{ event\.stopPropagation\(\);[\s\S]*?openEditor\(snippet\)/);
@@ -138,8 +138,9 @@ test("editor provides local and persistent undo and redo", () => {
 test("icon-only controls use delayed custom tooltips with shortcut badges", () => {
   assert.doesNotMatch(html, /\stitle=/);
   assert.match(html, /data-tooltip="Copy"/);
-  assert.match(html, /<label id="search-icon" class="search-icon" for="search"/);
+  assert.match(html, /<button id="search-icon" class="search-icon" type="button" tabindex="-1" aria-label="Focus search" data-tooltip="Focus search"><\/button>/);
   assert.match(css, /\.search-icon \{[^}]*cursor: text;/);
+  assert.match(source, /\$\("search-icon"\)\.addEventListener\("click", \(\) => \$\("search"\)\.focus\(\)\)/);
   assert.match(html, /id="clear-search" class="search-clear"[^>]*data-shortcut="Esc"[^>]*hidden/);
   assert.match(html, /id="tooltip-shortcut"/);
   assert.match(source, /dataset\.shortcut = commandShortcut\("C"\)/);
@@ -155,6 +156,14 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
   assert.match(source, /async function shareSnippet[\s\S]*?finally \{ hideTooltip\(\); \$\("preview-share"\)\.blur\(\); \}/);
   assert.match(source, /\$\("search"\)\.value = "";[\s\S]*?dispatchEvent\(new Event\("input"[\s\S]*?\$\("search"\)\.focus\(\)/);
   assert.match(source, /event\.key === "Escape"[\s\S]*?else if \(\$\("search"\)\.value\) \{ event\.preventDefault\(\); clearSearch\(\); \}/);
+});
+
+test("interactive web controls expose Voice Control names without changing the primary tab path", () => {
+  assert.match(html, /id="search-icon"[^>]*tabindex="-1"[^>]*aria-label="Focus search"/);
+  assert.match(html, /id="preview" class="viewer-pane" aria-label="Snippet viewer"/);
+  assert.match(source, /main\.ariaLabel = url \? `Open \$\{label\(snippet\)\} website` : `View \$\{label\(snippet\)\}`/);
+  assert.match(source, /main\.setAttribute\("aria-current", index === state\.selected \? "true" : "false"\)/);
+  assert.match(source, /row\.querySelector\("\.result-main"\)\?\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
 });
 
 test("content editing keeps the same plain-text scale and vertical rhythm", () => {

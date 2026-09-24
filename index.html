@@ -10,12 +10,13 @@
   <main class="launcher">
     <header class="search-row" data-tauri-drag-region>
       <button id="back" class="bare back" aria-label="Back" data-tooltip="Back to search" data-tooltip-shortcut="←" hidden></button>
+      <label class="visually-hidden" for="search">Search snippets</label>
       <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
       <button id="clear-search" class="bare" type="button" aria-label="Clear search" data-tooltip="Clear search" hidden></button>
       <button id="add" class="bare" aria-label="New snippet" data-tooltip="New snippet" data-tooltip-shortcut="N"></button>
       <button id="settings" class="bare" aria-label="Settings" data-tooltip="Settings"></button>
     </header>
-    <div id="status" class="status"></div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
     <div id="refresh-feedback" class="refresh-feedback" role="status" aria-live="polite" hidden>
       <span id="refresh-message"></span>
       <button id="retry-refresh" type="button" class="secondary" data-tooltip="Refresh snippets" data-tooltip-shortcut="R" hidden>Retry</button>
@@ -26,7 +27,7 @@
         <button id="open-paste-settings" type="button">Mac Settings</button>
       </div>
     </div>
-    <section id="results" class="results" aria-label="Results"></section>
+    <section id="results" class="results" aria-label="Snippets"></section>
   </main>
 
   <div id="copy-toast" class="copy-toast" role="status" aria-live="polite" hidden>Copied</div>
@@ -80,7 +81,7 @@
     </form>
   </dialog>
 
-  <dialog id="editor-dialog">
+  <dialog id="editor-dialog" aria-labelledby="editor-title">
     <form id="editor-form">
       <div class="editor-header">
         <h2 id="editor-title" class="visually-hidden">New snippet</h2>
