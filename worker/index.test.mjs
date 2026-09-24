@@ -131,6 +131,18 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.doesNotMatch(html, /href="https:\/\/example\.com\/docs`"/);
 });
 
+test("public share keeps a title that matches its content", async () => {
+  const env = {
+    DB: { prepare() { return { bind() { return { first: async () => ({ title: "Same", body: "Same" }) }; } }; } },
+  };
+
+  const response = await handle(new Request("https://linksaw.com/s/Ab3k9Qx7Lm2N4pRs"), env);
+  const html = await response.text();
+
+  assert.match(html, /<h1 class="title">Same<\/h1>/);
+  assert.doesNotMatch(html, /<h1 class="title" hidden>/);
+});
+
 test('private deep links serve the authenticated app and preserve the visible URL', async () => {
   const id = '12345678-1234-1234-1234-123456789abc';
   const assets = [];

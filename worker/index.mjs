@@ -92,7 +92,7 @@ function publicLinkedHtml(value) {
 
 function publicSnippetPage(snippet) {
   const body = snippet.body || snippet.title;
-  const heading = snippet.body.trim() && snippet.title.trim() !== snippet.body.trim() ? snippet.title.trim() : "";
+  const heading = snippet.title.trim();
   const pageTitle = heading || body.trim().split(/\r?\n/, 1)[0].slice(0, 80) || "Shared snippet";
   const nonce = randomToken().slice(0, 24);
   const html = `<!doctype html>

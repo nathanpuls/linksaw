@@ -275,7 +275,7 @@ function renderViewer(snippet) {
   state.previewing = snippet;
   $("viewer-empty").hidden = Boolean(snippet); $("viewer-content").hidden = !snippet;
   if (!snippet) return;
-  const heading = snippet.body.trim() && snippet.title.trim() !== snippet.body.trim() ? snippet.title.trim() : "";
+  const heading = snippet.title.trim();
   $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
   renderLinkedText($("preview-body"), snippet.body || snippet.title);
 }

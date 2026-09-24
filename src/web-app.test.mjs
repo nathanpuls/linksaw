@@ -39,6 +39,13 @@ test("viewing and editing use the same text scale and vertical rhythm", () => {
   assert.match(css, /\.preview-title, \.title-input \{ font-size: 19px; \}/);
 });
 
+test("viewer always preserves an explicit title", () => {
+  const viewer = source.match(/function renderViewer\(snippet\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(viewer, "viewer renderer is present");
+  assert.match(viewer, /const heading = snippet\.title\.trim\(\);/);
+  assert.doesNotMatch(viewer, /snippet\.title\.trim\(\) !== snippet\.body\.trim\(\)/);
+});
+
 test("settings offers working CSV and JSON transfer controls", () => {
   for (const label of ["Import CSV", "Import JSON", "Export CSV", "Export JSON"]) assert.match(html, new RegExp(`>${label}<`));
   assert.match(source, /importLibrary\(event\.target, parseCsvSnippets\)/);
