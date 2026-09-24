@@ -93,9 +93,24 @@ button { color: inherit; }
 .viewer-actions { margin-left: auto; display: flex; align-items: center; gap: 3px; }
 .viewer-delete { margin-left: 9px; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
-.preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
+.preview-body { width: min(900px, 100%); margin: 0; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
 .preview-body a { color: inherit; text-decoration: underline; text-decoration-color: var(--control); text-decoration-thickness: 1.2px; text-underline-offset: 2px; text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; cursor: pointer; word-break: break-word; }
 .preview-body a:hover, .preview-body a:focus-visible { text-decoration-color: currentColor; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child { margin-bottom: 0; }
+.markdown-body p { margin: 0 0 1em; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { margin: 1.25em 0 .55em; line-height: 1.28; letter-spacing: -.015em; }
+.markdown-body h1 { font-size: 1.5em; }
+.markdown-body h2 { font-size: 1.3em; }
+.markdown-body h3 { font-size: 1.15em; }
+.markdown-body h4, .markdown-body h5, .markdown-body h6 { font-size: 1em; }
+.markdown-body ul, .markdown-body ol { margin: 0 0 1em; padding-left: 1.65em; }
+.markdown-body li + li { margin-top: .25em; }
+.markdown-body blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 2px solid var(--control); color: var(--muted); }
+.markdown-body blockquote > :last-child { margin-bottom: 0; }
+.markdown-body code { border-radius: 4px; padding: .12em .32em; background: var(--selected); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; }
+.markdown-body pre { margin: 0 0 1em; overflow-x: auto; border-radius: 7px; padding: 14px 16px; background: var(--selected); white-space: pre; line-height: 1.5; }
+.markdown-body pre code { padding: 0; background: transparent; font-size: .875em; }
 .app.reader-mode { grid-template-columns: minmax(0, 1fr); }
 .app.reader-mode .list-pane { display: none; }
 

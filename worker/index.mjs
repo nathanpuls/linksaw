@@ -1,5 +1,5 @@
 import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64Url, shareToken, validSnippet, webSessionCookie } from "./lib.mjs";
-import { linkifyText } from "../web/app/linkify.js";
+import { markdownToSafeHtml } from "../web/app/markdown.js";
 
 const allowedOrigins = new Set(["https://linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
 const profileSchemaReady = new WeakMap();
@@ -101,14 +101,6 @@ async function saveAutocompleteTrigger(env, userId, trigger) {
     .bind(userId, trigger, nowSeconds()).run();
 }
 
-function publicLinkedHtml(value) {
-  return linkifyText(value).map(part => {
-    if (!part.href) return escapeHtml(part.text);
-    const external = part.external ? ' target="_blank" rel="noopener noreferrer"' : "";
-    return `<a href="${escapeHtml(part.href)}"${external}>${escapeHtml(part.text)}</a>`;
-  }).join("");
-}
-
 function publicSnippetPage(snippet) {
   const body = snippet.body;
   const heading = snippet.title.trim();
@@ -139,9 +131,16 @@ function publicSnippetPage(snippet) {
     .home::after{left:0}.copy::after{right:0}
     .snippet-container{width:min(900px,100%);margin:0 auto;padding:8px 36px 48px}
     .title{margin:0 0 22px;overflow-wrap:anywhere;font-size:21px;font-weight:550;letter-spacing:-.025em}
-    .content{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:16px;line-height:1.65}
+    .content{margin:0;overflow-wrap:anywhere;font:inherit;font-size:16px;line-height:1.65}
     .content a{color:inherit;text-decoration:underline;text-decoration-thickness:1.2px;text-underline-offset:2px;text-decoration-skip-ink:none;-webkit-text-decoration-skip:none;cursor:pointer;word-break:break-word}
     .content a:hover,.content a:focus-visible{text-decoration-color:currentColor}
+    .content>:first-child{margin-top:0}.content>:last-child{margin-bottom:0}.content p{margin:0 0 1em}
+    .content h1,.content h2,.content h3,.content h4,.content h5,.content h6{margin:1.25em 0 .55em;line-height:1.28;letter-spacing:-.015em}
+    .content h1{font-size:1.5em}.content h2{font-size:1.3em}.content h3{font-size:1.15em}.content h4,.content h5,.content h6{font-size:1em}
+    .content ul,.content ol{margin:0 0 1em;padding-left:1.65em}.content li+li{margin-top:.25em}
+    .content blockquote{margin:0 0 1em;padding-left:1em;border-left:2px solid #d4d4d8;color:#777}.content blockquote>:last-child{margin-bottom:0}
+    .content code{border-radius:4px;padding:.12em .32em;background:#f4f4f5;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em}
+    .content pre{margin:0 0 1em;overflow-x:auto;border-radius:7px;padding:14px 16px;background:#f4f4f5;white-space:pre;line-height:1.5}.content pre code{padding:0;background:transparent;font-size:.875em}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .copy-error{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:9px 15px;border-radius:9px;background:#b42318;color:#fff;font-size:13px}
     @media(hover:none),(pointer:coarse){[data-tooltip]::after{display:none}}
@@ -154,11 +153,11 @@ function publicSnippetPage(snippet) {
       <a class="home" href="https://linksaw.com/" aria-label="Linksaw home" data-tooltip="Linksaw home"><img src="https://linksaw.com/icon.png" alt=""></a>
       <button id="copy" class="copy" type="button" aria-label="Copy snippet" data-tooltip="Copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
     </header>
-    <article class="snippet-container"><h1 class="title"${heading ? "" : " hidden"}>${escapeHtml(heading)}</h1><pre id="snippet-content" class="content"${body ? "" : " hidden"}>${publicLinkedHtml(body)}</pre></article>
+    <article class="snippet-container"><h1 class="title"${heading ? "" : " hidden"}>${escapeHtml(heading)}</h1><div id="snippet-content" class="content"${body ? "" : " hidden"}>${markdownToSafeHtml(body)}</div><textarea id="snippet-source" hidden>${escapeHtml(body)}</textarea></article>
   </main>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="copy-error" class="copy-error" role="alert" hidden></div>
-  <script nonce="${nonce}">const b=document.getElementById("copy"),original=b.innerHTML,check='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>';let timer;b.addEventListener("click",async()=>{const error=document.getElementById("copy-error");error.hidden=true;try{const content=document.getElementById("snippet-content").textContent;await navigator.clipboard.writeText(content);clearTimeout(timer);b.innerHTML=check;b.setAttribute("aria-label","Copied");b.dataset.tooltip="Copied";const live=document.getElementById("copy-announcement");live.textContent="";requestAnimationFrame(()=>live.textContent="Copied to clipboard");timer=setTimeout(()=>{b.innerHTML=original;b.setAttribute("aria-label","Copy snippet");b.dataset.tooltip="Copy"},1800)}catch{error.textContent="Could not copy to clipboard";error.hidden=false}})</script>
+  <script nonce="${nonce}">const b=document.getElementById("copy"),original=b.innerHTML,check='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>';let timer;b.addEventListener("click",async()=>{const error=document.getElementById("copy-error");error.hidden=true;try{const content=document.getElementById("snippet-source").value;await navigator.clipboard.writeText(content);clearTimeout(timer);b.innerHTML=check;b.setAttribute("aria-label","Copied");b.dataset.tooltip="Copied";const live=document.getElementById("copy-announcement");live.textContent="";requestAnimationFrame(()=>live.textContent="Copied to clipboard");timer=setTimeout(()=>{b.innerHTML=original;b.setAttribute("aria-label","Copy snippet");b.dataset.tooltip="Copy"},1800)}catch{error.textContent="Could not copy to clipboard";error.hidden=false}})</script>
 </body>
 </html>`;
   return { html, nonce };
@@ -167,7 +166,7 @@ function publicSnippetPage(snippet) {
 export async function handle(request, env) {
   const url = new URL(request.url);
   const isWebHost = url.hostname === "linksaw.com";
-  const appAssetPaths = new Set(["/app/app.css", "/app/app.js", "/app/linkify.js", "/app/transfers.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"]);
+  const appAssetPaths = new Set(["/app/app.css", "/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"]);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(request) });
   if (!env.DB) return fail(request, "D1 database is not configured", 503);
 

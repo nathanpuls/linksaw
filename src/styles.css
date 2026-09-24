@@ -134,8 +134,22 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--muted); ou
 .preview-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
 .preview-header h2 { flex: 1; min-width: 0; margin: 0; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .preview-content { min-height: 0; overflow: auto; padding: 18px 20px; }
-.preview-content pre { font: inherit; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
-#preview-body { font-weight: 400; }
+#preview-body { overflow-wrap: anywhere; font-size: 14px; font-weight: 400; line-height: 1.6; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child { margin-bottom: 0; }
+.markdown-body p { margin: 0 0 1em; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { margin: 1.25em 0 .55em; line-height: 1.28; letter-spacing: -.015em; }
+.markdown-body h1 { font-size: 1.5em; }
+.markdown-body h2 { font-size: 1.3em; }
+.markdown-body h3 { font-size: 1.15em; }
+.markdown-body h4, .markdown-body h5, .markdown-body h6 { font-size: 1em; }
+.markdown-body ul, .markdown-body ol { margin: 0 0 1em; padding-left: 1.65em; }
+.markdown-body li + li { margin-top: .25em; }
+.markdown-body blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 2px solid var(--control-line); color: var(--muted); }
+.markdown-body blockquote > :last-child { margin-bottom: 0; }
+.markdown-body code { border-radius: 4px; padding: .12em .32em; background: var(--selected); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; }
+.markdown-body pre { margin: 0 0 1em; overflow-x: auto; border-radius: 7px; padding: 14px 16px; background: var(--selected); white-space: pre; line-height: 1.5; }
+.markdown-body pre code { padding: 0; background: transparent; font-size: .875em; }
 #preview-feedback { margin-right: auto; align-self: center; font-size: 12px; color: var(--muted); }
 .preview-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); }
 .preview-actions .viewer-delete { margin-left: 6px; }

@@ -1,5 +1,5 @@
 import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-2";
-import { linkifyText } from "./linkify.js?v=20260924-1";
+import { renderMarkdown } from "./markdown.js?v=20260924-1";
 
 const API = "https://snippets-api.linksaw.com";
 const icons = {
@@ -156,17 +156,6 @@ function openInNewTab(url) {
   if (!opened) return;
   opened.opener = null;
   opened.focus();
-}
-function renderLinkedText(element, text) {
-  const nodes = linkifyText(text).map(part => {
-    if (!part.href) return document.createTextNode(part.text);
-    const link = document.createElement("a");
-    link.href = part.href;
-    if (part.external) { link.target = "_blank"; link.rel = "noopener noreferrer"; }
-    link.textContent = part.text;
-    return link;
-  });
-  element.replaceChildren(...nodes);
 }
 function showToast(message = "Copied") {
   if (pendingUndo) return;
@@ -525,7 +514,7 @@ function renderViewer(snippet) {
   const heading = snippet.title.trim();
   $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
   $("preview-body").hidden = !snippet.body;
-  renderLinkedText($("preview-body"), snippet.body);
+  renderMarkdown($("preview-body"), snippet.body);
 }
 function narrowLayout() { return matchMedia("(max-width: 900px)").matches; }
 function syncReaderMode() {

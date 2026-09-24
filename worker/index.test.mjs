@@ -153,12 +153,12 @@ test("every browser module is served as a static asset", async () => {
     ASSETS: { async fetch(request) { requested.push(new URL(request.url).pathname); return new Response("module", { status: 200 }); } },
   };
 
-  for (const path of ["/app/app.js", "/app/linkify.js", "/app/transfers.js"]) {
+  for (const path of ["/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js"]) {
     const response = await handle(new Request(`https://linksaw.com${path}`), env);
     assert.equal(response.status, 200);
   }
 
-  assert.deepEqual(requested, ["/app/app.js", "/app/linkify.js", "/app/transfers.js"]);
+  assert.deepEqual(requested, ["/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js"]);
 });
 
 test("public share pages render without sign-in and escape snippet content", async () => {
@@ -186,7 +186,7 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /<a class="home" href="https:\/\/linksaw\.com\/" aria-label="Linksaw home" data-tooltip="Linksaw home">/);
   assert.match(html, /<header class="topbar">[\s\S]*id="copy"/);
   assert.match(html, /@media\(hover:none\),\(pointer:coarse\)\{\[data-tooltip\]::after\{display:none\}\}/);
-  assert.match(html, /<article class="snippet-container"><h1 class="title"[\s\S]*<pre id="snippet-content" class="content">/);
+  assert.match(html, /<article class="snippet-container"><h1 class="title"[\s\S]*<div id="snippet-content" class="content">/);
   assert.match(html, /\.snippet-container\{width:min\(900px,100%\);margin:0 auto;padding:8px 36px 48px\}/);
   assert.doesNotMatch(html, /border-bottom/);
   assert.match(html, /aria-live="polite"[\s\S]*Copied to clipboard/);
@@ -204,7 +204,9 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /href="tel:3125551212">\(312\) 555-1212<\/a>/);
   assert.match(html, /href="tel:\+442079460958">\+44 20 7946 0958<\/a>/);
   assert.match(html, /href="mailto:hi@example\.com">hi@example\.com<\/a>/);
-  assert.match(html, /href="https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=123%20Main%20St%2C%20Suite%20110%20Kingwood%2C%20TX%2077339" target="_blank" rel="noopener noreferrer">123 Main St, Suite 110,\nKingwood, TX 77339<\/a>/);
+  assert.match(html, /href="https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=123%20Main%20St%2C%20Suite%20110%20Kingwood%2C%20TX%2077339" target="_blank" rel="noopener noreferrer">123 Main St, Suite 110,<br>Kingwood, TX 77339<\/a>/);
+  assert.match(html, /<textarea id="snippet-source" hidden>&lt;script&gt;alert/);
+  assert.match(html, /document\.getElementById\("snippet-source"\)\.value/);
   assert.match(html, /text-decoration-thickness:1\.2px[\s\S]*text-decoration-skip-ink:none[\s\S]*word-break:break-word/);
 });
 
@@ -229,8 +231,8 @@ test("title-only public shares do not repeat the title as content", async () => 
   const html = await response.text();
 
   assert.match(html, /<h1 class="title">Only a title<\/h1>/);
-  assert.match(html, /<pre id="snippet-content" class="content" hidden><\/pre>/);
-  assert.match(html, /const content=document\.getElementById\("snippet-content"\)\.textContent;/);
+  assert.match(html, /<div id="snippet-content" class="content" hidden><\/div>/);
+  assert.match(html, /const content=document\.getElementById\("snippet-source"\)\.value;/);
   assert.doesNotMatch(html, /textContent\|\|document\.querySelector\("\.title"\)/);
 });
 

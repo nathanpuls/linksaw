@@ -8,6 +8,7 @@ import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { expandDynamic, rankedSnippets, searchTemplate, snippetLabel, standaloneUrl, trim } from "./lib.mjs";
 import linksawLogo from "../web/icon.png?url";
+import { renderMarkdown } from "../web/app/markdown.js";
 
 const native = Boolean(window.__TAURI_INTERNALS__);
 const WEB_TRANSFER_SETTINGS_URL = "https://linksaw.com/home/?view=settings#import-export";
@@ -571,7 +572,7 @@ function openPreview(item) {
   const previewBody = document.getElementById('preview-body');
   previewTitle.textContent = item.title || '';
   previewTitle.hidden = !item.title;
-  previewBody.textContent = item.body || '';
+  renderMarkdown(previewBody, item.body || '');
   previewBody.hidden = !item.body;
   document.getElementById('preview-feedback').textContent = '';
   previewDialog.showModal();

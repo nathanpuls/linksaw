@@ -6,6 +6,7 @@ const source = readFileSync(new URL("../web/app/app.js", import.meta.url), "utf8
 const html = readFileSync(new URL("../web/app/index.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../web/app/app.css", import.meta.url), "utf8");
 const linkifier = readFileSync(new URL("../web/app/linkify.js", import.meta.url), "utf8");
+const markdown = readFileSync(new URL("../web/app/markdown.js", import.meta.url), "utf8");
 
 test("autosave waits for settled meaningful text and has no permanent save button", () => {
   assert.doesNotMatch(html, /id="save-snippet"/);
@@ -189,12 +190,14 @@ test("viewer shows only explicit custom names above exact content", () => {
   assert.doesNotMatch(viewer, /snippet\.title\.trim\(\) !== snippet\.body\.trim\(\)/);
   assert.doesNotMatch(viewer, /derivedLabel/);
   assert.match(viewer, /\$\("preview-body"\)\.hidden = !snippet\.body;/);
-  assert.match(viewer, /renderLinkedText\(\$\("preview-body"\), snippet\.body\);/);
+  assert.match(viewer, /renderMarkdown\(\$\("preview-body"\), snippet\.body\);/);
 });
 
-test("viewer uses shared QK-style linkification and underlined styling", () => {
-  assert.match(source, /import \{ linkifyText \} from "\.\/linkify\.js\?v=20260924-1"/);
-  assert.match(source, /function renderLinkedText[\s\S]*?linkifyText\(text\)/);
+test("viewer uses safe Markdown plus shared QK-style linkification and underlined styling", () => {
+  assert.match(source, /import \{ renderMarkdown \} from "\.\/markdown\.js\?v=20260924-1"/);
+  assert.match(markdown, /import \{ linkifyText \} from "\.\/linkify\.js"/);
+  assert.match(markdown, /export function markdownToSafeHtml/);
+  assert.match(markdown, /element\.innerHTML = markdownToSafeHtml\(value\)/);
   assert.match(linkifier, /const EMAIL =/);
   assert.match(linkifier, /const PROTOCOL_URL =/);
   assert.match(linkifier, /const PHONE =/);
