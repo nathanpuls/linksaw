@@ -66,9 +66,11 @@ button { color: inherit; }
 .row-open { margin-right: 3px; text-decoration: none; }
 .empty { padding: 84px 24px; color: var(--muted); text-align: center; }
 .empty button { margin-top: 14px; }
-.sidebar-footer { min-height: 58px; display: flex; align-items: center; padding: 5px 7px; }
-.identity-button { width: 100%; min-width: 0; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 9px; padding: 7px 10px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+.sidebar-footer { min-height: 58px; display: flex; align-items: center; gap: 3px; padding: 5px 7px; }
+.identity-button { min-width: 0; flex: 1; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 9px; padding: 7px 10px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 .identity-button:hover, .identity-button:focus-visible { outline: 0; background: var(--selected); }
+.identity-logo-link { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border-radius: 9px; }
+.identity-logo-link:hover, .identity-logo-link:focus-visible { outline: 0; background: var(--selected); }
 .identity-logo { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 7px; object-fit: contain; }
 .identity-avatar { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; object-fit: cover; }
 .identity-avatar-fallback { display: grid; place-items: center; background: var(--selected); color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .02em; }

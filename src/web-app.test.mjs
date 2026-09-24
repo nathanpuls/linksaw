@@ -39,8 +39,8 @@ test("viewing and editing use the same text scale and vertical rhythm", () => {
   assert.match(css, /\.preview-title, \.title-input \{ font-size: 19px; \}/);
 });
 
-test("sidebar identity places the Linksaw mark before the account avatar", () => {
-  assert.match(html, /<img class="identity-logo"[^>]*>\s*<img id="account-avatar"/);
+test("sidebar Linksaw mark links home before the account control", () => {
+  assert.match(html, /<a class="identity-logo-link" href="https:\/\/linksaw\.com"[^>]*>[\s\S]*?<img class="identity-logo"[^>]*>[\s\S]*?<button id="settings"/);
   assert.match(css, /\.identity-logo \{ width: 28px; height: 28px;/);
 });
 
