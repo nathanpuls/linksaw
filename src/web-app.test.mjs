@@ -36,7 +36,8 @@ test("default workspace tabs directly between search and content", () => {
 test("editor label and content share one exact text gutter", () => {
   assert.match(css, /\.viewer-header \{[^}]*padding: 9px 22px;/);
   assert.match(css, /\.editor-name-action \{[^}]*padding: 6px 0;/);
-  assert.match(css, /\.editor-name-input \{[^}]*margin-left: -8px;[^}]*padding: 5px 7px;/);
+  assert.match(css, /\.editor-name-input \{[^}]*margin-left: -6px;[^}]*border: 1px solid var\(--control\);[^}]*border-radius: 6px;[^}]*padding: 5px;[^}]*background: transparent;[^}]*font-size: 16px;[^}]*font-weight: 550;[^}]*box-shadow: none;/);
+  assert.match(css, /\.editor-name-input:focus \{ border-color: var\(--focus\); outline: 0; box-shadow: none; \}/);
   assert.match(css, /\.content-input \{[^}]*padding: 8px 36px 48px 74px;/);
 });
 
