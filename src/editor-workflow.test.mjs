@@ -31,25 +31,25 @@ test('content editor preserves private names, protects drafts and previews liter
     assert.equal(d.getElementById('preview-body').textContent,snippet.body);assert.equal(d.querySelector('#preview-body b'),null);
     d.getElementById('preview-copy').click();await flush();assert.equal(copied,snippet.body);
     d.getElementById('preview-edit').click();
-    assert.equal(d.getElementById('snippet-actions').open,true,'the pencil opens edit options');
-    [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Edit content').click();
+    assert.equal(d.getElementById('editor-dialog').open,true,'the pencil opens Edit directly');
     const editor=d.getElementById('editor-dialog');
     d.getElementById('snippet-body').value='Changed draft';d.getElementById('cancel-editor').click();
-    assert.equal(d.getElementById('unsaved-confirmation').hidden,false);d.querySelector('[data-keep]').click();
-    key(editor,'s',{ctrlKey:true});await flush();assert.equal(editor.open,true);assert.match(d.getElementById('editor-feedback').textContent,/Simulated failure/);
-    failSave=false;key(editor,'s',{metaKey:true});await flush();assert.equal(editor.open,false);assert.equal(writes,2);
+    await flush();assert.equal(editor.open,true,'a failed autosave keeps the editor open');
+    key(editor,'s',{ctrlKey:true});await flush();assert.equal(editor.open,true);assert.match(d.getElementById('editor-feedback').textContent,/Couldn’t save/);
+    failSave=false;key(editor,'s',{metaKey:true});await flush();assert.equal(editor.open,true);assert.equal(writes,3);
+    d.getElementById('cancel-editor').click();await flush();assert.equal(editor.open,false);
     d.querySelector('.result-edit').click();
     [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Edit content').click();
     d.getElementById('snippet-body').value='Another change';editor.dispatchEvent(new w.Event('cancel',{cancelable:true}));
-    d.querySelector('[data-discard]').click();assert.equal(editor.open,false);assert.equal(writes,2);
+    await flush();assert.equal(editor.open,false);assert.equal(writes,4);
 
     d.querySelector('.result-edit').click();
     [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Rename').click();
     d.getElementById('rename-input').value='Private name';
     d.getElementById('rename-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await flush();
     assert.equal(snippet.title,'Private name','Rename updates the private label');
-    assert.equal(snippet.body,'Changed draft','Rename preserves the complete content');
-    assert.equal(writes,3);
+    assert.equal(snippet.body,'Another change','Rename preserves the complete content');
+    assert.equal(writes,5);
 
     snippet.body='';key(search,'ArrowRight');
     assert.equal(d.getElementById('preview-title').textContent,snippet.title);

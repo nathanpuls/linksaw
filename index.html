@@ -30,6 +30,7 @@
   </main>
 
   <div id="copy-toast" class="copy-toast" role="status" aria-live="polite" hidden>Copied</div>
+  <div id="delete-toast" class="delete-toast" role="status" aria-live="polite" hidden><span>Snippet deleted ·</span><button id="undo-delete" type="button">Undo</button></div>
   <dialog id="settings-dialog" aria-labelledby="settings-title">
     <form id="settings-form">
       <div class="settings-header">
@@ -93,15 +94,14 @@
           <textarea id="snippet-body" rows="8"></textarea>
         </div>
       </div>
-      <p id="editor-feedback" role="status" aria-live="polite"></p>
       <div id="delete-confirmation" hidden><p>Delete this snippet?</p><button id="confirm-delete" class="danger" type="button">Delete snippet</button><button id="cancel-delete" class="secondary" type="button">Keep snippet</button></div>
       <div class="dialog-actions editor-actions">
         <button id="delete-snippet" type="button" class="bare" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
+        <p id="editor-feedback" role="status" aria-live="polite"></p>
         <div id="unsaved-confirmation" role="group" aria-label="Unsaved changes" hidden>
           <p>Save your changes?</p>
           <div><button type="button" class="secondary" data-discard>Discard</button><button type="button" class="secondary" data-keep>Keep editing</button></div>
         </div>
-        <button type="submit" class="primary" data-tooltip="Save snippet" data-tooltip-shortcut="S">Save</button>
       </div>
     </form>
   </dialog>
@@ -118,7 +118,7 @@
   <dialog id="snippet-preview" aria-labelledby="preview-title" tabindex="-1">
     <div class="preview-header"><h2 id="preview-title"></h2><button id="close-preview" type="button" class="bare" aria-label="Close preview" data-tooltip="Close preview" data-tooltip-shortcut="Esc"></button></div>
     <div class="preview-content"><pre id="preview-body"></pre></div>
-    <div class="preview-actions"><span id="preview-feedback" role="status" aria-live="polite"></span><button id="preview-edit" type="button" class="bare" aria-label="Edit options" data-tooltip="Edit options"></button><button id="preview-copy" type="button" class="bare" aria-label="Copy snippet" data-tooltip="Copy snippet"></button></div>
+    <div class="preview-actions"><span id="preview-feedback" role="status" aria-live="polite"></span><button id="preview-copy" type="button" class="bare" aria-label="Copy" data-tooltip="Copy"></button><button id="preview-share" type="button" class="bare" aria-label="Share" data-tooltip="Share"></button><button id="preview-edit" type="button" class="bare" aria-label="Edit" data-tooltip="Edit"></button><button id="preview-delete" type="button" class="bare viewer-delete" aria-label="Delete" data-tooltip="Delete"></button></div>
   </dialog>
   <script type="module" src="/src/main.mjs"></script>
 </body>

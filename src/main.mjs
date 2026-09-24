@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { setupSettings, rightCommandEnabled, updatePermission } from "./settings.mjs";
 import { icon, setupIcons } from './icons.mjs';
-import { setupEditorSafety } from './editor-safety.mjs';
 import { setupTooltips } from './tooltips.mjs';
 import { setupSettingsWindow } from './settings-window.mjs';
 import { listen } from "@tauri-apps/api/event";
@@ -27,7 +26,7 @@ const state = {
   api: import.meta.env.VITE_API_URL || "https://snippets-api.linksaw.com",
   token: "", user: null, snippets: [], selected: 0, query: "",
   searchService: null, editing: null, loading: false,
-  signingIn: false, lastRefreshedAt: 0, refreshError: "",
+  signingIn: false, lastRefreshedAt: 0, refreshError: "", refreshSlow: false,
 };
 let lastPointer = null;
 document.addEventListener("pointermove", event => {
@@ -133,7 +132,7 @@ function render() {
   }
   if (!items.length) {
     const box = document.createElement("div"); box.className = "empty";
-    box.textContent = state.loading ? "Refreshing…" : state.query ? "No matches" : "No snippets yet. Use New snippet to add one.";
+    box.textContent = state.query ? "No matches" : "No snippets yet. Use New snippet to add one.";
     ui.results.append(box); return;
   }
   items.forEach((item, index) => {
@@ -157,9 +156,9 @@ function render() {
     const editable = item.type === "snippet" ? item : null;
     if (editable) {
       const edit = document.createElement("button"); edit.type = "button"; edit.className = "result-edit";
-      edit.append(icon('edit', 16));
-      edit.setAttribute("aria-label", `Edit options for ${snippetLabel(editable)}`);
-      edit.dataset.tooltip = 'Edit options';
+      edit.append(icon('more', 17));
+      edit.setAttribute("aria-label", `More options for ${snippetLabel(editable)}`);
+      edit.dataset.tooltip = 'More options';
       edit.addEventListener("click", () => openActions(editable));
       wrapper.append(edit);
     }
@@ -219,10 +218,10 @@ async function act(item) {
 }
 
 const STALE_AFTER_MS = 2_500;
-let refreshPromise = null, refreshAgain = false;
+let refreshPromise = null, refreshAgain = false, refreshSlowTimer = null;
 function updateRefreshFeedback() {
   const feedback = document.getElementById('refresh-feedback');
-  feedback.hidden = !state.user || (!state.loading && !state.refreshError);
+  feedback.hidden = !state.user || (!state.refreshSlow && !state.refreshError);
   document.getElementById('refresh-message').textContent = state.loading ? 'Refreshing…' : state.refreshError;
   document.getElementById('retry-refresh').hidden = state.loading || !state.refreshError;
 }
@@ -239,7 +238,10 @@ function refresh({ force = true } = {}) {
     if (force) refreshAgain = true;
     return refreshPromise;
   }
-  state.loading = true; updateRefreshFeedback();
+  state.loading = true;
+  state.refreshSlow = false;
+  clearTimeout(refreshSlowTimer);
+  refreshSlowTimer = setTimeout(() => { if (state.loading) { state.refreshSlow = true; updateRefreshFeedback(); } }, 1600);
   if (!state.snippets.length) render();
   refreshPromise = (async () => {
     try {
@@ -270,7 +272,8 @@ function refresh({ force = true } = {}) {
         }
       } while (refreshAgain && state.token && state.user);
     } finally {
-      state.loading = false; refreshPromise = null;
+      clearTimeout(refreshSlowTimer);
+      state.loading = false; state.refreshSlow = false; refreshPromise = null;
       updateRefreshFeedback();
       // Existing results stay interactive during the request and on failure.
       // Only an empty or signed-out view needs its loading message replaced.
@@ -354,26 +357,25 @@ function openEditor(snippet = null) {
   ui.snippetbody.value = snippet?.body || "";
   ui.deletesnippet.hidden = !snippet;
   editorBaseline = editorSnapshot();
-  editorSafety.reset();
   ui.editordialog.showModal();
   resizeEditorArea(ui.snippetbody);
   ui.snippetbody.focus();
 }
-async function saveEditor(event, { closeAfter = true } = {}) {
+async function saveEditor(event, { closeAfter = false } = {}) {
   event?.preventDefault();
   clearTimeout(editorAutosaveTimer);
-  if (editorSaving) { editorSaveAgain = true; return; }
-  if (!ui.snippettitle.value.trim() && !ui.snippetbody.value.trim()) return;
+  if (editorSaving) { editorSaveAgain = true; return false; }
+  if (!ui.snippettitle.value.trim() && !ui.snippetbody.value.trim()) {
+    document.getElementById('editor-feedback').textContent = '';
+    if (closeAfter) ui.editordialog.close();
+    return true;
+  }
   if (closeAfter && editorConflict && state.editing) { state.editing = { ...state.editing, ...editorConflict }; editorConflict = null; }
   editorSaving = true;
-  const saveButton = ui.editorform.querySelector('.editor-actions .primary');
-  saveButton.textContent = 'Saving…';
-  const controls = closeAfter ? [...ui.editorform.querySelectorAll('button, input, textarea')] : [];
-  const disabled = controls.map(control => control.disabled);
-  controls.forEach(control => { control.disabled = true; });
   document.getElementById('editor-feedback').textContent = 'Saving…';
   const snapshot = editorSnapshot();
   const body = { title: ui.snippettitle.value, body: ui.snippetbody.value, ...(state.editing ? { version: state.editing.version } : {}) };
+  let saved = false;
   try {
     const result = state.editing
       ? await api(`/snippets/${state.editing.id}`, { method: "PUT", body })
@@ -382,10 +384,8 @@ async function saveEditor(event, { closeAfter = true } = {}) {
     editorBaseline = snapshot;
     editorConflict = null;
     document.getElementById('editor-feedback').textContent = 'Saved';
-    if (closeAfter) {
-      const quitting = editorSafety.completeSave();
-      if (!quitting) await refresh();
-    } else await refresh();
+    saved = true;
+    await refresh();
   } catch (error) {
     if (error.status === 409) {
       const conflict = error.data?.snippet || null;
@@ -394,19 +394,22 @@ async function saveEditor(event, { closeAfter = true } = {}) {
         editorBaseline = snapshot;
         editorConflict = null;
         document.getElementById('editor-feedback').textContent = 'Saved';
-        if (closeAfter) {
-          const quitting = editorSafety.completeSave();
-          if (!quitting) await refresh();
-        } else await refresh();
+        saved = true;
+        await refresh();
       } else {
         editorConflict = conflict;
-        document.getElementById('editor-feedback').textContent = 'Changed elsewhere. Your edit is still here. Choose Save to keep yours.';
+        document.getElementById('editor-feedback').textContent = 'Couldn’t save · Try again';
       }
-    } else document.getElementById('editor-feedback').textContent = `Couldn’t save. ${errorMessage(error)}`;
+    } else document.getElementById('editor-feedback').textContent = 'Couldn’t save · Try again';
   } finally {
-    editorSaving = false; saveButton.textContent = 'Save'; controls.forEach((control, index) => { control.disabled = disabled[index]; });
-    if (editorSaveAgain && !editorConflict) { editorSaveAgain = false; void saveEditor(null, { closeAfter: false }); }
+    editorSaving = false;
+    if (editorSaveAgain && !editorConflict) {
+      editorSaveAgain = false;
+      saved = await saveEditor(null, { closeAfter: false });
+    }
   }
+  if (saved && closeAfter && editorSnapshot() === editorBaseline) ui.editordialog.close();
+  return saved;
 }
 function scheduleEditorAutosave() {
   clearTimeout(editorAutosaveTimer);
@@ -414,12 +417,19 @@ function scheduleEditorAutosave() {
   document.getElementById('editor-feedback').textContent = 'Saving…';
   editorAutosaveTimer = setTimeout(() => { void saveEditor(null, { closeAfter: false }); }, 700);
 }
-const editorSafety = setupEditorSafety({
-  dialog: ui.editordialog, prompt: document.getElementById('unsaved-confirmation'),
-  snapshot: editorSnapshot, baseline: () => editorBaseline, saving: () => editorSaving,
-  save: saveEditor, close: () => ui.editordialog.close(),
-  quit: () => invoke("finish_quit"),
-});
+async function closeEditorAfterAutosave() {
+  clearTimeout(editorAutosaveTimer);
+  if (editorSaving) {
+    editorSaveAgain = editorSnapshot() !== editorBaseline;
+    document.getElementById('editor-feedback').textContent = 'Saving…';
+    while (editorSaving) await new Promise(resolve => setTimeout(resolve, 30));
+  }
+  if (editorSnapshot() === editorBaseline || (!state.editing && !ui.snippettitle.value.trim() && !ui.snippetbody.value.trim())) {
+    ui.editordialog.close();
+    return true;
+  }
+  return saveEditor(null, { closeAfter: true });
+}
 
 // Require both press and release on the backdrop, not a drag from a field.
 let editorBackdropPress = false;
@@ -429,8 +439,14 @@ function outsideEditor(event) {
 }
 ui.editordialog.addEventListener('pointerdown', event => { editorBackdropPress = outsideEditor(event); });
 ui.editordialog.addEventListener('click', event => {
-  if (editorBackdropPress && outsideEditor(event)) editorSafety.requestClose();
+  if (editorBackdropPress && outsideEditor(event)) void closeEditorAfterAutosave();
   editorBackdropPress = false;
+});
+ui.editordialog.addEventListener('cancel', event => { event.preventDefault(); void closeEditorAfterAutosave(); });
+ui.canceleditor.addEventListener('click', () => { void closeEditorAfterAutosave(); });
+ui.editordialog.addEventListener('keydown', event => {
+  if (event.isComposing || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 's') return;
+  event.preventDefault(); void saveEditor(null, { closeAfter: false });
 });
 
 ui.search.addEventListener("input", () => { state.query = ui.search.value; state.selected = 0; render(); });
@@ -458,7 +474,7 @@ ui.signout.addEventListener("click", async () => {
   await clearToken(); state.user = null; state.snippets = [];
   ui.settingsdialog.close(); status("Signed out"); render();
 });
-ui.editorform.addEventListener("submit", saveEditor);
+ui.editorform.addEventListener("submit", event => { event.preventDefault(); void saveEditor(null, { closeAfter: false }); });
 ui.deletesnippet.addEventListener("click", async () => {
   if (!state.editing) return;
   document.getElementById('delete-confirmation').hidden = false;
@@ -554,7 +570,7 @@ function openPreview(item) {
   previewDialog.showModal();
   previewDialog.focus();
 }
-document.getElementById('preview-edit').onclick = () => { previewDialog.close(); openActions(previewItem); };
+document.getElementById('preview-edit').onclick = () => { previewDialog.close(); openEditor(previewItem); };
 async function copyItem(item) {
   try { await copyText(item.body || ''); status('Copied'); }
   catch (error) { status(errorMessage(error)); }
@@ -565,6 +581,49 @@ async function copyPreview() {
   catch (error) { feedback.textContent = errorMessage(error); }
 }
 document.getElementById('preview-copy').onclick = copyPreview;
+async function sharePreview() {
+  const feedback = document.getElementById('preview-feedback');
+  try {
+    const share = await api(`/snippets/${previewItem.id}/share`, { method: 'POST' });
+    previewItem.share_token = share.token;
+    await copyText(share.url);
+    feedback.textContent = 'Link copied';
+  } catch (error) { feedback.textContent = errorMessage(error); }
+}
+document.getElementById('preview-share').onclick = sharePreview;
+async function deletePreview() {
+  const deleting = previewItem;
+  if (!deleting) return;
+  const button = document.getElementById('preview-delete');
+  button.disabled = true;
+  try {
+    const result = await api(`/snippets/${deleting.id}`, { method: 'DELETE' });
+    previewDialog.close(); previewItem = null;
+    await refresh();
+    showDeletedToast(result.deleted || deleting);
+  } catch (error) { document.getElementById('preview-feedback').textContent = errorMessage(error); }
+  finally { button.disabled = false; }
+}
+document.getElementById('preview-delete').onclick = deletePreview;
+let deletedUndo = null, deletedUndoTimer = null;
+function showDeletedToast(deleted) {
+  deletedUndo = deleted;
+  const toast = document.getElementById('delete-toast');
+  toast.hidden = false;
+  clearTimeout(deletedUndoTimer);
+  deletedUndoTimer = setTimeout(() => { deletedUndo = null; toast.hidden = true; }, 7000);
+}
+document.getElementById('undo-delete').addEventListener('click', async () => {
+  if (!deletedUndo) return;
+  const deleted = deletedUndo;
+  deletedUndo = null;
+  clearTimeout(deletedUndoTimer);
+  document.getElementById('delete-toast').hidden = true;
+  try {
+    await api(`/snippets/${deleted.id}/restore`, { method: 'POST', body: deleted });
+    await refresh();
+  } catch (error) { status(`Could not undo deletion: ${errorMessage(error)}`); }
+});
 previewDialog.addEventListener('keydown', async event => {
   event.stopPropagation();
   if (event.isComposing || event.altKey || event.shiftKey) return;
@@ -634,10 +693,9 @@ async function boot() {
     // which do not always produce a browser-level focus event in a WebView.
     await getCurrentWindow().onFocusChanged(({ payload }) => { if (payload) void refreshIfStale(); });
     await listen('request-quit', async () => {
-      if (ui.editordialog.open && (editorSnapshot() !== editorBaseline || editorSaving)) {
-        await getCurrentWindow().show(); await getCurrentWindow().setFocus();
-      }
-      editorSafety.requestQuit();
+      if (!ui.editordialog.open) { await invoke('finish_quit'); return; }
+      await getCurrentWindow().show(); await getCurrentWindow().setFocus();
+      if (await closeEditorAfterAutosave()) await invoke('finish_quit');
     });
     // Settings can grant access while the launcher is hidden.
     setInterval(checkPastePermission, 2000);
