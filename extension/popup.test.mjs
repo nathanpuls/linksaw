@@ -77,6 +77,8 @@ test('website bridge opens links in an active tab and only accepts Linksaw reque
 test('extension icon controls use custom tooltips instead of browser titles', () => {
   assert.doesNotMatch(popupHtml, /\stitle=/);
   assert.match(popupHtml, /data-tooltip="New snippet"/);
+  assert.match(popupHtml, /aria-label="Linksaw website" data-tooltip="Linksaw website"/);
   assert.match(source, /dataset\.tooltip = 'Copy'/);
+  assert.match(source, /https:\/\/linksaw\.com\/\?website=1/);
   assert.match(source, /setTimeout\([\s\S]*450\)/);
 });

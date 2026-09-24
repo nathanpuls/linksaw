@@ -79,7 +79,7 @@ function render() {
     const row = document.createElement('div'); row.className = `row${index === selected ? ' selected' : ''}`;
     const main = document.createElement('button'); main.className = 'primary'; main.type = 'button';
     const title = document.createElement('span'); title.className = 'title'; title.textContent = label(snippet); main.append(title);
-    if (snippet.title.trim() && snippet.body.trim()) { const preview = document.createElement('span'); preview.className = 'preview'; preview.textContent = snippet.body.replace(/\s+/g, ' ').trim(); main.append(preview); }
+    if (snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim()) { const preview = document.createElement('span'); preview.className = 'preview'; preview.textContent = snippet.body.replace(/\s+/g, ' ').trim(); main.append(preview); }
     main.addEventListener('click', () => use(snippet).catch(error => status(error.message)));
     const copyButton = document.createElement('button'); copyButton.className = 'action'; copyButton.type = 'button'; copyButton.dataset.tooltip = 'Copy'; copyButton.ariaLabel = 'Copy'; copyButton.innerHTML = icons.copy; copyButton.addEventListener('click', () => copy(content(snippet)).catch(error => status(error.message)));
     const open = document.createElement('button'); open.className = 'action'; open.type = 'button'; open.dataset.tooltip = 'Open in Linksaw'; open.ariaLabel = 'Open in Linksaw'; open.innerHTML = icons.open; open.addEventListener('click', () => chrome.tabs.create({ url: `https://linksaw.com/home/?snippet=${snippet.id}` }));
@@ -91,7 +91,7 @@ async function refresh() {
   catch (error) { $('login').hidden = false; status(error.message === 'Sign in required' ? 'Sign in on the Linksaw website, then reopen this popup' : error.message); }
 }
 $('login').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/login' }));
-$('website').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/home/' }));
+$('website').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/?website=1' }));
 $('new').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/home/?view=new' }));
 $('search').addEventListener('input', () => { selected = 0; render(); });
 $('search').addEventListener('keydown', event => {
