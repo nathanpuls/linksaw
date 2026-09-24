@@ -26,6 +26,16 @@ test("default workspace tabs directly between search and title", () => {
   assert.match(source, /\$\("snippet-title"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("search"\)\.focus\(\)/);
 });
 
+test("destructive actions use branded cancellable dialogs", () => {
+  assert.doesNotMatch(source, /\bconfirm\(/);
+  assert.match(html, /id="action-confirm-dialog" class="confirm-dialog"/);
+  assert.match(html, /id="action-confirm-button" class="confirm-action"/);
+  assert.match(css, /\.confirm-action \{[^}]*background: #171717;[^}]*color: #fff;/);
+  assert.match(source, /function cancelDialogOnBackdrop\(dialog\)[\s\S]*?event\.target === dialog[\s\S]*?dialog\.close\("cancel"\)/);
+  assert.match(source, /requestConfirmation\(\{ title: "Delete snippet\?"/);
+  assert.match(source, /requestConfirmation\(\{ title: "Stop sharing\?"/);
+});
+
 test("icon-only controls use delayed custom tooltips with shortcut badges", () => {
   assert.doesNotMatch(html, /\stitle=/);
   assert.match(html, /data-tooltip="Copy"/);

@@ -426,13 +426,37 @@ $("editor-form").addEventListener("submit", async event => {
     updateUrl({ view: null, snippet: savedId }, false); applyUrlState();
   } catch (error) { $("editor-status").textContent = error.message; } finally { editorSaving = false; syncSaveButton(); }
 });
+let confirmationResolver;
+let confirmationReturnFocus;
+function requestConfirmation({ title, message, action }) {
+  const dialog = $("action-confirm-dialog");
+  $("action-confirm-title").textContent = title;
+  $("action-confirm-message").textContent = message;
+  $("action-confirm-button").textContent = action;
+  dialog.returnValue = "cancel";
+  confirmationReturnFocus = document.activeElement;
+  dialog.showModal();
+  $("action-confirm-cancel").focus();
+  return new Promise(resolve => { confirmationResolver = resolve; });
+}
+$("action-confirm-dialog").addEventListener("close", () => {
+  confirmationResolver?.($("action-confirm-dialog").returnValue === "confirm");
+  confirmationResolver = null;
+  confirmationReturnFocus?.focus();
+  confirmationReturnFocus = null;
+});
+function cancelDialogOnBackdrop(dialog) {
+  dialog.addEventListener("click", event => { if (event.target === dialog) dialog.close("cancel"); });
+}
+cancelDialogOnBackdrop($("action-confirm-dialog"));
+cancelDialogOnBackdrop($("delete-account-dialog"));
 $("delete").addEventListener("click", async () => {
-  if (!state.editing || !confirm("Delete this snippet?")) return;
+  if (!state.editing || !await requestConfirmation({ title: "Delete snippet?", message: "This permanently removes this snippet.", action: "Delete" })) return;
   try { await api(`/snippets/${state.editing.id}`, { method: "DELETE" }); state.snippets = state.snippets.filter(s => s.id !== state.editing.id); render(); updateUrl({ view: null, snippet: null }, false); applyUrlState(); }
   catch (error) { $("editor-status").textContent = error.message; }
 });
 $("unshare").addEventListener("click", async () => {
-  if (!state.editing?.share_token || !confirm("Stop sharing this snippet? The current link will no longer work.")) return;
+  if (!state.editing?.share_token || !await requestConfirmation({ title: "Stop sharing?", message: "Anyone using the current link will no longer be able to view this snippet.", action: "Stop sharing" })) return;
   try {
     await api(`/snippets/${state.editing.id}/share`, { method: "DELETE" });
     state.editing.share_token = null; $("unshare").hidden = true; $("editor-status").textContent = "Sharing stopped.";
@@ -538,7 +562,7 @@ $("save-trigger").addEventListener("click", async () => {
 });
 addEventListener("popstate", applyUrlState);
 document.addEventListener("keydown", event => {
-  if ($("delete-account-dialog").open) return;
+  if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
   if (event.key === "Escape") {

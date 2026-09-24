@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-29">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-30">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -141,6 +141,17 @@
     </div>
   </section>
 
+  <dialog id="action-confirm-dialog" class="confirm-dialog" aria-labelledby="action-confirm-title" aria-describedby="action-confirm-message">
+    <form method="dialog">
+      <h2 id="action-confirm-title"></h2>
+      <p id="action-confirm-message"></p>
+      <div class="dialog-actions">
+        <button id="action-confirm-cancel" class="text-button" type="submit" value="cancel">Cancel</button>
+        <button id="action-confirm-button" class="confirm-action" type="submit" value="confirm">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="delete-account-dialog" class="confirm-dialog" aria-labelledby="delete-account-title">
     <form id="delete-account-form">
       <h2 id="delete-account-title">Confirm account deletion</h2>
@@ -158,6 +169,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-36"></script>
+  <script type="module" src="/app/app.js?v=20260923-37"></script>
 </body>
 </html>

@@ -143,6 +143,8 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .confirm-input:focus { outline: 1px solid var(--focus); outline-offset: 1px; }
 .dialog-status { min-height: 20px; margin: 8px 0 0 !important; color: #b42318 !important; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 18px; }
+.confirm-action { border: 1px solid #171717; border-radius: 9px; padding: 9px 16px; background: #171717; color: #fff; cursor: pointer; }
+.confirm-action:hover, .confirm-action:focus-visible { outline: 0; opacity: .82; }
 .delete-button { border: 1px solid #b42318; border-radius: 9px; padding: 9px 14px; background: #b42318; color: #fff; cursor: pointer; }
 .delete-button:disabled { opacity: .45; cursor: default; }
 .shortcuts { padding-left: 28px; border-left: 1px solid var(--line); }
