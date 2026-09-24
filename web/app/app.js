@@ -313,8 +313,13 @@ function isSidebarShortcut(event) {
 $("reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-form").addEventListener("submit", async event => {
-  event.preventDefault(); const submit = event.submitter; submit.disabled = true; $("editor-status").textContent = "Saving…";
+  event.preventDefault();
   const payload = { title: $("snippet-title").value, body: $("snippet-body").value };
+  if (!payload.title.trim() && !payload.body.trim()) {
+    $("editor-status").textContent = "Enter content or a title";
+    return;
+  }
+  const submit = event.submitter; submit.disabled = true; $("editor-status").textContent = "Saving…";
   try {
     const saved = await api(state.editing ? `/snippets/${state.editing.id}` : "/snippets", { method: state.editing ? "PUT" : "POST", body: JSON.stringify(payload) });
     const savedId = state.editing?.id || saved.id;
