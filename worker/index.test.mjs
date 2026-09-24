@@ -157,6 +157,23 @@ test('authenticated users can read and update their autocomplete trigger', async
   assert.equal(saved, '/');
 });
 
+test('signed-in identity includes the display name and avatar', async () => {
+  const user = { id: 'user', email: 'user@example.com', display_name: 'Example User', avatar_url: 'https://example.com/avatar.jpg' };
+  const env = {
+    DB: {
+      prepare(sql) {
+        assert.match(sql, /avatar_url/);
+        return { bind() { return { first: async () => user }; } };
+      },
+    },
+  };
+  const response = await handle(new Request('https://snippets-api.linksaw.com/me', {
+    headers: { Authorization: `Bearer ${'a'.repeat(64)}` },
+  }), env);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { user });
+});
+
 test('account deletion requires typed confirmation and removes all owned data', async () => {
   let deleted = [];
   const env = {
@@ -191,6 +208,7 @@ test('account deletion requires typed confirmation and removes all owned data', 
     'DELETE FROM snippet_shares WHERE owner_id = ?',
     'DELETE FROM snippets WHERE owner_id = ?',
     'DELETE FROM user_preferences WHERE user_id = ?',
+    'DELETE FROM user_profiles WHERE user_id = ?',
     'DELETE FROM sessions WHERE user_id = ?',
     'DELETE FROM login_requests WHERE user_id = ?',
     'DELETE FROM users WHERE id = ?',

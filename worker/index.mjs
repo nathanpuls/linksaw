@@ -1,6 +1,16 @@
 import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64Url, shareToken, validSnippet, webSessionCookie } from "./lib.mjs";
 
 const allowedOrigins = new Set(["https://linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
+const profileSchemaReady = new WeakMap();
+async function ensureProfileSchema(env) {
+  if (!profileSchemaReady.has(env.DB)) {
+    const ready = Promise.resolve()
+      .then(() => env.DB.prepare("CREATE TABLE IF NOT EXISTS user_profiles (user_id TEXT PRIMARY KEY, avatar_url TEXT, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)").run())
+      .catch(() => null);
+    profileSchemaReady.set(env.DB, ready);
+  }
+  await profileSchemaReady.get(env.DB);
+}
 function responseHeaders(request, extra = {}) {
   const origin = request.headers.get("Origin");
   const headers = {
@@ -31,7 +41,8 @@ async function currentSession(request, env) {
   const token = bearer?.[1] || (/^[A-Za-z0-9_-]{40,}$/.test(cookie) ? cookie : "");
   if (!token) return null;
   const tokenHash = await sha256Base64Url(token);
-  const user = await env.DB.prepare("SELECT users.id, users.email, users.display_name FROM sessions JOIN users ON users.id = sessions.user_id WHERE sessions.token_hash = ? AND sessions.expires_at > ?")
+  await ensureProfileSchema(env);
+  const user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM sessions JOIN users ON users.id = sessions.user_id LEFT JOIN user_profiles ON user_profiles.user_id = users.id WHERE sessions.token_hash = ? AND sessions.expires_at > ?")
     .bind(tokenHash, nowSeconds()).first();
   return user ? { user, tokenHash, viaCookie: !bearer } : null;
 }
@@ -174,6 +185,9 @@ export async function handle(request, env) {
     if (!profile.sub || !profile.email_verified) return new Response("A verified Google account is required.", { status: 403 });
     await env.DB.prepare("INSERT INTO users(id, email, display_name, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET email=excluded.email, display_name=excluded.display_name")
       .bind(profile.sub, profile.email || "", profile.name || profile.email || "Google user", nowSeconds()).run();
+    await ensureProfileSchema(env);
+    await env.DB.prepare("INSERT INTO user_profiles(user_id, avatar_url) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET avatar_url=excluded.avatar_url")
+      .bind(profile.sub, profile.picture || null).run();
     if (state.startsWith("web_")) {
       const token = randomToken();
       const timestamp = nowSeconds();
@@ -231,6 +245,7 @@ export async function handle(request, env) {
       env.DB.prepare("DELETE FROM snippet_shares WHERE owner_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM snippets WHERE owner_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM user_preferences WHERE user_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM user_profiles WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM login_requests WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),

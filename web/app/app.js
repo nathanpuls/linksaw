@@ -1,7 +1,6 @@
 const API = "https://snippets-api.linksaw.com";
 const icons = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',
-  settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
@@ -18,7 +17,7 @@ const sidebarShortcutLabel = isMacPlatform ? "⌘\\" : "Ctrl+\\";
 let toastTimer;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
-icon("add", "plus"); icon("settings", "settings"); icon("close-editor", "close");
+icon("add", "plus"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
 icon("editor-reader-toggle", "panelLeft");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
@@ -33,6 +32,23 @@ async function api(path, options = {}) {
 
 function label(snippet) {
   return snippet.title.trim() || snippet.body.trim().split(/\r?\n/, 1)[0].slice(0, 90) || "Untitled";
+}
+function renderIdentity(user) {
+  const name = user.display_name?.trim() || user.email?.split("@", 1)[0] || "Account";
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => Array.from(part)[0]?.toUpperCase()).join("") || "A";
+  const avatar = $("account-avatar");
+  const fallback = $("account-avatar-fallback");
+  $("account-name").textContent = name;
+  fallback.textContent = initials;
+  avatar.hidden = true;
+  fallback.hidden = false;
+  try {
+    const url = new URL(user.avatar_url || "");
+    if (url.protocol !== "https:") return;
+    avatar.onload = () => { avatar.hidden = false; fallback.hidden = true; };
+    avatar.onerror = () => { avatar.hidden = true; fallback.hidden = false; };
+    avatar.src = url.href;
+  } catch {}
 }
 function snippetText(snippet) { return snippet.body || snippet.title; }
 function standaloneUrl(snippet) {
@@ -244,7 +260,7 @@ function applyUrlState() {
 async function load() {
   try {
     const [{ user }, { snippets }, preferences] = await Promise.all([api("/me"), api("/snippets"), api("/preferences")]);
-    state.user = user; state.snippets = snippets; $("account").textContent = user.email; $("app").ariaBusy = "false"; render();
+    state.user = user; state.snippets = snippets; $("account").textContent = user.email; renderIdentity(user); $("app").ariaBusy = "false"; render();
     $("autocomplete-trigger").value = preferences.autocompleteTrigger || ";";
     applyUrlState();
   } catch (error) { showError(error); }
