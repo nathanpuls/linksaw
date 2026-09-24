@@ -96,15 +96,6 @@ dialog .setting-help { font-size: 12px; margin: 7px 0 12px; }
 .permission-setting { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
 #record-shortcut { margin-top: 8px; }
 #sign-out { margin-right: auto; }
-.import-content { padding: 22px; }
-#import-mapping { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
-#import-mapping label { overflow-wrap: anywhere; }
-#import-mapping small { display: block; margin: 5px 0; font-weight: 400; color: var(--muted); white-space: pre-wrap; max-height: 48px; overflow: auto; }
-#import-status { white-space: pre-wrap; font-size: 13px; margin-top: 15px; }
-#import-preview article { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 10px 0; }
-#import-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13px; max-height: 160px; overflow: auto; }
-#import-preview small { color: var(--muted); }
-#open-import { margin-top: 15px; }
 button:disabled { opacity: .5; cursor: default; }
 .result-row { display: flex; align-items: center; gap: 4px; }
 .result-row .result { flex: 1; min-width: 0; }
@@ -163,6 +154,10 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--muted); ou
 #settings-dialog select { display: block; width: 250px; max-width: 100%; }
 #settings-dialog .settings-preferences > label:first-child { margin-top: 0; }
 #settings-dialog .permission-setting { flex-direction: column; align-items: flex-start; }
+#settings-dialog .web-transfer-setting { margin-top: 28px; }
+#settings-dialog .web-transfer-setting h3 { margin: 0 0 9px; font-size: 14px; font-weight: 600; }
+#settings-dialog .web-settings-link { border: 0; padding: 0; background: transparent; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+#settings-dialog .web-settings-link:hover, #settings-dialog .web-settings-link:focus-visible { color: var(--muted); }
 #settings-dialog .account-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 28px; }
 #settings-dialog .account { font-weight: 500; }
 #settings-dialog .shortcut-tips { margin-top: 0; padding-left: 28px; border-left: 1px solid var(--line); }

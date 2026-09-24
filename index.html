@@ -47,7 +47,10 @@
           <select id="appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
           <div class="permission-setting"><span id="permission-status">Checking pasting permission…</span><button id="settings-permission" type="button" class="secondary" hidden>Open Settings</button></div>
           <p id="settings-feedback" role="status" aria-live="polite" class="setting-help"></p>
-          <button id="open-import" type="button" class="secondary">Import CSV…</button>
+          <section class="web-transfer-setting" aria-labelledby="web-transfer-title">
+            <h3 id="web-transfer-title">Import and export</h3>
+            <button id="open-web-settings" type="button" class="web-settings-link">Open web settings <span aria-hidden="true">↗</span></button>
+          </section>
           <div class="account-actions">
             <div id="account" class="account"></div>
             <button id="sign-out" type="button" class="secondary">Sign out</button>
@@ -74,21 +77,6 @@
         </section>
       </div>
     </form>
-  </dialog>
-
-  <dialog id="import-dialog" aria-labelledby="import-title">
-    <div class="import-content">
-      <h2 id="import-title">Import snippets</h2>
-      <p>Choose Title, Content, or Ignore for each column.</p>
-      <label for="csv-file">CSV file (UTF-8, up to 5 MB)</label>
-      <input id="csv-file" type="file" accept=".csv,text/csv">
-      <label class="check-setting"><input id="csv-headers" type="checkbox"> First row contains headers</label>
-      <div id="import-mapping"></div>
-      <p id="import-status" role="status" aria-live="polite"></p>
-      <div id="import-preview" aria-label="Import preview"></div>
-      <p class="setting-help">Nothing is uploaded until you click Import. Import adds new snippets; importing the same file again creates another copy.</p>
-      <div class="dialog-actions"><button id="import-close" type="button" class="secondary">Close</button><button id="import-confirm" type="button" class="primary" disabled>Import snippets</button></div>
-    </div>
   </dialog>
 
   <dialog id="editor-dialog">

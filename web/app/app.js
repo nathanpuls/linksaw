@@ -330,6 +330,9 @@ function openSettings(pushHistory = true) {
   hideTooltip();
   showSurface("settings-panel");
   if (pushHistory) updateUrl({ view: "settings", snippet: null });
+  if (location.hash === "#import-export" && !matchMedia("(max-width: 700px)").matches) {
+    requestAnimationFrame(() => $("import-export").scrollIntoView({ block: "start" }));
+  }
 }
 function hasExplicitRoute() {
   const params = new URLSearchParams(location.search);

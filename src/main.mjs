@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { setupSettings, rightCommandEnabled, updatePermission } from "./settings.mjs";
-import { setupImporter } from "./importer.mjs";
 import { icon, setupIcons } from './icons.mjs';
 import { setupEditorSafety } from './editor-safety.mjs';
 import { setupTooltips } from './tooltips.mjs';
@@ -12,6 +11,7 @@ import { expandDynamic, rankedSnippets, searchTemplate, snippetLabel, standalone
 import linksawLogo from "../web/icon.png?url";
 
 const native = Boolean(window.__TAURI_INTERNALS__);
+const WEB_TRANSFER_SETTINGS_URL = "https://linksaw.com/app/?view=settings#import-export";
 setupIcons();
 setupTooltips();
 const ui = Object.fromEntries(["search", "clear-search", "results", "status", "paste-permission", "enable-pasting", "open-paste-settings", "back", "add", "settings", "settings-dialog",
@@ -401,6 +401,14 @@ ui.add.addEventListener("click", () => openEditor());
 document.getElementById("retry-refresh").addEventListener("click", () => { void refresh(); });
 ui.settings.addEventListener("click", openSettings);
 document.getElementById("close-settings").onclick = () => ui.settingsdialog.close();
+document.getElementById("open-web-settings").addEventListener("click", async () => {
+  try {
+    if (native) await openUrl(WEB_TRANSFER_SETTINGS_URL);
+    else window.open(WEB_TRANSFER_SETTINGS_URL, "_blank", "noopener");
+  } catch (error) {
+    document.getElementById("settings-feedback").textContent = errorMessage(error);
+  }
+});
 ui.settingsform.addEventListener("submit", event => {
   event.preventDefault();
   ui.settingsdialog.close();
@@ -612,5 +620,4 @@ async function boot() {
   try { await restoreSession(); } catch (error) { status(errorMessage(error)); }
   render();
 }
-setupImporter({ api, refresh, signedIn: () => Boolean(state.user) });
 boot();
