@@ -56,12 +56,15 @@ The active product model is intentionally small:
 
 - `users`: Google subject ID, email, display name, created timestamp.
 - `sessions`: hashed session token, owner, creation and expiration timestamps. Current sessions expire after 30 days.
+- `api_keys`: hashed personal API key, owner, and creation timestamp. The first key supports the Apple Shortcut clipboard capture flow.
 - `login_requests`: short-lived browser-sign-in state, proof challenge, resolved user, and consumed timestamp.
 - `snippets`: UUID, owner ID, optional title, body/content, created timestamp, updated timestamp.
 
 The database still has a legacy `details` table only for rollout cleanup. Details are not part of the product model: the client does not author them, the API does not return them as content, and authenticated startup deletes the signed-in user's old detail records.
 
 Current server limits are a 160-character title, 100,000-character body, and up to 2,000 snippets returned in latest-edit order. Search runs in the client over title and content, preserving server order within equal match strength.
+
+The Apple Shortcut named **Save to Linksaw** reads the clipboard, stops when it is empty, and POSTs it as Content with an empty Title. Its original `lsw_` key lives only in the Shortcut; the Worker receives and stores only the SHA-256 hash, then scopes requests to the existing owner account.
 
 ## Terminology and content behavior
 

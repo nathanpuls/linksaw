@@ -2,6 +2,7 @@ import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64
 
 const allowedOrigins = new Set(["https://linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
 const profileSchemaReady = new WeakMap();
+const apiKeySchemaReady = new WeakMap();
 async function ensureProfileSchema(env) {
   if (!profileSchemaReady.has(env.DB)) {
     const ready = Promise.resolve()
@@ -10,6 +11,14 @@ async function ensureProfileSchema(env) {
     profileSchemaReady.set(env.DB, ready);
   }
   await profileSchemaReady.get(env.DB);
+}
+async function ensureApiKeySchema(env) {
+  if (!apiKeySchemaReady.has(env.DB)) {
+    const ready = Promise.resolve()
+      .then(() => env.DB.prepare("CREATE TABLE IF NOT EXISTS api_keys (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at INTEGER NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)").run());
+    apiKeySchemaReady.set(env.DB, ready);
+  }
+  await apiKeySchemaReady.get(env.DB);
 }
 function responseHeaders(request, extra = {}) {
   const origin = request.headers.get("Origin");
@@ -36,14 +45,28 @@ async function bodyJson(request) {
 }
 
 async function currentSession(request, env) {
-  const bearer = request.headers.get("Authorization")?.match(/^Bearer ([A-Za-z0-9_-]{40,})$/);
+  const bearer = request.headers.get("Authorization")?.match(/^Bearer ((?:[A-Za-z0-9_-]{40,})|(?:lsw_[A-Za-z0-9_-]{10,}))$/);
   const cookie = cookieValue(request.headers.get("Cookie"), "linksaw_session");
   const token = bearer?.[1] || (/^[A-Za-z0-9_-]{40,}$/.test(cookie) ? cookie : "");
   if (!token) return null;
   const tokenHash = await sha256Base64Url(token);
   await ensureProfileSchema(env);
-  const user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM sessions JOIN users ON users.id = sessions.user_id LEFT JOIN user_profiles ON user_profiles.user_id = users.id WHERE sessions.token_hash = ? AND sessions.expires_at > ?")
-    .bind(tokenHash, nowSeconds()).first();
+  let user;
+  if (bearer?.[1].startsWith("lsw_")) {
+    await ensureApiKeySchema(env);
+    user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM api_keys JOIN users ON users.id = api_keys.user_id LEFT JOIN user_profiles ON user_profiles.user_id = users.id WHERE api_keys.token_hash = ?")
+      .bind(tokenHash).first();
+    if (!user && env.SHORTCUT_API_KEY_HASH && tokenHash === env.SHORTCUT_API_KEY_HASH) {
+      user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM users LEFT JOIN user_profiles ON user_profiles.user_id = users.id ORDER BY users.created_at ASC LIMIT 1").first();
+      if (user) {
+        await env.DB.prepare("INSERT OR IGNORE INTO api_keys(token_hash, user_id, created_at) VALUES (?, ?, ?)")
+          .bind(tokenHash, user.id, nowSeconds()).run();
+      }
+    }
+  } else {
+    user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM sessions JOIN users ON users.id = sessions.user_id LEFT JOIN user_profiles ON user_profiles.user_id = users.id WHERE sessions.token_hash = ? AND sessions.expires_at > ?")
+      .bind(tokenHash, nowSeconds()).first();
+  }
   return user ? { user, tokenHash, viaCookie: !bearer } : null;
 }
 
@@ -291,6 +314,7 @@ export async function handle(request, env) {
       env.DB.prepare("DELETE FROM snippets WHERE owner_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM user_preferences WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM user_profiles WHERE user_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM api_keys WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM login_requests WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),

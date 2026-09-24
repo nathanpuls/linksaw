@@ -14,6 +14,7 @@ For the product decisions, settled interaction model, repository transition, and
 - Ordinary text pastes into the previous app; a complete web link opens in the browser. A URL containing `$` enters search mode and substitutes the encoded query. The prior clipboard is restored after a successful paste when unchanged.
 - Trigger Search-style `{clipboard}`, `{cursor}`, `{date}`, `{time}`, `{datetime}`, and `{day}` placeholders, including `format` and `offset` attributes. No arbitrary code execution.
 - Google sign-in through a browser authorization-code flow. The desktop client proves possession of a random verifier before the Worker releases a one-time session. The session is stored in the macOS Keychain or Windows Credential Manager, not browser local storage.
+- A personal `lsw_` API key can create snippets from Apple Shortcuts. The Shortcut keeps the original key; the Worker stores only its SHA-256 hash and scopes requests to the existing owner account.
 
 ## Launcher and editor actions
 
@@ -72,4 +73,4 @@ Quit the installed app before replacing `/Applications/Linksaw.app`. Do not crea
 
 ## Security notes
 
-The Worker exchanges the Google authorization code with its server-side client secret and asks Google's userinfo endpoint for a verified account ID. D1 stores only a hash of each opaque session token. The desktop client stores the token in the OS credential vault. The API returns `Cache-Control: no-store`; private snippets are not persisted in the launcher cache. This is a prototype, not yet a production security review or penetration test. Before broad release, add request rate limiting, a session-management UI, sign-in failure auditing, and automated cross-platform security tests.
+The Worker exchanges the Google authorization code with its server-side client secret and asks Google's userinfo endpoint for a verified account ID. D1 stores only hashes of opaque session tokens and personal API keys. The desktop client stores its session token in the OS credential vault, while Apple Shortcuts stores its personal key in the Shortcut. The API returns `Cache-Control: no-store`; private snippets are not persisted in the launcher cache. This is a prototype, not yet a production security review or penetration test. Before broad release, add request rate limiting, a session-management UI, sign-in failure auditing, and automated cross-platform security tests.

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { handle } from "./index.mjs";
+import { sha256Base64Url } from "./lib.mjs";
 
 test("signed-in app route lets Cloudflare resolve its directory index without a redirect loop", async () => {
   let assetUrl = "";
@@ -213,6 +214,35 @@ test('signed-in identity includes the display name and avatar', async () => {
   assert.deepEqual(await response.json(), { user });
 });
 
+test('a configured Linksaw API key is stored by hash and attached to the existing owner', async () => {
+  const token = 'lsw_examplekey1';
+  const tokenHash = await sha256Base64Url(token);
+  const user = { id: 'user', email: 'user@example.com', display_name: 'Example User', avatar_url: null };
+  let storedKey;
+  const env = {
+    SHORTCUT_API_KEY_HASH: tokenHash,
+    DB: {
+      prepare(sql) {
+        if (sql.startsWith('CREATE TABLE')) return { run: async () => ({}) };
+        if (sql.includes('FROM api_keys JOIN users')) return { bind() { return { first: async () => null }; } };
+        if (sql.includes('FROM users LEFT JOIN') && sql.includes('ORDER BY')) return { first: async () => user };
+        if (sql.startsWith('INSERT OR IGNORE INTO api_keys')) {
+          return { bind(...values) { storedKey = values; return { run: async () => ({}) }; } };
+        }
+        throw new Error(`Unexpected SQL: ${sql}`);
+      },
+    },
+  };
+  const response = await handle(new Request('https://snippets-api.linksaw.com/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  }), env);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { user });
+  assert.equal(storedKey[0], tokenHash);
+  assert.equal(storedKey[1], user.id);
+  assert.equal(typeof storedKey[2], 'number');
+});
+
 test('account deletion requires typed confirmation and removes all owned data', async () => {
   let deleted = [];
   const env = {
@@ -248,6 +278,7 @@ test('account deletion requires typed confirmation and removes all owned data', 
     'DELETE FROM snippets WHERE owner_id = ?',
     'DELETE FROM user_preferences WHERE user_id = ?',
     'DELETE FROM user_profiles WHERE user_id = ?',
+    'DELETE FROM api_keys WHERE user_id = ?',
     'DELETE FROM sessions WHERE user_id = ?',
     'DELETE FROM login_requests WHERE user_id = ?',
     'DELETE FROM users WHERE id = ?',
