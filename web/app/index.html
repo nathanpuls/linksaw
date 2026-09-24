@@ -6,6 +6,8 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#ffffff">
   <title>Linksaw</title>
+  <script>if (new URLSearchParams(location.search).get("view") || new URLSearchParams(location.search).get("snippet") || new URLSearchParams(location.search).has("new") || location.pathname !== "/app/") document.documentElement.classList.add("route-pending");</script>
+  <style>html.route-pending body { visibility: hidden; }</style>
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
@@ -153,6 +155,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-30"></script>
+  <script type="module" src="/app/app.js?v=20260923-31"></script>
 </body>
 </html>

@@ -46,3 +46,10 @@ test("settings offers working CSV and JSON transfer controls", () => {
   assert.match(source, /downloadLibrary\(snippetsToCsv\(state\.snippets\)/);
   assert.match(source, /downloadLibrary\(snippetsToJson\(state\.snippets\)/);
 });
+
+test("deep links wait to reveal the resolved view", () => {
+  assert.ok(html.indexOf("route-pending") < html.indexOf('rel="stylesheet"'));
+  assert.match(html, /html\.route-pending body \{ visibility: hidden; \}/);
+  assert.match(source, /view === "settings"\) \{ openSettings\(false\); revealInitialView\(\); return;/);
+  assert.match(source, /catch \(error\) \{ revealInitialView\(\); showError\(error\); \}/);
+});

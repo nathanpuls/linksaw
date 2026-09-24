@@ -320,6 +320,7 @@ function showDefaultWorkspace() {
   if (!narrowLayout()) openEditor(null, false, { defaultDraft: true, focus: false });
   $("search").focus();
 }
+function revealInitialView() { document.documentElement.classList.remove("route-pending"); }
 function applyUrlState() {
   hideTooltip();
   closeSurface("editor"); closeSurface("settings-panel"); $("app").classList.remove("viewer-open");
@@ -331,22 +332,23 @@ function applyUrlState() {
   if (location.pathname !== "/app/" || params.has("new")) {
     updateUrl({ view: view || null, snippet: snippetId || null }, false);
   }
-  if (view === "settings") { openSettings(false); return; }
-  if (view === "new") { openEditor(null, false); return; }
+  if (view === "settings") { openSettings(false); revealInitialView(); return; }
+  if (view === "new") { openEditor(null, false); revealInitialView(); return; }
   if (view === "edit" && snippetId) {
     const snippet = state.snippets.find(item => item.id === snippetId);
     if (snippet) { state.selected = state.filtered.findIndex(item => item.id === snippetId); render(); openEditor(snippet, false); }
     else $("status").textContent = "Snippet not found";
-    return;
+    revealInitialView(); return;
   }
   if (snippetId) {
     const index = state.filtered.findIndex(item => item.id === snippetId);
     const snippet = state.filtered[index];
     if (snippet) { setSelected(index, false); openPreview(snippet, false); }
     else $("status").textContent = "Snippet not found";
-    return;
+    revealInitialView(); return;
   }
   showDefaultWorkspace();
+  revealInitialView();
 }
 async function load() {
   try {
@@ -354,7 +356,7 @@ async function load() {
     state.user = user; state.snippets = snippets; $("account").textContent = user.email; renderIdentity(user); $("app").ariaBusy = "false"; render();
     $("autocomplete-trigger").value = preferences.autocompleteTrigger || ";";
     applyUrlState();
-  } catch (error) { showError(error); }
+  } catch (error) { revealInitialView(); showError(error); }
 }
 
 $("search").addEventListener("input", () => {
