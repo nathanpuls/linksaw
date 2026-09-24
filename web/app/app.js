@@ -75,6 +75,9 @@ document.addEventListener("focusout", event => {
 document.addEventListener("click", event => { if (!event.target.closest?.("#preview-copy")) hideTooltip(); });
 addEventListener("scroll", hideTooltip, true);
 addEventListener("resize", hideTooltip);
+addEventListener("blur", hideTooltip);
+addEventListener("pagehide", hideTooltip);
+document.addEventListener("visibilitychange", () => { if (document.hidden) hideTooltip(); });
 
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
@@ -174,13 +177,16 @@ async function copySnippet(snippet) {
   showCopySuccess();
 }
 async function shareSnippet(snippet) {
+  hideTooltip();
   const share = await api(`/snippets/${snippet.id}/share`, { method: "POST" });
   snippet.share_token = share.token;
   if (navigator.share) {
     try { await navigator.share({ title: label(snippet), url: share.url }); return; }
     catch (error) { if (error?.name === "AbortError") return; }
+    finally { hideTooltip(); $("preview-share").blur(); }
   }
   await navigator.clipboard.writeText(share.url);
+  $("preview-share").blur();
   showToast("Link copied");
 }
 function setSelected(index, scroll = true) {
@@ -253,6 +259,7 @@ function leaveRoutedView() {
   updateUrl({ view: null, snippet }, false); applyUrlState();
 }
 function openEditor(snippet = null, pushHistory = true, options = {}) {
+  hideTooltip();
   const { defaultDraft = false, focus = true } = options;
   state.editing = snippet; $("snippet-title").value = snippet?.title || ""; $("snippet-body").value = snippet?.body || "";
   state.editorContext = defaultDraft ? "default" : "routed";
@@ -285,6 +292,7 @@ function syncReaderMode() {
 }
 function openPreview(snippet, pushHistory = true) {
   if (!snippet) return;
+  hideTooltip();
   renderViewer(snippet);
   if (pushHistory) updateUrl({ view: null, snippet: snippet.id });
   if (!narrowLayout()) return;
@@ -296,6 +304,7 @@ function closePreview() {
   leaveRoutedView();
 }
 function openSettings(pushHistory = true) {
+  hideTooltip();
   showSurface("settings-panel");
   if (pushHistory) updateUrl({ view: "settings", snippet: null });
 }
@@ -310,6 +319,7 @@ function showDefaultWorkspace() {
   $("search").focus();
 }
 function applyUrlState() {
+  hideTooltip();
   closeSurface("editor"); closeSurface("settings-panel"); $("app").classList.remove("viewer-open");
   const params = new URLSearchParams(location.search);
   syncReaderMode();

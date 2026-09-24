@@ -24,6 +24,10 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
   assert.match(source, /}, 450\);/);
   assert.match(source, /button\.dataset\.tooltip = "Copied"/);
   assert.match(source, /pointerout[\s\S]*?!target\.matches\(":hover"\)\) hideTooltip\(\)/);
+  assert.match(source, /addEventListener\("blur", hideTooltip\)/);
+  assert.match(source, /addEventListener\("pagehide", hideTooltip\)/);
+  assert.match(source, /visibilitychange[\s\S]*?document\.hidden\) hideTooltip\(\)/);
+  assert.match(source, /async function shareSnippet[\s\S]*?finally \{ hideTooltip\(\); \$\("preview-share"\)\.blur\(\); \}/);
   assert.match(source, /\$\("search"\)\.value = "";[\s\S]*?dispatchEvent\(new Event\("input"[\s\S]*?\$\("search"\)\.focus\(\)/);
   assert.match(source, /event\.key === "Escape"[\s\S]*?else if \(\$\("search"\)\.value\) \{ event\.preventDefault\(\); clearSearch\(\); \}/);
 });
