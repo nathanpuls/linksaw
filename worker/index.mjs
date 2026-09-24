@@ -96,17 +96,24 @@ async function saveAutocompleteTrigger(env, userId, trigger) {
 
 function publicLinkedHtml(value) {
   const text = String(value ?? "");
-  const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?/gi;
+  const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?|(?:\+?\d|\(\d)[\d(). \t-]{5,}\d(?:[ \t]*(?:x|ext\.?)\s*\d{1,6})?/gi;
   let html = "", last = 0;
   for (const match of text.matchAll(pattern)) {
     const full = match[0]; let linkText = full;
     while (/[.,;:!?)}\]]$/.test(linkText)) linkText = linkText.slice(0, -1);
     html += escapeHtml(text.slice(last, match.index));
     const bareDomainInCode = !/^https?:\/\//i.test(linkText) && (text[match.index - 1] === "`" || text[match.index + full.length] === "`");
-    if (text[match.index - 1] === "@" || bareDomainInCode || !linkText) html += escapeHtml(full);
+    const phoneMatch = linkText.match(/^(.*?)(?:[ \t]*(?:x|ext\.?)\s*(\d{1,6}))?$/i);
+    const phoneDigits = phoneMatch?.[1].replace(/\D/g, "") || "";
+    const isPhone = !/[a-z]/i.test(phoneMatch?.[1] || "") && (phoneDigits.length === 7 || (phoneDigits.length >= 10 && phoneDigits.length <= 15));
+    const isWeb = /^https?:\/\//i.test(linkText) || /^(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?$/i.test(linkText);
+    if (text[match.index - 1] === "@" || bareDomainInCode || !linkText || (!isWeb && !isPhone)) html += escapeHtml(full);
     else {
-      const href = /^https?:\/\//i.test(linkText) ? linkText : `https://${linkText}`;
-      html += `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkText)}</a>${escapeHtml(full.slice(linkText.length))}`;
+      const href = isPhone
+        ? `tel:${phoneMatch[1].trim().startsWith("+") ? "+" : ""}${phoneDigits}${phoneMatch[2] ? `;ext=${phoneMatch[2]}` : ""}`
+        : (/^https?:\/\//i.test(linkText) ? linkText : `https://${linkText}`);
+      const external = isPhone ? "" : ' target="_blank" rel="noopener noreferrer"';
+      html += `<a href="${escapeHtml(href)}"${external}>${escapeHtml(linkText)}</a>${escapeHtml(full.slice(linkText.length))}`;
     }
     last = match.index + full.length;
   }

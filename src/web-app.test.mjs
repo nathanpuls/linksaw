@@ -164,6 +164,12 @@ test("viewer shows only explicit custom names above exact content", () => {
   assert.match(viewer, /renderLinkedText\(\$\("preview-body"\), snippet\.body\);/);
 });
 
+test("viewer turns recognizable phone numbers into underlined telephone links", () => {
+  assert.match(source, /const isPhone = [\s\S]*?phoneDigits\.length === 7[\s\S]*?phoneDigits\.length >= 10 && phoneDigits\.length <= 15/);
+  assert.match(source, /link\.href = `tel:\$\{prefix\}\$\{phoneDigits\}/);
+  assert.match(css, /\.preview-body a \{ color: inherit; text-decoration-color: var\(--control\); text-underline-offset: 2px; \}/);
+});
+
 test("settings offers working CSV and JSON transfer controls", () => {
   for (const label of ["Import CSV", "Import JSON", "Export CSV", "Export JSON"]) assert.match(html, new RegExp(`>${label}<`));
   assert.match(html, /<section id="import-export" class="transfer-settings" tabindex="-1">[\s\S]*?<h2>Import and export<\/h2>/);

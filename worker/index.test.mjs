@@ -99,7 +99,7 @@ test("public share pages render without sign-in and escape snippet content", asy
         return {
           bind(token) {
             assert.equal(token, "Ab3k9Qx7Lm2N4pRs");
-            return { first: async () => ({ title: "Example <title>", body: `<script>alert("no")</script>\n\`README.md\`\n\`https://example.com/docs\`.` }) };
+        return { first: async () => ({ title: "Example <title>", body: `<script>alert("no")</script>\n\`README.md\`\n\`https://example.com/docs\`.\nCall (312) 555-1212 or +44 20 7946 0958.` }) };
           },
         };
       },
@@ -131,6 +131,8 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /href="https:\/\/example\.com\/docs"/);
   assert.doesNotMatch(html, /href="https:\/\/README\.md"/);
   assert.doesNotMatch(html, /href="https:\/\/example\.com\/docs`"/);
+  assert.match(html, /href="tel:3125551212">\(312\) 555-1212<\/a>/);
+  assert.match(html, /href="tel:\+442079460958">\+44 20 7946 0958<\/a>/);
 });
 
 test("public share keeps a title that matches its content", async () => {

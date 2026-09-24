@@ -140,7 +140,7 @@ function openInNewTab(url) {
   opened.focus();
 }
 function renderLinkedText(element, text) {
-  const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?/gi;
+  const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?|(?:\+?\d|\(\d)[\d(). \t-]{5,}\d(?:[ \t]*(?:x|ext\.?)\s*\d{1,6})?/gi;
   const nodes = []; let last = 0;
   for (const match of text.matchAll(pattern)) {
     const full = match[0]; let value = full;
@@ -148,11 +148,21 @@ function renderLinkedText(element, text) {
     const suffix = full.slice(value.length);
     nodes.push(document.createTextNode(text.slice(last, match.index)));
     const bareDomainInCode = !/^https?:\/\//i.test(value) && (text[match.index - 1] === "`" || text[match.index + full.length] === "`");
-    if (text[match.index - 1] === "@" || bareDomainInCode || !value) nodes.push(document.createTextNode(full));
+    const phoneMatch = value.match(/^(.*?)(?:[ \t]*(?:x|ext\.?)\s*(\d{1,6}))?$/i);
+    const phoneDigits = phoneMatch?.[1].replace(/\D/g, "") || "";
+    const isPhone = !/[a-z]/i.test(phoneMatch?.[1] || "") && (phoneDigits.length === 7 || (phoneDigits.length >= 10 && phoneDigits.length <= 15));
+    const isWeb = /^https?:\/\//i.test(value) || /^(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?$/i.test(value);
+    if (text[match.index - 1] === "@" || bareDomainInCode || !value || (!isWeb && !isPhone)) nodes.push(document.createTextNode(full));
     else {
       const link = document.createElement("a");
-      link.href = /^https?:\/\//i.test(value) ? value : `https://${value}`;
-      link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = value;
+      if (isPhone) {
+        const prefix = phoneMatch[1].trim().startsWith("+") ? "+" : "";
+        link.href = `tel:${prefix}${phoneDigits}${phoneMatch[2] ? `;ext=${phoneMatch[2]}` : ""}`;
+      } else {
+        link.href = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+        link.target = "_blank"; link.rel = "noopener noreferrer";
+      }
+      link.textContent = value;
       nodes.push(link, document.createTextNode(suffix));
     }
     last = match.index + full.length;
