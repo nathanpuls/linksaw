@@ -48,7 +48,7 @@ test("rows provide one-click link, viewer, and edit actions", () => {
   assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?activateSnippet\(selected\)/);
   assert.match(css, /\.result-link-text \{ text-decoration: underline;/);
   assert.match(css, /\.result-edit \{[^}]*visibility: hidden;[^}]*pointer-events: none;/);
-  assert.match(css, /\.result-row:hover \.result-edit, \.result-row\.selected \.result-edit, \.result-edit:focus-visible \{ visibility: visible; pointer-events: auto; \}/);
+  assert.match(css, /\.result-row:hover \.result-edit,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-row\.selected \.result-edit,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-edit:focus-visible \{ visibility: visible; pointer-events: auto; \}/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-edit \{ width: 44px; height: 44px; visibility: visible; pointer-events: auto; \}/);
   assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });
