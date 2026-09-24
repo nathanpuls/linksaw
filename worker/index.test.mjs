@@ -88,6 +88,10 @@ test("privacy is a dedicated public page and the homepage links to it", async ()
   assert.equal(canonical.status, 308);
   assert.equal(canonical.headers.get("Location"), "https://linksaw.com/privacy");
 
+  const head = await handle(new Request("https://linksaw.com/privacy/", { method: "HEAD" }), env);
+  assert.equal(head.status, 308);
+  assert.equal(head.headers.get("Location"), "https://linksaw.com/privacy");
+
   const homepage = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
   const privacy = readFileSync(new URL("../web/privacy/index.html", import.meta.url), "utf8");
   assert.match(homepage, /<a href="\/privacy">Privacy<\/a>/);
