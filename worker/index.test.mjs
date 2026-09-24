@@ -94,10 +94,14 @@ test("privacy is a dedicated public page and the homepage links to it", async ()
 
   const homepage = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
   const privacy = readFileSync(new URL("../web/privacy/index.html", import.meta.url), "utf8");
+  assert.match(homepage, /<h1 id="linksaw-title">Linksaw<\/h1>/);
+  assert.match(homepage, /Linksaw saves and syncs your snippets, notes, and links/);
   assert.match(homepage, /<a href="\/privacy">Privacy<\/a>/);
   assert.doesNotMatch(homepage, /data-legal="privacy"/);
   assert.match(homepage, /data-legal="terms"/);
   assert.match(privacy, /Account information/);
+  assert.match(privacy, /How Linksaw uses Google user data/);
+  assert.match(privacy, /does not request access to your Gmail/);
   assert.match(privacy, /Your content/);
   assert.match(privacy, /Sharing information/);
   assert.match(privacy, /Clipboard and device access/);
