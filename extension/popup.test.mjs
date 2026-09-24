@@ -70,15 +70,24 @@ test('manifest limits fetch permission to the API and installs the autocomplete 
 test('website bridge opens links in an active tab and only accepts Linksaw requests', () => {
   assert.match(contentSource, /dataset\.linksawExtension = 'ready'/);
   assert.match(contentSource, /LINKSAW_OPEN_ACTIVE_TAB/);
+  assert.match(contentSource, /LINKSAW_OPEN_SNIPPET/);
   assert.match(backgroundSource, /source\.hostname !== 'linksaw\.com'/);
   assert.match(backgroundSource, /chrome\.tabs\.create\(\{ url: destination\.href, active: true \}\)/);
+  assert.match(backgroundSource, /https:\/\/linksaw\.com\/home\/\?snippet=/);
 });
 
-test('extension icon controls use custom tooltips instead of browser titles', () => {
+test('extension opens on click and Enter while its chevron and Right Arrow use the item', () => {
   assert.doesNotMatch(popupHtml, /\stitle=/);
   assert.match(popupHtml, /data-tooltip="New snippet"/);
   assert.match(popupHtml, /aria-label="Linksaw website" data-tooltip="Linksaw website"/);
-  assert.match(source, /dataset\.tooltip = 'Copy'/);
+  assert.match(source, /useButton\.dataset\.tooltip = 'Use'; useButton\.ariaLabel = urlFor\(content\(snippet\)\) \? 'Open website' : 'Paste'/);
+  assert.match(source, /icons\.open = svg\('<path d="m9 18 6-6-6-6"\/>/);
+  assert.match(source, /main\.addEventListener\('click',[\s\S]*openInLinksaw\(snippet\)/);
+  assert.match(source, /event\.key === 'Enter'[\s\S]*openInLinksaw\(found\[selected\]\)/);
+  assert.match(source, /event\.key === 'ArrowRight'[\s\S]*use\(found\[selected\]\)/);
+  assert.match(contentSource, /event\.key === 'Enter'[\s\S]*openInLinksaw\(snippets\[selected\]\)/);
+  assert.match(contentSource, /event\.key === 'ArrowRight'[\s\S]*choose\(snippets\[selected\]\)/);
+  assert.match(backgroundSource, /message\?\.type === 'LINKSAW_OPEN_URL'/);
   assert.match(source, /https:\/\/linksaw\.com\/\?website=1/);
   assert.match(source, /setTimeout\([\s\S]*450\)/);
 });

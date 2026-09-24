@@ -10,7 +10,7 @@ export function setupTooltips() {
   if (popover) tooltip.setAttribute('popover', 'manual');
   document.body.append(tooltip);
   let timer = null, hovered = null, focused = null, described = null, keyboard = false;
-  const selector = '[data-tooltip], button[title], button.bare, button.result-edit, button.icon-label';
+  const selector = '[data-tooltip], button[title], button.bare, button.result-view, button.icon-label';
   const controlFor = target => target instanceof Element ? target.closest(selector) : null;
   const labelFor = control => control.dataset.tooltip || control.getAttribute('aria-label') || control.textContent.trim();
   const usable = control => {

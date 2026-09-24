@@ -155,16 +155,15 @@ function render() {
     const key = document.createElement("span"); key.className = "result-key"; key.textContent = index < 9 ? `${navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}${index + 1}` : "";
     row.append(left, key);
     row.addEventListener("click", () => act(item));
-    wrapper.addEventListener('contextmenu', event => { event.preventDefault(); state.selected = index; updateSelection(false); openActions(item); });
     wrapper.prepend(row);
     const editable = item.type === "snippet" ? item : null;
     if (editable) {
-      const edit = document.createElement("button"); edit.type = "button"; edit.className = "result-edit";
-      edit.append(icon('more', 17));
-      edit.setAttribute("aria-label", `More options for ${snippetLabel(editable)}`);
-      edit.dataset.tooltip = 'More options';
-      edit.addEventListener("click", () => openActions(editable));
-      wrapper.append(edit);
+      const view = document.createElement("button"); view.type = "button"; view.className = "result-view";
+      view.append(icon('forward', 17));
+      view.setAttribute("aria-label", "View");
+      view.dataset.tooltip = 'View';
+      view.addEventListener("click", event => { event.stopPropagation(); openPreview(editable); });
+      wrapper.append(view);
     }
     ui.results.append(wrapper);
   });
@@ -538,16 +537,17 @@ document.addEventListener("keydown", async event => {
     if (item && item.type !== 'search-query') { event.preventDefault(); if (!event.repeat) await copyItem(item); }
     return;
   }
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); openActions(items[state.selected]); return; }
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'p') { event.preventDefault(); openPreview(items[state.selected]); return; }
-  if (event.shiftKey && event.key === 'F10') { event.preventDefault(); openActions(items[state.selected]); return; }
   if (["ArrowDown", "ArrowUp"].includes(event.key)) {
     event.preventDefault(); state.selected = Math.max(0, Math.min(items.length - 1, state.selected + (event.key === "ArrowDown" ? 1 : -1))); updateSelection();
   } else if (event.key === "Enter") { event.preventDefault(); await act(items[state.selected]); }
   else if (event.key === "ArrowRight") {
     const item = items[state.selected];
     if (item?.type === "snippet") { event.preventDefault(); openPreview(item); }
-  } else if (event.key === "ArrowLeft") { if (goBack()) event.preventDefault(); }
+  } else if (event.key === "ArrowLeft") {
+    if (previewDialog.open) { event.preventDefault(); closePreview(); }
+    else if (goBack()) event.preventDefault();
+  }
   else if (event.key === "Escape") { event.preventDefault(); if (!goBack()) await hide(); }
   else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "r") { event.preventDefault(); await refresh(); }
   else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "e") {
@@ -579,6 +579,7 @@ function openPreview(item) {
   previewDialog.focus();
 }
 document.getElementById('preview-edit').onclick = () => { previewDialog.close(); openEditor(previewItem); };
+document.getElementById('preview-more').onclick = () => openActions(previewItem);
 async function copyItem(item) {
   try { await copyText(item.body || ''); status('Copied'); }
   catch (error) { status(errorMessage(error)); }
@@ -649,13 +650,7 @@ function openActions(item) {
   if (!item || item.type === 'search-query') return;
   const list = document.getElementById('snippet-action-list'); list.replaceChildren();
   const editable = item;
-  const actions = [
-    ['Preview', 'preview', () => openPreview(item)],
-    ['Edit content', 'edit', () => openEditor(editable)],
-    ['Rename', 'edit', () => openRename(editable)],
-    ['Copy', 'copy', () => copyItem(item)],
-    ['Delete snippet…', 'trash', () => { openEditor(editable); ui.deletesnippet.click(); }],
-  ];
+  const actions = [['Rename', 'edit', () => openRename(editable)]];
   for (const [label, name, run] of actions) {
     const button = document.createElement('button'); button.type = 'button'; button.append(icon(name, 16), document.createTextNode(label));
     button.onclick = () => { actionDialog.close(); run(); }; list.append(button);

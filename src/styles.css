@@ -27,7 +27,7 @@ button { cursor: pointer; }
 .paste-permission button { flex: 0 0 auto; border: 1px solid #c7b99c; border-radius: 8px; padding: 6px 9px; background: #fff; color: #473923; }
 .paste-permission button:hover { background: #fbf8f1; }
 .results { overflow: auto; padding: 5px 8px 10px; }
-.result { width: 100%; min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) 48px; align-items: center; gap: 12px; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: inherit; text-align: left; }
+.result { width: 100%; min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) 42px; align-items: center; gap: 8px; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: inherit; text-align: left; }
 .result > span:first-child { min-width: 0; overflow: hidden; }
 .result-row.selected { background: var(--selected); border-radius: 10px; }
 .result-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 580; }
@@ -101,10 +101,9 @@ dialog .setting-help { font-size: 12px; margin: 7px 0 12px; }
 button:disabled { opacity: .5; cursor: default; }
 .result-row { display: flex; align-items: center; gap: 4px; }
 .result-row .result { flex: 1; min-width: 0; }
-.result-edit { flex: 0 0 auto; margin-right: 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--surface); font-size: 12px; }
-.result-edit:hover { color: var(--ink); background: var(--hover); }
-.result-edit { visibility: hidden; pointer-events: none; border: 0; background: transparent; padding: 7px; }
-.result-row.selected .result-edit { visibility: visible; pointer-events: auto; }
+.result-view { flex: 0 0 auto; color: var(--muted); visibility: hidden; pointer-events: none; border: 0; background: transparent; }
+.result-view:hover { color: var(--ink); background: var(--hover); }
+.result-row.selected .result-view { visibility: visible; pointer-events: auto; }
 #search { font-size: 25px; }
 #delete-confirmation { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 #delete-confirmation[hidden] { display: none; }
@@ -157,7 +156,7 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--muted); ou
 
 /* Equal icon slots preserve pencil alignment on every result. */
 .result-row { gap: 4px; padding-right: 8px; }
-.result-edit { flex: 0 0 30px; width: 30px; height: 30px; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; }
+.result-view { flex: 0 0 30px; width: 30px; height: 30px; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; }
 #settings-dialog { inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 14px; box-shadow: none; }
 #settings-dialog::backdrop { background: transparent; backdrop-filter: none; }
 #settings-form { min-height: 100%; padding: 22px 28px 28px; }
@@ -207,4 +206,4 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--muted); ou
 
 /* Icon controls keep their hover treatment without a focus ring. */
 .bare:focus, .bare:focus-visible,
-.result-edit:focus, .result-edit:focus-visible { outline: none; box-shadow: none; }
+.result-view:focus, .result-view:focus-visible { outline: none; box-shadow: none; }

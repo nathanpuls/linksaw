@@ -38,18 +38,20 @@ test('content editor preserves private names, protects drafts and previews liter
     key(editor,'s',{ctrlKey:true});await flush();assert.equal(editor.open,true);assert.match(d.getElementById('editor-feedback').textContent,/Couldn’t save/);
     failSave=false;key(editor,'s',{metaKey:true});await flush();assert.equal(editor.open,true);assert.equal(writes,3);
     d.getElementById('cancel-editor').click();await flush();assert.equal(editor.open,false);
-    d.querySelector('.result-edit').click();
-    [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Edit content').click();
+    d.querySelector('.result-view').click();
+    d.getElementById('preview-edit').click();
     d.getElementById('snippet-body').value='Another change';editor.dispatchEvent(new w.Event('cancel',{cancelable:true}));
     await flush();assert.equal(editor.open,false);assert.equal(writes,4);
 
-    d.querySelector('.result-edit').click();
+    d.querySelector('.result-view').click();
+    d.getElementById('preview-more').click();
     [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Rename').click();
     d.getElementById('rename-input').value='Private name';
     d.getElementById('rename-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await flush();
     assert.equal(snippet.title,'Private name','Rename updates the private label');
     assert.equal(snippet.body,'Another change','Rename preserves the complete content');
     assert.equal(writes,5);
+    d.getElementById('close-preview').click();
 
     snippet.body='';key(search,'ArrowRight');
     assert.equal(d.getElementById('preview-title').textContent,snippet.title);

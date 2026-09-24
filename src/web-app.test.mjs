@@ -54,19 +54,21 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.match(source, /editorCustomName = cancel \? inlineRenameBaseline : unchangedAutomaticName \? "" : enteredName/);
 });
 
-test("rows provide one-click link, viewer, and edit actions", () => {
+test("web rows open on click and Enter while their chevron and Right Arrow use the item", () => {
   assert.doesNotMatch(source, /row-open|icons\.externalLink/);
-  assert.match(source, /function activateSnippet\(snippet\)[\s\S]*?if \(url\) openInNewTab\(url\);[\s\S]*?else openPreview\(snippet\);/);
+  assert.match(source, /function openSnippet\(snippet\) \{[\s\S]*?openPreview\(snippet\);/);
+  assert.match(source, /async function useSnippet\(snippet\)[\s\S]*?if \(url\) \{ openInNewTab\(url\); return; \}[\s\S]*?navigator\.clipboard\.writeText/);
   assert.match(source, /function runListActionAfterSave\(action\)[\s\S]*?navigateAfterSave[\s\S]*?closeSurface\("editor"\)[\s\S]*?action\(\)/);
-  assert.match(source, /main\.ariaLabel = url \? `Open \$\{label\(snippet\)\} website` : `View \$\{label\(snippet\)\}`/);
-  assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?activateSnippet\(snippet\)/);
-  assert.match(source, /edit\.ariaLabel = "Edit"; edit\.dataset\.tooltip = "Edit"/);
-  assert.match(source, /edit\.addEventListener\("click", event => \{ event\.stopPropagation\(\);[\s\S]*?openEditor\(snippet\)/);
-  assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?runListActionAfterSave\(\(\) => activateSnippet\(selected\)\)/);
+  assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} in Linksaw`/);
+  assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?openSnippet\(snippet\)/);
+  assert.match(source, /use\.ariaLabel = url \? "Open website" : "Copy"; use\.dataset\.tooltip = "Use"; use\.innerHTML = icons\.chevronRight/);
+  assert.match(source, /use\.addEventListener\("click", event => \{ event\.stopPropagation\(\);[\s\S]*?useSnippet\(snippet\)/);
+  assert.match(source, /event\.key === "ArrowRight" && selected[\s\S]*?useSnippet\(selected\)/);
+  assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?openSnippet\(selected\)/);
   assert.match(css, /\.result-link-text \{ text-decoration: underline;/);
-  assert.match(css, /\.result-edit \{[^}]*visibility: hidden;[^}]*pointer-events: none;/);
-  assert.match(css, /\.result-row:hover \.result-edit,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-row\.selected \.result-edit,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-edit:focus-visible \{ visibility: visible; pointer-events: auto; \}/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-edit \{ width: 44px; height: 44px; visibility: visible; pointer-events: auto; \}/);
+  assert.match(css, /\.result-use \{[^}]*visibility: hidden;[^}]*pointer-events: none;/);
+  assert.match(css, /\.result-row:hover \.result-use,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-row\.selected \.result-use,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-use:focus-visible \{ visibility: visible; pointer-events: auto; \}/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-use \{ width: 44px; height: 44px; visibility: visible; pointer-events: auto; \}/);
   assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });
 
@@ -162,7 +164,7 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
 test("interactive web controls expose Voice Control names without changing the primary tab path", () => {
   assert.match(html, /id="search-icon"[^>]*tabindex="-1"[^>]*aria-label="Focus search"/);
   assert.match(html, /id="preview" class="viewer-pane" aria-label="Snippet viewer"/);
-  assert.match(source, /main\.ariaLabel = url \? `Open \$\{label\(snippet\)\} website` : `View \$\{label\(snippet\)\}`/);
+  assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} in Linksaw`/);
   assert.match(source, /main\.setAttribute\("aria-current", index === state\.selected \? "true" : "false"\)/);
   assert.match(source, /row\.querySelector\("\.result-main"\)\?\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
 });

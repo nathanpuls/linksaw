@@ -79,19 +79,23 @@
       const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = data.snippets.length ? 'No matches' : 'No snippets yet'; results.append(empty); return;
     }
     snippets.slice(0, 9).forEach((snippet, index) => {
-      const button = document.createElement('button'); button.type = 'button'; button.className = `row${index === selected ? ' selected' : ''}`;
+      const row = document.createElement('div'); row.className = `row${index === selected ? ' selected' : ''}`;
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'primary';
       const title = document.createElement('span'); title.className = 'title'; title.textContent = label(snippet); button.append(title);
       if (snippet.title?.trim() && snippet.body?.trim()) {
         const preview = document.createElement('span'); preview.className = 'preview'; preview.textContent = snippet.body.replace(/\s+/g, ' ').trim(); button.append(preview);
       }
-      button.addEventListener('pointerdown', event => event.preventDefault());
-      button.addEventListener('pointerenter', () => {
+      row.addEventListener('pointerdown', event => event.preventDefault());
+      row.addEventListener('pointerenter', () => {
         if (selected === index) return;
         results.querySelector('.selected')?.classList.remove('selected');
         selected = index;
-        button.classList.add('selected');
+        row.classList.add('selected');
       });
-      button.addEventListener('click', () => choose(snippet)); results.append(button);
+      button.addEventListener('click', () => openInLinksaw(snippet));
+      const useButton = document.createElement('button'); useButton.type = 'button'; useButton.className = 'use'; useButton.setAttribute('aria-label', urlFor(content(snippet)) ? 'Open website' : 'Paste'); useButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>';
+      useButton.addEventListener('click', () => choose(snippet));
+      row.append(button, useButton); results.append(row);
     });
     results.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
   }
@@ -124,12 +128,19 @@
   }
 
   function close() { host?.remove(); host = search = results = status = null; target?.focus(); }
-  function choose(snippet) { const expanded = LinksawDynamic.expandDynamic(content(snippet)); close(); insert(expanded.text, expanded.cursorLeft); }
+  function choose(snippet) {
+    const expanded = LinksawDynamic.expandDynamic(content(snippet));
+    const url = urlFor(expanded.text);
+    close();
+    if (url) { chrome.runtime.sendMessage({ type: 'LINKSAW_OPEN_URL', url }).catch(() => {}); return; }
+    insert(expanded.text, expanded.cursorLeft);
+  }
+  function openInLinksaw(snippet) { close(); chrome.runtime.sendMessage({ type: 'LINKSAW_OPEN_SNIPPET', id: snippet.id }).catch(() => {}); }
 
   function open(element) {
     captureTarget(element); selected = 0;
     host = document.createElement('div'); host.id = 'linksaw-autocomplete-root'; const root = host.attachShadow({ mode: 'closed' });
-    root.innerHTML = `<style>:host{all:initial}.backdrop{position:fixed;inset:0;z-index:2147483647;background:#0002;display:grid;place-items:start center;padding:14vh 20px 40px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717}.panel{width:min(680px,calc(100vw - 40px));max-height:min(620px,72vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid #d8d8dc;border-radius:14px;background:#fff;box-shadow:0 22px 70px #0004}.search{width:100%;border:0;border-bottom:1px solid #e5e5e7;outline:0;padding:20px 22px;background:transparent;color:#171717;font:inherit;font-size:28px;letter-spacing:-.035em}.results{overflow:auto;padding:7px}.row{width:100%;min-height:58px;display:block;border:0;border-radius:10px;padding:9px 12px;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}.row:hover,.row.selected{background:#f1f1f2}.title,.preview{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.title{font-size:14px;font-weight:650}.preview{margin-top:4px;color:#777;font-size:12px}.empty{padding:44px 18px;text-align:center;color:#777;font-size:13px}.status{padding:0 22px 14px;color:#777;font-size:12px}.status:empty{display:none}@media(prefers-color-scheme:dark){.panel{border-color:#454549;background:#242426;color:#f5f5f5}.search{border-color:#414145;color:#f5f5f5}.row:hover,.row.selected{background:#39393c}.preview,.status,.empty{color:#aaa}}</style><div class="backdrop"><section class="panel" role="dialog" aria-modal="true" aria-label="Linksaw autocomplete"><input class="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search snippets"><div class="results" role="listbox"></div><div class="status" role="status"></div></section></div>`;
+    root.innerHTML = `<style>:host{all:initial}.backdrop{position:fixed;inset:0;z-index:2147483647;background:#0002;display:grid;place-items:start center;padding:14vh 20px 40px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717}.panel{width:min(680px,calc(100vw - 40px));max-height:min(620px,72vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid #d8d8dc;border-radius:14px;background:#fff;box-shadow:0 22px 70px #0004}.search{width:100%;border:0;border-bottom:1px solid #e5e5e7;outline:0;padding:20px 22px;background:transparent;color:#171717;font:inherit;font-size:28px;letter-spacing:-.035em}.results{overflow:auto;padding:7px}.row{width:100%;min-height:58px;display:flex;align-items:center;border-radius:10px;padding:4px 6px 4px 12px;background:transparent;color:inherit;font:inherit}.row:hover,.row.selected{background:#f1f1f2}.primary{min-width:0;flex:1;border:0;padding:5px 0;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}.use{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:#777;opacity:0;cursor:pointer}.row:hover .use,.row.selected .use,.use:focus-visible{opacity:1}.use svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.title,.preview{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.title{font-size:14px;font-weight:650}.preview{margin-top:4px;color:#777;font-size:12px}.empty{padding:44px 18px;text-align:center;color:#777;font-size:13px}.status{padding:0 22px 14px;color:#777;font-size:12px}.status:empty{display:none}@media(prefers-color-scheme:dark){.panel{border-color:#454549;background:#242426;color:#f5f5f5}.search{border-color:#414145;color:#f5f5f5}.row:hover,.row.selected{background:#39393c}.preview,.status,.empty,.use{color:#aaa}}</style><div class="backdrop"><section class="panel" role="dialog" aria-modal="true" aria-label="Linksaw autocomplete"><input class="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search snippets"><div class="results" role="listbox"></div><div class="status" role="status"></div></section></div>`;
     search = root.querySelector('.search'); results = root.querySelector('.results'); status = root.querySelector('.status');
     root.querySelector('.backdrop').addEventListener('pointerdown', event => { if (event.target.classList.contains('backdrop')) close(); });
     search.addEventListener('input', () => { selected = 0; render(); });
@@ -137,7 +148,8 @@
       const snippets = found().slice(0, 9);
       if (event.key === 'Escape') { event.preventDefault(); close(); }
       else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); selected = Math.max(0, Math.min(snippets.length - 1, selected + (event.key === 'ArrowDown' ? 1 : -1))); render(); }
-      else if (event.key === 'Enter' && snippets[selected]) { event.preventDefault(); choose(snippets[selected]); }
+      else if (event.key === 'Enter' && snippets[selected]) { event.preventDefault(); openInLinksaw(snippets[selected]); }
+      else if (event.key === 'ArrowRight' && snippets[selected]) { event.preventDefault(); choose(snippets[selected]); }
     });
     document.documentElement.append(host); render(); search.focus();
   }

@@ -15,6 +15,7 @@ const icons = {
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
   undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',
   redo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>',
+  chevronRight: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
 };
 
 const $ = id => document.getElementById(id);
@@ -228,10 +229,14 @@ function setSelected(index, scroll = true) {
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
   renderViewer(state.filtered[state.selected] || null);
 }
-function activateSnippet(snippet) {
+function openSnippet(snippet) {
+  openPreview(snippet);
+}
+async function useSnippet(snippet) {
   const url = standaloneUrl(snippet);
-  if (url) openInNewTab(url);
-  else openPreview(snippet);
+  if (url) { openInNewTab(url); return; }
+  await navigator.clipboard.writeText(snippetText(snippet));
+  showToast("Copied");
 }
 function runListActionAfterSave(action) {
   void navigateAfterSave(() => {
@@ -265,15 +270,15 @@ function render() {
     text.append(title);
     if (hasPreview) text.append(preview);
     main.append(text);
-    main.ariaLabel = url ? `Open ${label(snippet)} website` : `View ${label(snippet)}`;
+    main.ariaLabel = `Open ${label(snippet)} in Linksaw`;
     main.addEventListener("focus", () => setSelected(index, false));
-    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); activateSnippet(snippet); }));
+    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); openSnippet(snippet); }));
     row.append(main);
-    const edit = document.createElement("button"); edit.type = "button"; edit.className = "result-edit icon-button";
-    edit.ariaLabel = "Edit"; edit.dataset.tooltip = "Edit"; edit.innerHTML = icons.edit;
-    edit.addEventListener("focus", () => setSelected(index, false));
-    edit.addEventListener("click", event => { event.stopPropagation(); void navigateAfterSave(() => { setSelected(index, false); openEditor(snippet); }); });
-    row.append(edit);
+    const use = document.createElement("button"); use.type = "button"; use.className = "result-use icon-button";
+    use.ariaLabel = url ? "Open website" : "Copy"; use.dataset.tooltip = "Use"; use.innerHTML = icons.chevronRight;
+    use.addEventListener("focus", () => setSelected(index, false));
+    use.addEventListener("click", event => { event.stopPropagation(); runListActionAfterSave(() => { setSelected(index, false); void useSnippet(snippet).catch(showCopyError); }); });
+    row.append(use);
     results.append(row);
   });
   renderViewer(state.selected >= 0 ? state.filtered[state.selected] : null);
@@ -996,8 +1001,8 @@ document.addEventListener("keydown", event => {
     if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
     setSelected(state.selected - 1);
   }
-  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => openPreview(selected)); }
-  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => activateSnippet(selected)); }
+  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => { void useSnippet(selected).catch(showCopyError); }); }
+  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => openSnippet(selected)); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });
 

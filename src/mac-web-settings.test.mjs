@@ -32,9 +32,12 @@ test("Mac refresh and autosave status never insert transient layout rows", () =>
 });
 
 test("Mac viewer actions are stable and icon semantics are literal", () => {
-  assert.match(html, /id="preview-copy"[\s\S]*id="preview-share"[\s\S]*id="preview-edit"[\s\S]*id="preview-delete"/);
+  assert.match(html, /id="preview-copy"[\s\S]*id="preview-share"[\s\S]*id="preview-edit"[\s\S]*id="preview-more"[\s\S]*id="preview-delete"/);
   assert.match(source, /getElementById\('preview-edit'\)\.onclick = \(\) => \{ previewDialog\.close\(\); openEditor\(previewItem\); \}/);
-  assert.match(source, /edit\.append\(icon\('more', 17\)\)/);
+  assert.match(source, /getElementById\('preview-more'\)\.onclick = \(\) => openActions\(previewItem\)/);
+  assert.match(source, /const actions = \[\['Rename', 'edit', \(\) => openRename\(editable\)\]\]/);
+  assert.doesNotMatch(source, /\['Edit content',/);
+  assert.match(icons, /'preview-more': 'more'/);
   assert.match(icons, /more: Ellipsis/);
   assert.match(css, /\.preview-actions \.viewer-delete \{ margin-left: 6px; \}/);
   assert.match(source, /showDeletedToast\(result\.deleted \|\| deleting\)/);
