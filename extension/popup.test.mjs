@@ -7,6 +7,7 @@ import { JSDOM } from 'jsdom';
 const source = readFileSync(new URL('./popup.js', import.meta.url), 'utf8');
 const contentSource = readFileSync(new URL('./content.js', import.meta.url), 'utf8');
 const backgroundSource = readFileSync(new URL('./background.js', import.meta.url), 'utf8');
+const popupHtml = readFileSync(new URL('./popup.html', import.meta.url), 'utf8');
 const dynamicSource = readFileSync(new URL('./dynamic.js', import.meta.url), 'utf8');
 const insertSource = source.match(/function insert\(text, cursorLeft = 0\) \{[\s\S]*?\n\}/)?.[0];
 assert.ok(insertSource, 'insert implementation is present');
@@ -71,4 +72,11 @@ test('website bridge opens links in an active tab and only accepts Linksaw reque
   assert.match(contentSource, /LINKSAW_OPEN_ACTIVE_TAB/);
   assert.match(backgroundSource, /source\.hostname !== 'linksaw\.com'/);
   assert.match(backgroundSource, /chrome\.tabs\.create\(\{ url: destination\.href, active: true \}\)/);
+});
+
+test('extension icon controls use custom tooltips instead of browser titles', () => {
+  assert.doesNotMatch(popupHtml, /\stitle=/);
+  assert.match(popupHtml, /data-tooltip="New snippet"/);
+  assert.match(source, /dataset\.tooltip = 'Copy snippet'/);
+  assert.match(source, /setTimeout\([\s\S]*450\)/);
 });

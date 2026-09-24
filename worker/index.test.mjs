@@ -97,7 +97,7 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(response.headers.get("Content-Security-Policy"), /script-src 'nonce-/);
   assert.equal(response.headers.get("X-Robots-Tag"), "noindex, nofollow");
   assert.match(html, /<link rel="icon" href="\/app\/favicon\.png\?v=20260923-1" type="image\/png">/);
-  assert.match(html, /<a class="home" href="https:\/\/linksaw\.com\/" aria-label="Linksaw home">/);
+  assert.match(html, /<a class="home" href="https:\/\/linksaw\.com\/" aria-label="Linksaw home" data-tooltip="Linksaw home">/);
   assert.match(html, /<header class="topbar">[\s\S]*id="copy"/);
   assert.match(html, /<article class="snippet-container"><h1 class="title"[\s\S]*<pre id="snippet-content" class="content">/);
   assert.match(html, /\.snippet-container\{width:min\(900px,100%\);margin:0 auto;padding:8px 36px 48px\}/);
@@ -106,6 +106,8 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /m20 6-11 11-5/);
   assert.match(html, /Could not copy to clipboard/);
   assert.doesNotMatch(html, />Copied<\/div>/);
+  assert.doesNotMatch(html, /\stitle=/);
+  assert.match(html, /transition-delay:\.45s/);
   assert.match(html, /Example &lt;title&gt;/);
   assert.match(html, /&lt;script&gt;alert\(&quot;no&quot;\)&lt;\/script&gt;/);
   assert.doesNotMatch(html, /<script>alert/);

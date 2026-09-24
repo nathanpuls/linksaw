@@ -131,6 +131,9 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .shortcuts dt { font-weight: 550; }
 .shortcuts dd { margin: 0; color: var(--muted); }
 .toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; transform: translateX(-50%); border-radius: 9px; padding: 9px 15px; background: #171717; color: #fff; font-size: 13px; box-shadow: 0 5px 20px #0003; }
+.custom-tooltip { position: fixed; z-index: 100; display: flex; align-items: center; gap: 7px; max-width: min(260px, calc(100vw - 16px)); border-radius: 6px; padding: 6px 8px; background: #18181b; color: #fff; font-size: 12px; line-height: 1.2; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 14px #0004; }
+.custom-tooltip[hidden] { display: none; }
+.custom-tooltip kbd { border: 0; border-radius: 4px; padding: 2px 5px; background: #3f3f46; color: #f4f4f5; font: inherit; font-size: 11px; line-height: 1.1; }
 
 @media (max-width: 900px) {
   .app { display: block; }

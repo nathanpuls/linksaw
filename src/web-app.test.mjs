@@ -3,10 +3,19 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../web/app/app.js", import.meta.url), "utf8");
+const html = readFileSync(new URL("../web/app/index.html", import.meta.url), "utf8");
 
 test("empty snippets are rejected before the saving state begins", () => {
   const submitHandler = source.match(/\$\("editor-form"\)\.addEventListener\("submit",[\s\S]*?\n\}\);/)?.[0];
   assert.ok(submitHandler, "editor submit handler is present");
   assert.match(submitHandler, /!payload\.title\.trim\(\) && !payload\.body\.trim\(\)/);
   assert.ok(submitHandler.indexOf("Enter content or a title") < submitHandler.indexOf("Saving…"));
+});
+
+test("icon-only controls use delayed custom tooltips with shortcut badges", () => {
+  assert.doesNotMatch(html, /\stitle=/);
+  assert.match(html, /data-tooltip="Copy snippet"/);
+  assert.match(html, /id="tooltip-shortcut"/);
+  assert.match(source, /dataset\.shortcut = commandShortcut\("C"\)/);
+  assert.match(source, /}, 450\);/);
 });

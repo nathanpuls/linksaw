@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Linksaw",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Search and insert your Linksaw snippets.",
   "action": {
     "default_popup": "popup.html",

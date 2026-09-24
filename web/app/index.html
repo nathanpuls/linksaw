@@ -9,7 +9,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-20">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-21">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -19,7 +19,7 @@
           <span class="sr-only">Search snippets</span>
           <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
         </label>
-        <button id="add" class="icon-button" type="button" aria-label="New snippet" title="New snippet"></button>
+        <button id="add" class="icon-button" type="button" aria-label="New snippet" data-tooltip="New snippet"></button>
       </header>
       <div id="status" class="status" role="status" aria-live="polite"></div>
       <section id="results" class="results" aria-label="Snippets"></section>
@@ -36,13 +36,13 @@
       <div id="viewer-empty" class="viewer-empty" aria-hidden="true"></div>
       <article id="viewer-content" class="viewer-content" hidden>
         <header class="viewer-header">
-          <button id="close-preview" class="icon-button viewer-back" type="button" aria-label="Back to snippets" title="Back"></button>
-          <button id="reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" title="Hide list"></button>
+          <button id="close-preview" class="icon-button viewer-back" type="button" aria-label="Back to snippets" data-tooltip="Back to snippets" data-shortcut="Esc"></button>
+          <button id="reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
           <h1 id="preview-title" class="preview-title"></h1>
           <div class="viewer-actions">
-            <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" title="Copy"></button>
-            <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" title="Share"></button>
-            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" title="Edit"></button>
+            <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy snippet"></button>
+            <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" data-tooltip="Share snippet"></button>
+            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" data-tooltip="Edit snippet"></button>
           </div>
         </header>
         <div class="viewer-scroll"><pre id="preview-body" class="preview-body"></pre></div>
@@ -54,10 +54,10 @@
     <form id="editor-form" class="surface-inner" autocomplete="off">
       <header class="surface-header editor-header">
         <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
-        <button id="editor-reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" title="Hide list"></button>
+        <button id="editor-reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
         <label class="sr-only" for="snippet-title">Title</label>
         <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title" autocomplete="off">
-        <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" title="Close"></button>
+        <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
       </header>
       <label class="sr-only" for="snippet-body">Content</label>
       <textarea id="snippet-body" class="content-input" placeholder="Content" autocomplete="off"></textarea>
@@ -73,7 +73,7 @@
   <section id="settings-panel" class="surface" aria-labelledby="settings-title" hidden>
     <div class="settings-inner">
       <header class="surface-header">
-        <button id="close-settings" class="icon-button" type="button" aria-label="Back to search" title="Back"></button>
+        <button id="close-settings" class="icon-button" type="button" aria-label="Back to search" data-tooltip="Back to search" data-shortcut="Esc"></button>
         <h1 id="settings-title">Settings</h1>
         <button id="sign-out" class="settings-sign-out" type="button">Sign out</button>
       </header>
@@ -137,7 +137,8 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
+  <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-23"></script>
+  <script type="module" src="/app/app.js?v=20260923-24"></script>
 </body>
 </html>

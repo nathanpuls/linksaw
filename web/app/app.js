@@ -15,14 +15,62 @@ const $ = id => document.getElementById(id);
 const state = { snippets: [], filtered: [], selected: -1, editing: null, editorContext: null, previewing: null, user: null };
 const isMacPlatform = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || "");
 const sidebarShortcutLabel = isMacPlatform ? "⌘\\" : "Ctrl+\\";
+const commandShortcut = key => isMacPlatform ? `⌘${key}` : `Ctrl+${key}`;
 let toastTimer;
 let copyFeedbackTimer;
+let tooltipTimer;
+let tooltipTarget;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
 icon("editor-reader-toggle", "panelLeft");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
+$("add").dataset.shortcut = commandShortcut("N");
+$("preview-copy").dataset.shortcut = commandShortcut("C");
+$("preview-edit").dataset.shortcut = commandShortcut("E");
+
+function hideTooltip() {
+  clearTimeout(tooltipTimer);
+  tooltipTarget = null;
+  $("linksaw-tooltip").hidden = true;
+}
+function showTooltip(target) {
+  if (!target?.dataset.tooltip) return;
+  tooltipTarget = target;
+  tooltipTimer = setTimeout(() => {
+    if (tooltipTarget !== target || (!target.matches(":hover") && document.activeElement !== target)) return;
+    $("tooltip-label").textContent = target.dataset.tooltip;
+    const shortcut = $("tooltip-shortcut");
+    shortcut.textContent = target.dataset.shortcut || "";
+    shortcut.hidden = !target.dataset.shortcut;
+    const tooltip = $("linksaw-tooltip");
+    tooltip.hidden = false;
+    const rect = target.getBoundingClientRect();
+    const tip = tooltip.getBoundingClientRect();
+    const left = Math.max(8, Math.min(innerWidth - tip.width - 8, rect.left + rect.width / 2 - tip.width / 2));
+    const below = rect.bottom + 8;
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${below + tip.height <= innerHeight - 8 ? below : rect.top - tip.height - 8}px`;
+  }, 450);
+}
+document.addEventListener("pointerover", event => {
+  const target = event.target.closest?.("[data-tooltip]");
+  if (target && !target.contains(event.relatedTarget)) showTooltip(target);
+});
+document.addEventListener("pointerout", event => {
+  const target = event.target.closest?.("[data-tooltip]");
+  if (!target || target.contains(event.relatedTarget)) return;
+  queueMicrotask(() => { if (!target.matches(":hover") && document.activeElement !== target) hideTooltip(); });
+});
+document.addEventListener("focusin", event => showTooltip(event.target.closest?.("[data-tooltip]")));
+document.addEventListener("focusout", event => {
+  const target = event.target.closest?.("[data-tooltip]");
+  queueMicrotask(() => { if (target && !target.matches(":hover") && document.activeElement !== target) hideTooltip(); });
+});
+document.addEventListener("click", hideTooltip);
+addEventListener("scroll", hideTooltip, true);
+addEventListener("resize", hideTooltip);
 
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
@@ -99,14 +147,14 @@ function showCopySuccess() {
   const button = $("preview-copy");
   button.innerHTML = icons.check;
   button.ariaLabel = "Copied";
-  button.title = "Copied";
+  button.dataset.tooltip = "Copied";
   const announcement = $("copy-announcement");
   announcement.textContent = "";
   requestAnimationFrame(() => { announcement.textContent = "Copied to clipboard"; });
   copyFeedbackTimer = setTimeout(() => {
     button.innerHTML = icons.copy;
     button.ariaLabel = "Copy snippet";
-    button.title = "Copy";
+    button.dataset.tooltip = "Copy snippet";
   }, 1800);
 }
 function showCopyError(error) {
@@ -161,7 +209,7 @@ function render() {
     row.append(main);
     if (url) {
       const open = document.createElement("a"); open.className = "row-open icon-button"; open.href = url; open.target = "_blank"; open.rel = "noopener noreferrer";
-      open.ariaLabel = `Open ${label(snippet)} website`; open.title = "Open website"; open.innerHTML = icons.externalLink;
+      open.ariaLabel = `Open ${label(snippet)} website`; open.dataset.tooltip = "Open website"; open.dataset.shortcut = commandShortcut("↵"); open.innerHTML = icons.externalLink;
       open.addEventListener("focus", () => setSelected(index, false));
       open.addEventListener("click", () => setSelected(index, false)); row.append(open);
     }
@@ -223,7 +271,8 @@ function syncReaderMode() {
   for (const id of ["reader-toggle", "editor-reader-toggle"]) {
     $(id).innerHTML = icons.panelLeft;
     $(id).ariaLabel = enabled ? "Show sidebar" : "Hide sidebar";
-    $(id).title = `${enabled ? "Show sidebar" : "Hide sidebar"} (${sidebarShortcutLabel})`;
+    $(id).dataset.tooltip = enabled ? "Show sidebar" : "Hide sidebar";
+    $(id).dataset.shortcut = sidebarShortcutLabel;
   }
 }
 function openPreview(snippet, pushHistory = true) {
