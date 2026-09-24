@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { handle } from "./index.mjs";
 import { sha256Base64Url } from "./lib.mjs";
 
@@ -71,6 +72,34 @@ test("signed-out homepage is served directly as a static asset", async () => {
 
   assert.equal(response.status, 200);
   assert.equal(assetUrl, "https://linksaw.com/");
+});
+
+test("privacy is a dedicated public page and the homepage links to it", async () => {
+  let assetUrl = "";
+  const env = {
+    DB: {},
+    ASSETS: { async fetch(request) { assetUrl = request.url; return new Response("privacy", { status: 200 }); } },
+  };
+  const response = await handle(new Request("https://linksaw.com/privacy"), env);
+  assert.equal(response.status, 200);
+  assert.equal(assetUrl, "https://linksaw.com/privacy/");
+
+  const canonical = await handle(new Request("https://linksaw.com/privacy/"), env);
+  assert.equal(canonical.status, 308);
+  assert.equal(canonical.headers.get("Location"), "https://linksaw.com/privacy");
+
+  const homepage = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
+  const privacy = readFileSync(new URL("../web/privacy/index.html", import.meta.url), "utf8");
+  assert.match(homepage, /<a href="\/privacy">Privacy<\/a>/);
+  assert.doesNotMatch(homepage, /data-legal="privacy"/);
+  assert.match(homepage, /data-legal="terms"/);
+  assert.match(privacy, /Account information/);
+  assert.match(privacy, /Your content/);
+  assert.match(privacy, /Sharing information/);
+  assert.match(privacy, /Clipboard and device access/);
+  assert.match(privacy, /Cookies and sessions/);
+  assert.match(privacy, /Cloudflare/);
+  assert.match(privacy, /delete your account/);
 });
 
 test("mobile install assets are public static assets", async () => {

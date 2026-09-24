@@ -181,6 +181,12 @@ export async function handle(request, env) {
       .replace(/<svg class="google-g"[\s\S]*?<\/svg><span>Continue with Google<\/span>/, "<span>Open Linksaw</span>");
     return new Response(html, { status: response.status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   }
+  if (isWebHost && request.method === "GET" && url.pathname === "/privacy/") {
+    return Response.redirect("https://linksaw.com/privacy", 308);
+  }
+  if (isWebHost && request.method === "GET" && url.pathname === "/privacy") {
+    return env.ASSETS.fetch(new Request("https://linksaw.com/privacy/", request));
+  }
   if (isWebHost && request.method === "GET" && ["/favicon.ico", "/icon.png", "/apple-touch-icon.png", "/robots.txt", "/sitemap.xml"].includes(url.pathname)) {
     return env.ASSETS.fetch(request);
   }
