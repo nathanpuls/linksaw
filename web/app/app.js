@@ -1,4 +1,4 @@
-import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-1";
+import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-2";
 
 const API = "https://snippets-api.linksaw.com";
 const icons = {
