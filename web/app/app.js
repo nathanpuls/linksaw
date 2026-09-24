@@ -23,7 +23,7 @@ let tooltipTimer;
 let tooltipTarget;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
-icon("add", "plus"); icon("search-icon", "search"); icon("close-editor", "close");
+icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
 icon("editor-reader-toggle", "panelLeft");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
@@ -347,9 +347,16 @@ async function load() {
 
 $("search").addEventListener("input", () => {
   const query = $("search").value.trim();
+  $("clear-search").hidden = !$("search").value;
   state.selected = -1; render();
   if (query && state.filtered.length) setSelected(0, false);
   else if (!query && !hasExplicitRoute() && !narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
+});
+$("clear-search").addEventListener("pointerdown", event => event.preventDefault());
+$("clear-search").addEventListener("click", () => {
+  $("search").value = "";
+  $("search").dispatchEvent(new Event("input", { bubbles: true }));
+  $("search").focus();
 });
 $("add").addEventListener("click", () => openEditor());
 $("settings").addEventListener("click", () => openSettings());
