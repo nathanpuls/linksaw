@@ -380,10 +380,34 @@ $("search").addEventListener("keydown", event => {
   }
 });
 $("snippet-title").addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.isComposing) {
+    event.preventDefault(); $("snippet-body").focus(); return;
+  }
   if (event.key === "Tab" && event.shiftKey && defaultEditorOpen()) {
     event.preventDefault(); $("search").focus();
   }
 });
+$("snippet-body").addEventListener("keydown", event => {
+  const body = $("snippet-body");
+  if (event.key !== "ArrowUp" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (body.value || body.selectionStart !== 0 || body.selectionEnd !== 0) return;
+  event.preventDefault();
+  $("snippet-title").focus();
+  const end = $("snippet-title").value.length;
+  $("snippet-title").setSelectionRange(end, end);
+});
+function routeEmptySnippetPaste(event) {
+  if ($("snippet-title").value.length || $("snippet-body").value.length) return;
+  const text = event.clipboardData?.getData("text/plain");
+  if (!text) return;
+  event.preventDefault();
+  $("snippet-body").value = text;
+  $("snippet-body").focus();
+  $("snippet-body").setSelectionRange(text.length, text.length);
+  $("snippet-body").dispatchEvent(new Event("input", { bubbles: true }));
+}
+$("snippet-title").addEventListener("paste", routeEmptySnippetPaste);
+$("snippet-body").addEventListener("paste", routeEmptySnippetPaste);
 $("clear-search").addEventListener("pointerdown", event => event.preventDefault());
 function clearSearch() {
   $("search").value = "";

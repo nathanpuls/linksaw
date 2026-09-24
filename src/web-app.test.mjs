@@ -26,6 +26,17 @@ test("default workspace tabs directly between search and title", () => {
   assert.match(source, /\$\("snippet-title"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("search"\)\.focus\(\)/);
 });
 
+test("editor treats title as optional metadata and paste as exact content", () => {
+  assert.match(html, /id="snippet-title"[^>]*placeholder="Title \(optional\)"/);
+  assert.match(html, /id="snippet-body"[^>]*placeholder="Type or paste a snippet"/);
+  assert.match(source, /event\.key === "Enter" && !event\.isComposing[\s\S]*?\$\("snippet-body"\)\.focus\(\)/);
+  assert.match(source, /event\.key !== "ArrowUp"[\s\S]*?if \(body\.value \|\| body\.selectionStart !== 0 \|\| body\.selectionEnd !== 0\) return;[\s\S]*?\$\("snippet-title"\)\.focus\(\)/);
+  assert.match(source, /function routeEmptySnippetPaste\(event\)[\s\S]*?clipboardData\?\.getData\("text\/plain"\)[\s\S]*?\$\("snippet-body"\)\.value = text/);
+  assert.match(source, /\$\("snippet-title"\)\.addEventListener\("paste", routeEmptySnippetPaste\)/);
+  assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| snippet\.title; \}/);
+  assert.match(source, /return snippet\.title\.trim\(\) \|\| snippet\.body\.trim\(\)\.split/);
+});
+
 test("destructive actions use branded cancellable dialogs", () => {
   assert.doesNotMatch(source, /\bconfirm\(/);
   assert.match(html, /id="action-confirm-dialog" class="confirm-dialog"/);

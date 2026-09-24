@@ -197,7 +197,7 @@ async function act(item) {
     await hide(); return;
   }
   // A title-only snippet is still usable.
-  const body = item.type === "snippet" && !trim(item.body) ? item.title : item.body;
+  const body = item.type === "snippet" ? (item.body || item.title) : item.body;
   if (item.type === "snippet") {
     const template = searchTemplate(body);
     if (template) { state.searchService = { ...item, template }; resetSearch(); return; }
@@ -397,8 +397,28 @@ ui.editordialog.addEventListener('click', event => {
 ui.search.addEventListener("input", () => { state.query = ui.search.value; state.selected = 0; render(); });
 ui.snippetbody.addEventListener('input', () => resizeEditorArea(ui.snippetbody));
 ui.snippettitle.addEventListener('keydown', event => {
-  if (event.key === 'Enter') { event.preventDefault(); ui.snippetbody.focus(); }
+  if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); ui.snippetbody.focus(); }
 });
+ui.snippetbody.addEventListener('keydown', event => {
+  if (event.key !== 'ArrowUp' || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (ui.snippetbody.value || ui.snippetbody.selectionStart !== 0 || ui.snippetbody.selectionEnd !== 0) return;
+  event.preventDefault();
+  ui.snippettitle.focus();
+  const end = ui.snippettitle.value.length;
+  ui.snippettitle.setSelectionRange(end, end);
+});
+function routeEmptySnippetPaste(event) {
+  if (ui.snippettitle.value.length || ui.snippetbody.value.length) return;
+  const text = event.clipboardData?.getData('text/plain');
+  if (!text) return;
+  event.preventDefault();
+  ui.snippetbody.value = text;
+  ui.snippetbody.focus();
+  ui.snippetbody.setSelectionRange(text.length, text.length);
+  ui.snippetbody.dispatchEvent(new Event('input', { bubbles: true }));
+}
+ui.snippettitle.addEventListener('paste', routeEmptySnippetPaste);
+ui.snippetbody.addEventListener('paste', routeEmptySnippetPaste);
 ui.clearsearch.addEventListener("click", resetSearch);
 ui.back.addEventListener("click", goBack);
 ui.add.addEventListener("click", () => openEditor());
@@ -500,8 +520,12 @@ previewDialog.addEventListener('cancel', event => { event.preventDefault(); clos
 function openPreview(item) {
   if (!item || item.type === 'search-query') return;
   previewItem = item;
-  document.getElementById('preview-title').textContent = snippetLabel(item);
-  document.getElementById('preview-body').textContent = item.body || item.title || '';
+  const previewTitle = document.getElementById('preview-title');
+  const previewBody = document.getElementById('preview-body');
+  previewTitle.textContent = item.title || '';
+  previewTitle.hidden = !item.title;
+  previewBody.textContent = item.body || '';
+  previewBody.hidden = !item.body;
   document.getElementById('preview-feedback').textContent = '';
   previewDialog.showModal();
   previewDialog.focus();

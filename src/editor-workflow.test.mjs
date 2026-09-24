@@ -37,5 +37,26 @@ test('title/content editor protects drafts and preview remains literal', async (
     failSave=false;key(editor,'s',{metaKey:true});await flush();assert.equal(editor.open,false);assert.equal(writes,2);
     d.querySelector('.result-edit').click();d.getElementById('snippet-body').value='Another change';editor.dispatchEvent(new w.Event('cancel',{cancelable:true}));
     d.querySelector('[data-discard]').click();assert.equal(editor.open,false);assert.equal(writes,2);
+
+    snippet.body='';key(search,'ArrowRight');
+    assert.equal(d.getElementById('preview-title').textContent,snippet.title);
+    assert.equal(d.getElementById('preview-body').textContent,'','a title-only snippet does not generate repeated content');
+    assert.equal(d.getElementById('preview-body').hidden,true);
+    d.getElementById('close-preview').click();
+
+    d.getElementById('add').click();
+    const title=d.getElementById('snippet-title'),body=d.getElementById('snippet-body');
+    assert.equal(d.activeElement,title,'a new snippet starts in the optional title');
+    assert.equal(title.placeholder,'Title (optional)');
+    assert.equal(body.placeholder,'Type or paste a snippet');
+    key(title,'Enter');assert.equal(d.activeElement,body,'Return moves from title to content');
+    key(body,'ArrowUp');assert.equal(d.activeElement,title,'Up from empty content returns to title');
+    const pasted='First line\nSecond line {cursor} {day}';
+    const paste=new w.Event('paste',{bubbles:true,cancelable:true});
+    Object.defineProperty(paste,'clipboardData',{value:{getData:type=>type==='text/plain'?pasted:''}});
+    title.dispatchEvent(paste);
+    assert.equal(title.value,'','pasted text never becomes the title');
+    assert.equal(body.value,pasted,'the complete paste is preserved as content');
+    assert.equal(d.activeElement,body,'paste continues in the content field');
   }finally{await new Promise(resolve=>setTimeout(resolve,100));dom.window.close();}
 });

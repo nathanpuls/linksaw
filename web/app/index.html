@@ -63,11 +63,11 @@
         <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
         <button id="editor-reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
         <label class="sr-only" for="snippet-title">Title</label>
-        <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title" autocomplete="off">
+        <input id="snippet-title" class="title-input" maxlength="160" placeholder="Title (optional)" autocomplete="off">
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
       </header>
       <label class="sr-only" for="snippet-body">Content</label>
-      <textarea id="snippet-body" class="content-input" placeholder="Content" autocomplete="off"></textarea>
+      <textarea id="snippet-body" class="content-input" placeholder="Type or paste a snippet" autocomplete="off"></textarea>
       <footer class="surface-footer">
         <button id="delete" class="text-button danger" type="button" tabindex="-1" hidden>Delete</button>
         <button id="unshare" class="text-button danger" type="button" tabindex="-1" hidden>Unshare</button>
@@ -169,6 +169,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-37"></script>
+  <script type="module" src="/app/app.js?v=20260923-38"></script>
 </body>
 </html>
