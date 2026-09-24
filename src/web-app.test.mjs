@@ -14,10 +14,18 @@ test("empty snippets are rejected before the saving state begins", () => {
 });
 
 test("save button is gray and disabled until the snippet has a value", () => {
-  assert.match(html, /id="save-snippet" class="save-button" type="submit" disabled/);
+  assert.match(html, /id="save-snippet" class="save-button" type="submit" data-tooltip="Save" disabled/);
   assert.match(css, /\.save-button:disabled \{[^}]*background: #9a9a9a;[^}]*color: #fff;[^}]*opacity: 1;[^}]*cursor: default;/);
   assert.match(source, /function syncSaveButton\(\)[\s\S]*?editorSaving \|\| !hasValue/);
-  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("input", syncSaveButton\)/);
+  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("input", \(\) => \{ syncSaveButton\(\);/);
+});
+
+test("command save reuses form validation and suppresses browser save", () => {
+  assert.match(source, /\$\("save-snippet"\)\.dataset\.shortcut = commandShortcut\("S"\)/);
+  assert.match(source, /const saveShortcut = event\.key\.toLowerCase\(\) === "s"[\s\S]*?isMacPlatform \? event\.metaKey && !event\.ctrlKey : event\.ctrlKey && !event\.metaKey/);
+  assert.match(source, /if \(saveShortcut\)[\s\S]*?event\.preventDefault\(\)[\s\S]*?!\$\("save-snippet"\)\.disabled[\s\S]*?\$\("editor-form"\)\.requestSubmit\(\)/);
+  assert.match(source, /if \(editorSaving \|\| \$\("save-snippet"\)\.disabled\) return;/);
+  assert.match(html, /<dt>⌘\/Ctrl S<\/dt><dd>Save snippet<\/dd>/);
 });
 
 test("default workspace tabs directly between search and content", () => {
@@ -25,17 +33,23 @@ test("default workspace tabs directly between search and content", () => {
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("search"\)\.focus\(\)/);
 });
 
-test("primary editor is content-only and private names use Rename", () => {
+test("primary editor is content-only and supports quiet inline custom names", () => {
   assert.doesNotMatch(html, /id="snippet-title"/);
   assert.match(html, /<textarea id="snippet-body" class="content-input" autocomplete="off"><\/textarea>/);
+  assert.doesNotMatch(html, /<textarea[^>]*placeholder=/);
   assert.doesNotMatch(source, /routeEmptySnippetPaste/);
-  assert.match(source, /function openEditor[\s\S]*?\$\("snippet-body"\)\.value = snippet\?\.body \|\| "";[\s\S]*?\$\("snippet-body"\)\.focus\(\)/);
-  assert.match(source, /const payload = \{ title: state\.editing\?\.title \|\| "", body: \$\("snippet-body"\)\.value \}/);
+  assert.match(source, /function openEditor[\s\S]*?\$\("snippet-body"\)\.value = snippet\?\.body \|\| ""; editorCustomName = snippet\?\.title \|\| "";[\s\S]*?setSelectionRange\(0, 0\)/);
+  assert.match(source, /const payload = \{ title: editorCustomName, body: \$\("snippet-body"\)\.value \}/);
   assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| ""; \}/);
-  assert.match(source, /return snippet\.title\.trim\(\) \|\| snippet\.body\.trim\(\)\.split/);
-  assert.match(html, /id="rename" class="text-button rename-action"[^>]*>Rename<\/button>/);
-  assert.match(source, /\$\("rename"\)\.addEventListener\("click", \(\) => openRename\(state\.editing\)\)/);
-  assert.match(source, /body: JSON\.stringify\(\{ title, body: renamingSnippet\.body \}\)/);
+  assert.match(source, /function derivedLabel\(body\)[\s\S]*?find\(line => line\.trim\(\)\)/);
+  assert.match(source, /function label\(snippet\) \{ return snippet\.title\.trim\(\) \|\| derivedLabel\(snippet\.body\); \}/);
+  assert.match(html, /id="editor-name" class="editor-name-action"[^>]*aria-label="Rename"[^>]*data-tooltip="Rename"/);
+  assert.match(html, /id="editor-name-input" class="editor-name-input"[^>]*maxlength="160"[^>]*hidden/);
+  assert.doesNotMatch(html, /id="rename-dialog"/);
+  assert.match(source, /event\.key === "Enter"[\s\S]*?finishInlineRename\(\)/);
+  assert.match(source, /event\.key === "Escape"[\s\S]*?finishInlineRename\(\{ cancel: true \}\)/);
+  assert.match(source, /const unchangedAutomaticName = !inlineRenameBaseline\.trim\(\) && enteredName === derivedLabel/);
+  assert.match(source, /editorCustomName = cancel \? inlineRenameBaseline : unchangedAutomaticName \? "" : enteredName/);
 });
 
 test("rows provide one-click link, viewer, and edit actions", () => {
@@ -96,8 +110,10 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
 });
 
 test("content editing keeps the same plain-text scale and vertical rhythm", () => {
+  assert.match(css, /\.preview-title \{ font-size: 16px; font-weight: 550;/);
   assert.match(css, /\.preview-body \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
   assert.match(css, /\.content-input \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.preview-body, \.content-input \{ padding: 8px 22px 40px 16px; \}/);
 });
 
 test("sidebar Linksaw mark links home before the account control", () => {
@@ -109,11 +125,12 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(css, /\.viewer-content \{ height: 100dvh; \}/);
 });
 
-test("viewer always preserves an explicit title", () => {
+test("viewer shows only explicit custom names above exact content", () => {
   const viewer = source.match(/function renderViewer\(snippet\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(viewer, "viewer renderer is present");
   assert.match(viewer, /const heading = snippet\.title\.trim\(\);/);
   assert.doesNotMatch(viewer, /snippet\.title\.trim\(\) !== snippet\.body\.trim\(\)/);
+  assert.doesNotMatch(viewer, /derivedLabel/);
   assert.match(viewer, /\$\("preview-body"\)\.hidden = !snippet\.body;/);
   assert.match(viewer, /renderLinkedText\(\$\("preview-body"\), snippet\.body\);/);
 });

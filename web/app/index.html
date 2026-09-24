@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260924-3">
+  <link rel="stylesheet" href="/app/app.css?v=20260924-4">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -62,17 +62,18 @@
       <header class="surface-header editor-header">
         <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
         <button id="editor-reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
-        <span class="editor-header-spacer" aria-hidden="true"></span>
+        <button id="editor-name" class="editor-name-action" type="button" aria-label="Rename" data-tooltip="Rename"></button>
+        <label class="sr-only" for="editor-name-input">Custom display name</label>
+        <input id="editor-name-input" class="editor-name-input" type="text" maxlength="160" autocomplete="off" hidden>
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
       </header>
       <label class="sr-only" for="snippet-body">Snippet text</label>
       <textarea id="snippet-body" class="content-input" autocomplete="off"></textarea>
       <footer class="surface-footer">
         <button id="delete" class="icon-button delete-action" type="button" tabindex="-1" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
-        <button id="rename" class="text-button rename-action" type="button" tabindex="-1" hidden>Rename</button>
         <button id="unshare" class="text-button danger" type="button" tabindex="-1" hidden>Unshare</button>
         <p id="editor-status" class="editor-status" role="status" aria-live="polite"></p>
-        <button id="save-snippet" class="save-button" type="submit" disabled>Save</button>
+        <button id="save-snippet" class="save-button" type="submit" data-tooltip="Save" disabled>Save</button>
       </footer>
     </form>
   </section>
@@ -126,6 +127,7 @@
             <div><dt id="toggle-sidebar-shortcut">⌘\</dt><dd>Toggle sidebar</dd></div>
             <div><dt>→</dt><dd>Focus the viewer</dd></div>
             <div><dt>⌘/Ctrl E</dt><dd>Edit selected snippet</dd></div>
+            <div><dt>⌘/Ctrl S</dt><dd>Save snippet</dd></div>
             <div><dt>⌘/Ctrl C</dt><dd>Copy selected snippet</dd></div>
             <div><dt>⌘/Ctrl 1–9</dt><dd>Select a visible snippet</dd></div>
             <div><dt>Esc</dt><dd>Go back</dd></div>
@@ -140,19 +142,6 @@
       </section>
     </div>
   </section>
-
-  <dialog id="rename-dialog" class="confirm-dialog" aria-labelledby="rename-title">
-    <form id="rename-form">
-      <h2 id="rename-title">Rename snippet</h2>
-      <label class="sr-only" for="rename-input">Name</label>
-      <input id="rename-input" class="confirm-input" type="text" maxlength="160" autocomplete="off" placeholder="Name (optional)">
-      <p id="rename-status" class="dialog-status" role="status" aria-live="polite"></p>
-      <div class="dialog-actions">
-        <button id="cancel-rename" class="text-button" type="button">Cancel</button>
-        <button class="confirm-action" type="submit">Save</button>
-      </div>
-    </form>
-  </dialog>
 
   <dialog id="action-confirm-dialog" class="confirm-dialog" aria-labelledby="action-confirm-title" aria-describedby="action-confirm-message">
     <form method="dialog">
@@ -182,6 +171,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260924-2"></script>
+  <script type="module" src="/app/app.js?v=20260924-4"></script>
 </body>
 </html>

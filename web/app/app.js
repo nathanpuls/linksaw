@@ -26,6 +26,8 @@ let copyFeedbackTimer;
 let tooltipTimer;
 let tooltipTarget;
 let editorSaving = false;
+let editorCustomName = "";
+let inlineRenameBaseline = "";
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
@@ -34,6 +36,7 @@ icon("editor-reader-toggle", "panelLeft"); icon("delete", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
 $("preview-copy").dataset.shortcut = commandShortcut("C");
+$("save-snippet").dataset.shortcut = commandShortcut("S");
 
 function hideTooltip() {
   clearTimeout(tooltipTimer);
@@ -93,9 +96,10 @@ async function api(path, options = {}) {
   return data;
 }
 
-function label(snippet) {
-  return snippet.title.trim() || snippet.body.trim().split(/\r?\n/, 1)[0].slice(0, 90) || "Untitled";
+function derivedLabel(body) {
+  return body.split(/\r?\n/).find(line => line.trim())?.trim().slice(0, 90) || "Untitled";
 }
+function label(snippet) { return snippet.title.trim() || derivedLabel(snippet.body); }
 function renderIdentity(user) {
   const name = user.display_name?.trim() || user.email?.split("@", 1)[0] || "Account";
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => Array.from(part)[0]?.toUpperCase()).join("") || "A";
@@ -272,6 +276,27 @@ function syncSaveButton() {
   const hasValue = $("snippet-body").value.trim();
   $("save-snippet").disabled = editorSaving || !hasValue;
 }
+function syncEditorName() {
+  $("editor-name").textContent = editorCustomName.trim() || derivedLabel($("snippet-body").value);
+}
+function beginInlineRename() {
+  hideTooltip();
+  inlineRenameBaseline = editorCustomName;
+  const automaticName = derivedLabel($("snippet-body").value);
+  $("editor-name-input").value = editorCustomName || (automaticName === "Untitled" ? "" : automaticName);
+  $("editor-name").hidden = true;
+  $("editor-name-input").hidden = false;
+  $("editor-name-input").focus();
+  $("editor-name-input").select();
+}
+function finishInlineRename({ cancel = false } = {}) {
+  const enteredName = $("editor-name-input").value.trim();
+  const unchangedAutomaticName = !inlineRenameBaseline.trim() && enteredName === derivedLabel($("snippet-body").value);
+  editorCustomName = cancel ? inlineRenameBaseline : unchangedAutomaticName ? "" : enteredName;
+  $("editor-name-input").hidden = true;
+  $("editor-name").hidden = false;
+  syncEditorName();
+}
 function leaveRoutedView() {
   if (history.state?.linksawPushed) { history.back(); return; }
   const params = new URLSearchParams(location.search);
@@ -281,15 +306,15 @@ function leaveRoutedView() {
 function openEditor(snippet = null, pushHistory = true, options = {}) {
   hideTooltip();
   const { defaultDraft = false, focus = true } = options;
-  state.editing = snippet; $("snippet-body").value = snippet?.body || "";
+  state.editing = snippet; $("snippet-body").value = snippet?.body || ""; editorCustomName = snippet?.title || "";
   editorSaving = false; syncSaveButton();
   state.editorContext = defaultDraft ? "default" : "routed";
   $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
   $("close-editor").hidden = defaultDraft;
-  $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = ""; showSurface("editor");
-  $("rename").hidden = !snippet;
+  $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = "";
+  $("editor-name-input").hidden = true; $("editor-name").hidden = false; syncEditorName(); showSurface("editor");
   if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
-  if (focus) setTimeout(() => $("snippet-body").focus(), 0);
+  if (focus) setTimeout(() => { $("snippet-body").focus(); if (!snippet) $("snippet-body").setSelectionRange(0, 0); }, 0);
 }
 function renderViewer(snippet) {
   state.previewing = snippet;
@@ -415,36 +440,13 @@ $("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", leaveRoutedView);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showCopyError));
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
-let renamingSnippet = null;
-function openRename(snippet) {
-  if (!snippet) return;
-  renamingSnippet = snippet; $("rename-input").value = snippet.title || ""; $("rename-status").textContent = "";
-  $("rename-dialog").showModal(); $("rename-input").focus(); $("rename-input").select();
-}
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
-$("rename").addEventListener("click", () => openRename(state.editing));
-$("cancel-rename").addEventListener("click", () => $("rename-dialog").close());
-$("rename-dialog").addEventListener("click", event => { if (event.target === $("rename-dialog")) $("rename-dialog").close(); });
-$("rename-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  if (!renamingSnippet) return;
-  const title = $("rename-input").value;
-  if (!title.trim() && !renamingSnippet.body.trim()) { $("rename-status").textContent = "A snippet without content needs a name."; return; }
-  try {
-    $("rename-status").textContent = "Saving…";
-    await api(`/snippets/${renamingSnippet.id}`, { method: "PUT", body: JSON.stringify({ title, body: renamingSnippet.body }) });
-    const id = renamingSnippet.id;
-    const data = await api("/snippets"); state.snippets = data.snippets;
-    state.selected = Math.max(0, state.filtered.findIndex(snippet => snippet.id === id));
-    render();
-    const renamed = state.snippets.find(snippet => snippet.id === id);
-    if (renamed) {
-      state.previewing = renamed; renderViewer(renamed);
-      if (state.editing?.id === id) state.editing = renamed;
-    }
-    $("rename-dialog").close();
-  } catch (error) { $("rename-status").textContent = error.message; }
+$("editor-name").addEventListener("click", beginInlineRename);
+$("editor-name-input").addEventListener("keydown", event => {
+  if (event.key === "Enter") { event.preventDefault(); finishInlineRename(); $("snippet-body").focus(); }
+  else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finishInlineRename({ cancel: true }); $("snippet-body").focus(); }
 });
+$("editor-name-input").addEventListener("blur", () => { if (!$("editor-name-input").hidden) finishInlineRename(); });
 function toggleReaderMode() {
   const enabled = !$("app").classList.contains("reader-mode");
   sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();
@@ -455,10 +457,12 @@ function isSidebarShortcut(event) {
 }
 $("reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-reader-toggle").addEventListener("click", toggleReaderMode);
-$("snippet-body").addEventListener("input", syncSaveButton);
+$("snippet-body").addEventListener("input", () => { syncSaveButton(); if (!editorCustomName.trim()) syncEditorName(); });
 $("editor-form").addEventListener("submit", async event => {
   event.preventDefault();
-  const payload = { title: state.editing?.title || "", body: $("snippet-body").value };
+  if (editorSaving || $("save-snippet").disabled) return;
+  if (!$("editor-name-input").hidden) finishInlineRename();
+  const payload = { title: editorCustomName, body: $("snippet-body").value };
   if (!payload.body.trim()) {
     $("editor-status").textContent = "Enter snippet text";
     return;
@@ -607,6 +611,15 @@ $("save-trigger").addEventListener("click", async () => {
 });
 addEventListener("popstate", applyUrlState);
 document.addEventListener("keydown", event => {
+  const modifier = event.metaKey || event.ctrlKey;
+  const saveShortcut = event.key.toLowerCase() === "s" && !event.altKey && !event.shiftKey
+    && (isMacPlatform ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey);
+  if (saveShortcut) {
+    event.preventDefault();
+    if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
+    if (!$("editor").hidden && !$("save-snippet").disabled) $("editor-form").requestSubmit();
+    return;
+  }
   if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
   const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
@@ -617,7 +630,6 @@ document.addEventListener("keydown", event => {
   }
   const defaultDraftField = state.editorContext === "default" && document.activeElement === $("snippet-body");
   if ((editing && (state.editorContext !== "default" || defaultDraftField)) || settings) return;
-  const modifier = event.metaKey || event.ctrlKey;
   if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); openEditor(); return; }
   const selected = state.filtered[state.selected];
   if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); openEditor(selected); return; }
