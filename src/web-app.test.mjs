@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../web/app/app.js", import.meta.url), "utf8");
 const html = readFileSync(new URL("../web/app/index.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../web/app/app.css", import.meta.url), "utf8");
+const linkifier = readFileSync(new URL("../web/app/linkify.js", import.meta.url), "utf8");
 
 test("autosave waits for settled meaningful text and has no permanent save button", () => {
   assert.doesNotMatch(html, /id="save-snippet"/);
@@ -176,10 +177,14 @@ test("viewer shows only explicit custom names above exact content", () => {
   assert.match(viewer, /renderLinkedText\(\$\("preview-body"\), snippet\.body\);/);
 });
 
-test("viewer turns recognizable phone numbers into underlined telephone links", () => {
-  assert.match(source, /const isPhone = [\s\S]*?phoneDigits\.length === 7[\s\S]*?phoneDigits\.length >= 10 && phoneDigits\.length <= 15/);
-  assert.match(source, /link\.href = `tel:\$\{prefix\}\$\{phoneDigits\}/);
-  assert.match(css, /\.preview-body a \{ color: inherit; text-decoration-color: var\(--control\); text-underline-offset: 2px; \}/);
+test("viewer uses shared QK-style linkification and underlined styling", () => {
+  assert.match(source, /import \{ linkifyText \} from "\.\/linkify\.js\?v=20260924-1"/);
+  assert.match(source, /function renderLinkedText[\s\S]*?linkifyText\(text\)/);
+  assert.match(linkifier, /const EMAIL =/);
+  assert.match(linkifier, /const PROTOCOL_URL =/);
+  assert.match(linkifier, /const PHONE =/);
+  assert.match(linkifier, /const STREET_ADDRESS =/);
+  assert.match(css, /\.preview-body a \{[^}]*text-decoration-thickness: 1\.2px;[^}]*text-decoration-skip-ink: none;[^}]*word-break: break-word;/);
 });
 
 test("settings offers working CSV and JSON transfer controls", () => {

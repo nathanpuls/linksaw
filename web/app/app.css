@@ -93,7 +93,7 @@ button { color: inherit; }
 .viewer-delete { margin-left: 9px; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
 .preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
-.preview-body a { color: inherit; text-decoration-color: var(--control); text-underline-offset: 2px; }
+.preview-body a { color: inherit; text-decoration: underline; text-decoration-color: var(--control); text-decoration-thickness: 1.2px; text-underline-offset: 2px; text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; cursor: pointer; word-break: break-word; }
 .preview-body a:hover, .preview-body a:focus-visible { text-decoration-color: currentColor; }
 .app.reader-mode { grid-template-columns: minmax(0, 1fr); }
 .app.reader-mode .list-pane { display: none; }

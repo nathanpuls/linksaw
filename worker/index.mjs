@@ -1,4 +1,5 @@
 import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64Url, shareToken, validSnippet, webSessionCookie } from "./lib.mjs";
+import { linkifyText } from "../web/app/linkify.js";
 
 const allowedOrigins = new Set(["https://linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
 const profileSchemaReady = new WeakMap();
@@ -101,29 +102,11 @@ async function saveAutocompleteTrigger(env, userId, trigger) {
 }
 
 function publicLinkedHtml(value) {
-  const text = String(value ?? "");
-  const pattern = /https?:\/\/[^\s<>"'`]+|(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?|(?:\+?\d|\(\d)[\d(). \t-]{5,}\d(?:[ \t]*(?:x|ext\.?)\s*\d{1,6})?/gi;
-  let html = "", last = 0;
-  for (const match of text.matchAll(pattern)) {
-    const full = match[0]; let linkText = full;
-    while (/[.,;:!?)}\]]$/.test(linkText)) linkText = linkText.slice(0, -1);
-    html += escapeHtml(text.slice(last, match.index));
-    const bareDomainInCode = !/^https?:\/\//i.test(linkText) && (text[match.index - 1] === "`" || text[match.index + full.length] === "`");
-    const phoneMatch = linkText.match(/^(.*?)(?:[ \t]*(?:x|ext\.?)\s*(\d{1,6}))?$/i);
-    const phoneDigits = phoneMatch?.[1].replace(/\D/g, "") || "";
-    const isPhone = !/[a-z]/i.test(phoneMatch?.[1] || "") && (phoneDigits.length === 7 || (phoneDigits.length >= 10 && phoneDigits.length <= 15));
-    const isWeb = /^https?:\/\//i.test(linkText) || /^(?:www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z]{2,})+(?:\/[^\s<>"'`]*)?$/i.test(linkText);
-    if (text[match.index - 1] === "@" || bareDomainInCode || !linkText || (!isWeb && !isPhone)) html += escapeHtml(full);
-    else {
-      const href = isPhone
-        ? `tel:${phoneMatch[1].trim().startsWith("+") ? "+" : ""}${phoneDigits}${phoneMatch[2] ? `;ext=${phoneMatch[2]}` : ""}`
-        : (/^https?:\/\//i.test(linkText) ? linkText : `https://${linkText}`);
-      const external = isPhone ? "" : ' target="_blank" rel="noopener noreferrer"';
-      html += `<a href="${escapeHtml(href)}"${external}>${escapeHtml(linkText)}</a>${escapeHtml(full.slice(linkText.length))}`;
-    }
-    last = match.index + full.length;
-  }
-  return html + escapeHtml(text.slice(last));
+  return linkifyText(value).map(part => {
+    if (!part.href) return escapeHtml(part.text);
+    const external = part.external ? ' target="_blank" rel="noopener noreferrer"' : "";
+    return `<a href="${escapeHtml(part.href)}"${external}>${escapeHtml(part.text)}</a>`;
+  }).join("");
 }
 
 function publicSnippetPage(snippet) {
@@ -157,7 +140,7 @@ function publicSnippetPage(snippet) {
     .snippet-container{width:min(900px,100%);margin:0 auto;padding:8px 36px 48px}
     .title{margin:0 0 22px;overflow-wrap:anywhere;font-size:21px;font-weight:550;letter-spacing:-.025em}
     .content{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:16px;line-height:1.65}
-    .content a{color:inherit;text-decoration-color:#d4d4d8;text-underline-offset:2px}
+    .content a{color:inherit;text-decoration:underline;text-decoration-thickness:1.2px;text-underline-offset:2px;text-decoration-skip-ink:none;-webkit-text-decoration-skip:none;cursor:pointer;word-break:break-word}
     .content a:hover,.content a:focus-visible{text-decoration-color:currentColor}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .copy-error{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:9px 15px;border-radius:9px;background:#b42318;color:#fff;font-size:13px}
@@ -219,7 +202,7 @@ export async function handle(request, env) {
     // otherwise create a signed-in redirect loop.
     return env.ASSETS.fetch(request);
   }
-  if (isWebHost && request.method === "GET" && ["/app/app.css", "/app/app.js", "/app/transfers.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"].includes(url.pathname)) {
+  if (isWebHost && request.method === "GET" && ["/app/app.css", "/app/app.js", "/app/linkify.js", "/app/transfers.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"].includes(url.pathname)) {
     return env.ASSETS.fetch(request);
   }
   const publicShare = isWebHost ? url.pathname.match(/^\/s\/([A-Za-z0-9_-]{16})\/?$/) : null;

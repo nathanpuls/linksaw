@@ -83,12 +83,12 @@ test("every browser module is served as a static asset", async () => {
     ASSETS: { async fetch(request) { requested.push(new URL(request.url).pathname); return new Response("module", { status: 200 }); } },
   };
 
-  for (const path of ["/app/app.js", "/app/transfers.js"]) {
+  for (const path of ["/app/app.js", "/app/linkify.js", "/app/transfers.js"]) {
     const response = await handle(new Request(`https://linksaw.com${path}`), env);
     assert.equal(response.status, 200);
   }
 
-  assert.deepEqual(requested, ["/app/app.js", "/app/transfers.js"]);
+  assert.deepEqual(requested, ["/app/app.js", "/app/linkify.js", "/app/transfers.js"]);
 });
 
 test("public share pages render without sign-in and escape snippet content", async () => {
@@ -99,7 +99,7 @@ test("public share pages render without sign-in and escape snippet content", asy
         return {
           bind(token) {
             assert.equal(token, "Ab3k9Qx7Lm2N4pRs");
-        return { first: async () => ({ title: "Example <title>", body: `<script>alert("no")</script>\n\`README.md\`\n\`https://example.com/docs\`.\nCall (312) 555-1212 or +44 20 7946 0958.` }) };
+        return { first: async () => ({ title: "Example <title>", body: `<script>alert("no")</script>\n\`README.md\`\nhttps://example.com/docs.\nhi@example.com\nCall (312) 555-1212 or +44 20 7946 0958.\n123 Main St, Suite 110,\nKingwood, TX 77339` }) };
           },
         };
       },
@@ -133,6 +133,9 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.doesNotMatch(html, /href="https:\/\/example\.com\/docs`"/);
   assert.match(html, /href="tel:3125551212">\(312\) 555-1212<\/a>/);
   assert.match(html, /href="tel:\+442079460958">\+44 20 7946 0958<\/a>/);
+  assert.match(html, /href="mailto:hi@example\.com">hi@example\.com<\/a>/);
+  assert.match(html, /href="https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=123%20Main%20St%2C%20Suite%20110%20Kingwood%2C%20TX%2077339" target="_blank" rel="noopener noreferrer">123 Main St, Suite 110,\nKingwood, TX 77339<\/a>/);
+  assert.match(html, /text-decoration-thickness:1\.2px[\s\S]*text-decoration-skip-ink:none[\s\S]*word-break:break-word/);
 });
 
 test("public share keeps a title that matches its content", async () => {
