@@ -14,8 +14,10 @@ test("empty snippets are rejected before the saving state begins", () => {
 
 test("icon-only controls use delayed custom tooltips with shortcut badges", () => {
   assert.doesNotMatch(html, /\stitle=/);
-  assert.match(html, /data-tooltip="Copy snippet"/);
+  assert.match(html, /data-tooltip="Copy"/);
+  assert.match(html, /id="search-icon" class="search-icon"/);
   assert.match(html, /id="tooltip-shortcut"/);
   assert.match(source, /dataset\.shortcut = commandShortcut\("C"\)/);
   assert.match(source, /}, 450\);/);
+  assert.match(source, /button\.dataset\.tooltip = "Copied"/);
 });

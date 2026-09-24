@@ -1,6 +1,7 @@
 const API = "https://snippets-api.linksaw.com";
 const icons = {
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',
+  search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
   copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>',
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>',
@@ -22,7 +23,7 @@ let tooltipTimer;
 let tooltipTarget;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
-icon("add", "plus"); icon("close-editor", "close");
+icon("add", "plus"); icon("search-icon", "search"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
 icon("editor-reader-toggle", "panelLeft");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
@@ -35,23 +36,26 @@ function hideTooltip() {
   tooltipTarget = null;
   $("linksaw-tooltip").hidden = true;
 }
+function placeTooltip(target) {
+  $("tooltip-label").textContent = target.dataset.tooltip;
+  const shortcut = $("tooltip-shortcut");
+  shortcut.textContent = target.dataset.shortcut || "";
+  shortcut.hidden = !target.dataset.shortcut;
+  const tooltip = $("linksaw-tooltip");
+  tooltip.hidden = false;
+  const rect = target.getBoundingClientRect();
+  const tip = tooltip.getBoundingClientRect();
+  const left = Math.max(8, Math.min(innerWidth - tip.width - 8, rect.left + rect.width / 2 - tip.width / 2));
+  const below = rect.bottom + 8;
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${below + tip.height <= innerHeight - 8 ? below : rect.top - tip.height - 8}px`;
+}
 function showTooltip(target) {
   if (!target?.dataset.tooltip) return;
   tooltipTarget = target;
   tooltipTimer = setTimeout(() => {
     if (tooltipTarget !== target || (!target.matches(":hover") && document.activeElement !== target)) return;
-    $("tooltip-label").textContent = target.dataset.tooltip;
-    const shortcut = $("tooltip-shortcut");
-    shortcut.textContent = target.dataset.shortcut || "";
-    shortcut.hidden = !target.dataset.shortcut;
-    const tooltip = $("linksaw-tooltip");
-    tooltip.hidden = false;
-    const rect = target.getBoundingClientRect();
-    const tip = tooltip.getBoundingClientRect();
-    const left = Math.max(8, Math.min(innerWidth - tip.width - 8, rect.left + rect.width / 2 - tip.width / 2));
-    const below = rect.bottom + 8;
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${below + tip.height <= innerHeight - 8 ? below : rect.top - tip.height - 8}px`;
+    placeTooltip(target);
   }, 450);
 }
 document.addEventListener("pointerover", event => {
@@ -68,7 +72,7 @@ document.addEventListener("focusout", event => {
   const target = event.target.closest?.("[data-tooltip]");
   queueMicrotask(() => { if (target && !target.matches(":hover") && document.activeElement !== target) hideTooltip(); });
 });
-document.addEventListener("click", hideTooltip);
+document.addEventListener("click", event => { if (!event.target.closest?.("#preview-copy")) hideTooltip(); });
 addEventListener("scroll", hideTooltip, true);
 addEventListener("resize", hideTooltip);
 
@@ -148,13 +152,17 @@ function showCopySuccess() {
   button.innerHTML = icons.check;
   button.ariaLabel = "Copied";
   button.dataset.tooltip = "Copied";
+  hideTooltip();
+  tooltipTarget = button;
+  placeTooltip(button);
   const announcement = $("copy-announcement");
   announcement.textContent = "";
   requestAnimationFrame(() => { announcement.textContent = "Copied to clipboard"; });
   copyFeedbackTimer = setTimeout(() => {
     button.innerHTML = icons.copy;
     button.ariaLabel = "Copy snippet";
-    button.dataset.tooltip = "Copy snippet";
+    button.dataset.tooltip = "Copy";
+    if (tooltipTarget === button && !$("linksaw-tooltip").hidden) placeTooltip(button);
   }, 1800);
 }
 function showCopyError(error) {

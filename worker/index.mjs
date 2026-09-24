@@ -115,7 +115,7 @@ function publicSnippetPage(snippet) {
     .home:hover,.home:focus-visible,.copy:hover,.copy:focus-visible{outline:0;background:#f4f4f5;color:#171717}
     .home img{display:block;width:28px;height:28px;object-fit:contain}
     .copy svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    [data-tooltip]::after{content:attr(data-tooltip);position:absolute;z-index:10;top:calc(100% + 8px);border-radius:6px;padding:6px 8px;background:#18181b;color:#fff;font-size:12px;font-weight:400;line-height:1.2;white-space:nowrap;opacity:0;pointer-events:none;box-shadow:0 4px 14px #0004;transition:opacity .08s;transition-delay:0s}
+    [data-tooltip]::after{content:attr(data-tooltip);position:absolute;z-index:10;top:calc(100% + 8px);border:1px solid #e4e4e7;border-radius:7px;padding:6px 8px;background:#fff;color:#18181b;font-size:12px;font-weight:400;line-height:1.2;white-space:nowrap;opacity:0;pointer-events:none;box-shadow:0 4px 14px #0000001f;transition:opacity .08s;transition-delay:0s}
     [data-tooltip]:hover::after,[data-tooltip]:focus-visible::after{opacity:1;transition-delay:.45s}
     .home::after{left:0}.copy::after{right:0}
     .snippet-container{width:min(900px,100%);margin:0 auto;padding:8px 36px 48px}
@@ -132,13 +132,13 @@ function publicSnippetPage(snippet) {
   <main class="snippet">
     <header class="topbar">
       <a class="home" href="https://linksaw.com/" aria-label="Linksaw home" data-tooltip="Linksaw home"><img src="https://linksaw.com/icon.png" alt=""></a>
-      <button id="copy" class="copy" type="button" aria-label="Copy snippet" data-tooltip="Copy snippet"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+      <button id="copy" class="copy" type="button" aria-label="Copy snippet" data-tooltip="Copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
     </header>
     <article class="snippet-container"><h1 class="title"${heading ? "" : " hidden"}>${escapeHtml(heading)}</h1><pre id="snippet-content" class="content">${publicLinkedHtml(body)}</pre></article>
   </main>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="copy-error" class="copy-error" role="alert" hidden></div>
-  <script nonce="${nonce}">const b=document.getElementById("copy"),original=b.innerHTML,check='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>';let timer;b.addEventListener("click",async()=>{const error=document.getElementById("copy-error");error.hidden=true;try{await navigator.clipboard.writeText(document.getElementById("snippet-content").textContent);clearTimeout(timer);b.innerHTML=check;b.setAttribute("aria-label","Copied");b.dataset.tooltip="Copied";const live=document.getElementById("copy-announcement");live.textContent="";requestAnimationFrame(()=>live.textContent="Copied to clipboard");timer=setTimeout(()=>{b.innerHTML=original;b.setAttribute("aria-label","Copy snippet");b.dataset.tooltip="Copy snippet"},1800)}catch{error.textContent="Could not copy to clipboard";error.hidden=false}})</script>
+  <script nonce="${nonce}">const b=document.getElementById("copy"),original=b.innerHTML,check='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>';let timer;b.addEventListener("click",async()=>{const error=document.getElementById("copy-error");error.hidden=true;try{await navigator.clipboard.writeText(document.getElementById("snippet-content").textContent);clearTimeout(timer);b.innerHTML=check;b.setAttribute("aria-label","Copied");b.dataset.tooltip="Copied";const live=document.getElementById("copy-announcement");live.textContent="";requestAnimationFrame(()=>live.textContent="Copied to clipboard");timer=setTimeout(()=>{b.innerHTML=original;b.setAttribute("aria-label","Copy snippet");b.dataset.tooltip="Copy"},1800)}catch{error.textContent="Could not copy to clipboard";error.hidden=false}})</script>
 </body>
 </html>`;
   return { html, nonce };

@@ -9,9 +9,14 @@
   --hover: #f7f7f8;
   --control: #d4d4d8;
   --focus: #a1a1aa;
+  --tooltip-bg: #fff;
+  --tooltip-ink: #18181b;
+  --tooltip-border: #e4e4e7;
+  --tooltip-kbd: #f4f4f5;
+  --tooltip-shadow: 0 4px 14px #0000001f;
 }
-:root[data-theme="dark"] { color-scheme: dark; --paper:#202020; --ink:#f2f2f2; --muted:#aaa; --line:#414141; --selected:#303030; --hover:#292929; --control:#5b5b5b; --focus:#71717a; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { color-scheme:dark; --paper:#202020; --ink:#f2f2f2; --muted:#aaa; --line:#414141; --selected:#303030; --hover:#292929; --control:#5b5b5b; --focus:#71717a; } }
+:root[data-theme="dark"] { color-scheme: dark; --paper:#202020; --ink:#f2f2f2; --muted:#aaa; --line:#414141; --selected:#303030; --hover:#292929; --control:#5b5b5b; --focus:#71717a; --tooltip-bg:#18181b; --tooltip-ink:#fff; --tooltip-border:#3f3f46; --tooltip-kbd:#3f3f46; --tooltip-shadow:0 4px 14px #0006; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not([data-theme="dark"]) { color-scheme:dark; --paper:#202020; --ink:#f2f2f2; --muted:#aaa; --line:#414141; --selected:#303030; --hover:#292929; --control:#5b5b5b; --focus:#71717a; --tooltip-bg:#18181b; --tooltip-ink:#fff; --tooltip-border:#3f3f46; --tooltip-kbd:#3f3f46; --tooltip-shadow:0 4px 14px #0006; } }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; overflow: hidden; background: var(--paper); color: var(--ink); }
 body, button, input, textarea, select { font: inherit; }
@@ -22,8 +27,10 @@ button { color: inherit; }
 .app { height: 100vh; display: grid; grid-template-columns: 340px minmax(0, 1fr); background: var(--paper); }
 .list-pane { min-width: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: hidden; border-right: 1px solid var(--line); background: var(--paper); }
 .toolbar { height: 68px; display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 18px; background: var(--paper); }
-.search-wrap { flex: 1; min-width: 0; }
-#search { width: 100%; border: 0; outline: 0; padding: 0; background: transparent; color: var(--ink); font-size: 18px; font-weight: 500; letter-spacing: -.015em; }
+.search-wrap { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; }
+.search-icon { width: 18px; height: 18px; flex: 0 0 18px; color: var(--muted); }
+.search-icon svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#search { min-width: 0; flex: 1; border: 0; outline: 0; padding: 0; background: transparent; color: var(--ink); font-size: 18px; font-weight: 500; letter-spacing: -.015em; }
 #search::placeholder { color: #999; opacity: 1; }
 #search::-webkit-search-cancel-button { display: none; }
 .icon-button { width: 38px; height: 38px; flex: 0 0 auto; display: inline-grid; place-items: center; border: 0; border-radius: 9px; padding: 0; background: transparent; color: var(--muted); cursor: pointer; }
@@ -131,9 +138,9 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .shortcuts dt { font-weight: 550; }
 .shortcuts dd { margin: 0; color: var(--muted); }
 .toast { position: fixed; z-index: 50; left: 50%; bottom: 24px; transform: translateX(-50%); border-radius: 9px; padding: 9px 15px; background: #171717; color: #fff; font-size: 13px; box-shadow: 0 5px 20px #0003; }
-.custom-tooltip { position: fixed; z-index: 100; display: flex; align-items: center; gap: 7px; max-width: min(260px, calc(100vw - 16px)); border-radius: 6px; padding: 6px 8px; background: #18181b; color: #fff; font-size: 12px; line-height: 1.2; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 14px #0004; }
+.custom-tooltip { position: fixed; z-index: 100; display: flex; align-items: center; gap: 7px; max-width: min(260px, calc(100vw - 16px)); border: 1px solid var(--tooltip-border); border-radius: 7px; padding: 6px 8px; background: var(--tooltip-bg); color: var(--tooltip-ink); font-size: 12px; line-height: 1.2; white-space: nowrap; pointer-events: none; box-shadow: var(--tooltip-shadow); }
 .custom-tooltip[hidden] { display: none; }
-.custom-tooltip kbd { border: 0; border-radius: 4px; padding: 2px 5px; background: #3f3f46; color: #f4f4f5; font: inherit; font-size: 11px; line-height: 1.1; }
+.custom-tooltip kbd { border: 0; border-radius: 4px; padding: 2px 5px; background: var(--tooltip-kbd); color: inherit; font: inherit; font-size: 11px; line-height: 1.1; }
 
 @media (max-width: 900px) {
   .app { display: block; }

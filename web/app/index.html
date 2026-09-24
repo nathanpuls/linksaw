@@ -9,7 +9,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-21">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-22">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -17,6 +17,7 @@
       <header class="toolbar">
         <label class="search-wrap">
           <span class="sr-only">Search snippets</span>
+          <span id="search-icon" class="search-icon" aria-hidden="true"></span>
           <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
         </label>
         <button id="add" class="icon-button" type="button" aria-label="New snippet" data-tooltip="New snippet"></button>
@@ -40,7 +41,7 @@
           <button id="reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
           <h1 id="preview-title" class="preview-title"></h1>
           <div class="viewer-actions">
-            <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy snippet"></button>
+            <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
             <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" data-tooltip="Share snippet"></button>
             <button id="preview-edit" class="icon-button" type="button" aria-label="Edit snippet" data-tooltip="Edit snippet"></button>
           </div>
@@ -139,6 +140,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-24"></script>
+  <script type="module" src="/app/app.js?v=20260923-25"></script>
 </body>
 </html>
