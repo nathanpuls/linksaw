@@ -114,7 +114,7 @@ function publicLinkedHtml(value) {
 }
 
 function publicSnippetPage(snippet) {
-  const body = snippet.body || snippet.title;
+  const body = snippet.body;
   const heading = snippet.title.trim();
   const pageTitle = heading || body.trim().split(/\r?\n/, 1)[0].slice(0, 80) || "Shared snippet";
   const nonce = randomToken().slice(0, 24);
@@ -157,11 +157,11 @@ function publicSnippetPage(snippet) {
       <a class="home" href="https://linksaw.com/" aria-label="Linksaw home" data-tooltip="Linksaw home"><img src="https://linksaw.com/icon.png" alt=""></a>
       <button id="copy" class="copy" type="button" aria-label="Copy snippet" data-tooltip="Copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
     </header>
-    <article class="snippet-container"><h1 class="title"${heading ? "" : " hidden"}>${escapeHtml(heading)}</h1><pre id="snippet-content" class="content">${publicLinkedHtml(body)}</pre></article>
+    <article class="snippet-container"><h1 class="title"${heading ? "" : " hidden"}>${escapeHtml(heading)}</h1><pre id="snippet-content" class="content"${body ? "" : " hidden"}>${publicLinkedHtml(body)}</pre></article>
   </main>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="copy-error" class="copy-error" role="alert" hidden></div>
-  <script nonce="${nonce}">const b=document.getElementById("copy"),original=b.innerHTML,check='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>';let timer;b.addEventListener("click",async()=>{const error=document.getElementById("copy-error");error.hidden=true;try{await navigator.clipboard.writeText(document.getElementById("snippet-content").textContent);clearTimeout(timer);b.innerHTML=check;b.setAttribute("aria-label","Copied");b.dataset.tooltip="Copied";const live=document.getElementById("copy-announcement");live.textContent="";requestAnimationFrame(()=>live.textContent="Copied to clipboard");timer=setTimeout(()=>{b.innerHTML=original;b.setAttribute("aria-label","Copy snippet");b.dataset.tooltip="Copy"},1800)}catch{error.textContent="Could not copy to clipboard";error.hidden=false}})</script>
+  <script nonce="${nonce}">const b=document.getElementById("copy"),original=b.innerHTML,check='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"></path></svg>';let timer;b.addEventListener("click",async()=>{const error=document.getElementById("copy-error");error.hidden=true;try{const content=document.getElementById("snippet-content").textContent||document.querySelector(".title").textContent;await navigator.clipboard.writeText(content);clearTimeout(timer);b.innerHTML=check;b.setAttribute("aria-label","Copied");b.dataset.tooltip="Copied";const live=document.getElementById("copy-announcement");live.textContent="";requestAnimationFrame(()=>live.textContent="Copied to clipboard");timer=setTimeout(()=>{b.innerHTML=original;b.setAttribute("aria-label","Copy snippet");b.dataset.tooltip="Copy"},1800)}catch{error.textContent="Could not copy to clipboard";error.hidden=false}})</script>
 </body>
 </html>`;
   return { html, nonce };

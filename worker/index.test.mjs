@@ -144,6 +144,19 @@ test("public share keeps a title that matches its content", async () => {
   assert.doesNotMatch(html, /<h1 class="title" hidden>/);
 });
 
+test("title-only public shares do not repeat the title as content", async () => {
+  const env = {
+    DB: { prepare() { return { bind() { return { first: async () => ({ title: "Only a title", body: "" }) }; } }; } },
+  };
+
+  const response = await handle(new Request("https://linksaw.com/s/Ab3k9Qx7Lm2N4pRs"), env);
+  const html = await response.text();
+
+  assert.match(html, /<h1 class="title">Only a title<\/h1>/);
+  assert.match(html, /<pre id="snippet-content" class="content" hidden><\/pre>/);
+  assert.match(html, /snippet-content"\)\.textContent\|\|document\.querySelector\("\.title"\)\.textContent/);
+});
+
 test('private deep links serve the authenticated app and preserve the visible URL', async () => {
   const id = '12345678-1234-1234-1234-123456789abc';
   const assets = [];

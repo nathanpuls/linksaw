@@ -49,6 +49,8 @@ test("viewer always preserves an explicit title", () => {
   assert.ok(viewer, "viewer renderer is present");
   assert.match(viewer, /const heading = snippet\.title\.trim\(\);/);
   assert.doesNotMatch(viewer, /snippet\.title\.trim\(\) !== snippet\.body\.trim\(\)/);
+  assert.match(viewer, /\$\("preview-body"\)\.hidden = !snippet\.body;/);
+  assert.match(viewer, /renderLinkedText\(\$\("preview-body"\), snippet\.body\);/);
 });
 
 test("settings offers working CSV and JSON transfer controls", () => {

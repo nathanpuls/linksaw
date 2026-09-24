@@ -277,7 +277,8 @@ function renderViewer(snippet) {
   if (!snippet) return;
   const heading = snippet.title.trim();
   $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
-  renderLinkedText($("preview-body"), snippet.body || snippet.title);
+  $("preview-body").hidden = !snippet.body;
+  renderLinkedText($("preview-body"), snippet.body);
 }
 function narrowLayout() { return matchMedia("(max-width: 900px)").matches; }
 function syncReaderMode() {
