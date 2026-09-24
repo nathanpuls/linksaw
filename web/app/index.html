@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260923-31">
+  <link rel="stylesheet" href="/app/app.css?v=20260923-32">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -69,7 +69,7 @@
       <label class="sr-only" for="snippet-body">Content</label>
       <textarea id="snippet-body" class="content-input" placeholder="Type or paste a snippet" autocomplete="off"></textarea>
       <footer class="surface-footer">
-        <button id="delete" class="text-button danger" type="button" tabindex="-1" hidden>Delete</button>
+        <button id="delete" class="icon-button delete-action" type="button" tabindex="-1" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
         <button id="unshare" class="text-button danger" type="button" tabindex="-1" hidden>Unshare</button>
         <p id="editor-status" class="editor-status" role="status" aria-live="polite"></p>
         <button id="save-snippet" class="save-button" type="submit" disabled>Save</button>
@@ -169,6 +169,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260923-39"></script>
+  <script type="module" src="/app/app.js?v=20260923-40"></script>
 </body>
 </html>

@@ -37,6 +37,16 @@ test("editor treats title as optional metadata and paste as exact content", () =
   assert.match(source, /return snippet\.title\.trim\(\) \|\| snippet\.body\.trim\(\)\.split/);
 });
 
+test("mobile editor keeps destructive and save actions inside the viewport", () => {
+  assert.match(html, /id="delete" class="icon-button delete-action"[^>]*aria-label="Delete snippet"[^>]*data-tooltip="Delete snippet"/);
+  assert.match(source, /trash: '<svg[\s\S]*?icon\("delete", "trash"\)/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?#editor \{ height: 100dvh; overflow: hidden; \}/);
+  assert.match(css, /#editor \.surface-inner \{ height: 100%; min-height: 0; \}/);
+  assert.match(css, /#editor \.surface-header, #editor \.surface-footer \{ flex: 0 0 auto; \}/);
+  assert.match(css, /#editor \.content-input \{ min-height: 0; \}/);
+  assert.match(css, /env\(safe-area-inset-bottom\)/);
+});
+
 test("destructive actions use branded cancellable dialogs", () => {
   assert.doesNotMatch(source, /\bconfirm\(/);
   assert.match(html, /id="action-confirm-dialog" class="confirm-dialog"/);
