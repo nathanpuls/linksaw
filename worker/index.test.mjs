@@ -96,6 +96,7 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.equal(response.status, 200);
   assert.match(response.headers.get("Content-Security-Policy"), /script-src 'nonce-/);
   assert.equal(response.headers.get("X-Robots-Tag"), "noindex, nofollow");
+  assert.match(html, /<link rel="icon" href="\/app\/favicon\.png\?v=20260923-1" type="image\/png">/);
   assert.match(html, /<a class="home" href="https:\/\/linksaw\.com\/" aria-label="Linksaw home">/);
   assert.match(html, /<header class="topbar">[\s\S]*id="copy"/);
   assert.match(html, /<article class="snippet-container"><h1 class="title"[\s\S]*<pre id="snippet-content" class="content">/);
