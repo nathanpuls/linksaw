@@ -126,13 +126,14 @@ function render() {
   }
   state.filtered.forEach((snippet, index) => {
     const url = standaloneUrl(snippet);
-    const row = document.createElement("article"); row.className = `result-row${url ? " has-url" : ""}${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
+    const hasPreview = snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim();
+    const row = document.createElement("article"); row.className = `result-row${url ? " has-url" : ""}${hasPreview ? " has-preview" : ""}${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
     const main = document.createElement("button"); main.type = "button"; main.className = "result-main";
     const text = document.createElement("span"); text.className = "result-text";
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = label(snippet);
     const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim();
     text.append(title);
-    if (snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim()) text.append(preview);
+    if (hasPreview) text.append(preview);
     main.append(text);
     main.addEventListener("focus", () => setSelected(index, false));
     main.addEventListener("click", () => { if (!$("editor").hidden) closeSurface("editor"); setSelected(index); openPreview(snippet); });

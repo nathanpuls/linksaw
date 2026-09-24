@@ -39,15 +39,19 @@ button { color: inherit; }
 .results::-webkit-scrollbar-track { background: transparent; }
 .results::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: transparent; background-clip: content-box; }
 .results:hover::-webkit-scrollbar-thumb, .results:focus-within::-webkit-scrollbar-thumb { background-color: var(--control); }
-.result-row { min-height: 60px; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; border-radius: 9px; }
+.result-row { min-height: 44px; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; border-radius: 9px; }
+.result-row.has-preview { min-height: 56px; }
 .result-row.has-url { grid-template-columns: minmax(0, 1fr) 38px; }
 .result-row:hover, .result-row.selected { background: var(--selected); }
 .results:has(.result-row:hover) .result-row.selected:not(:hover) { background: transparent; }
-.result-main { width: 100%; min-height: 60px; display: block; border: 0; border-radius: 9px; padding: 10px 12px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.result-main { width: 100%; min-height: 44px; display: block; border: 0; border-radius: 9px; padding: 7px 12px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.result-row.has-preview .result-main { min-height: 56px; padding-block: 8px; }
 .result-main:focus-visible { outline: 0; }
 .result-text { min-width: 0; display: block; overflow: hidden; }
-.result-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 520; }
-.result-preview { margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; line-height: 1.3; }
+.result-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 500; }
+.result-row.selected .result-title { font-weight: 600; }
+.results:has(.result-row:hover) .result-row.selected:not(:hover) .result-title { font-weight: 500; }
+.result-preview { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.25; }
 .row-open { margin-right: 3px; text-decoration: none; }
 .empty { padding: 84px 24px; color: var(--muted); text-align: center; }
 .empty button { margin-top: 14px; }
