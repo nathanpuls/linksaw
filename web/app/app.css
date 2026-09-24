@@ -69,6 +69,7 @@ button { color: inherit; }
 .sidebar-footer { min-height: 58px; display: flex; align-items: center; padding: 5px 7px; }
 .identity-button { width: 100%; min-width: 0; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 9px; padding: 7px 10px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 .identity-button:hover, .identity-button:focus-visible { outline: 0; background: var(--selected); }
+.identity-logo { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 7px; object-fit: contain; }
 .identity-avatar { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; object-fit: cover; }
 .identity-avatar-fallback { display: grid; place-items: center; background: var(--selected); color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .02em; }
 .identity-button:hover .identity-avatar-fallback, .identity-button:focus-visible .identity-avatar-fallback { background: var(--control); color: var(--ink); }
@@ -84,7 +85,7 @@ button { color: inherit; }
 .preview-title, .title-input { font-size: 21px; font-weight: 550; letter-spacing: -.025em; }
 .viewer-actions { margin-left: auto; display: flex; align-items: center; gap: 3px; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
-.preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 30px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
+.preview-body { width: min(900px, 100%); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
 .preview-body a { color: inherit; text-decoration-color: var(--control); text-underline-offset: 2px; }
 .preview-body a:hover, .preview-body a:focus-visible { text-decoration-color: currentColor; }
 .app.reader-mode { grid-template-columns: minmax(0, 1fr); }
@@ -98,7 +99,7 @@ button { color: inherit; }
 .surface-header h1 { margin: 0; font-size: 20px; font-weight: 550; letter-spacing: -.02em; }
 .editor-header { border-bottom: 0; }
 .title-input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 0; background: transparent; color: inherit; }
-.content-input { flex: 1; min-height: 260px; width: 100%; resize: none; border: 0; outline: 0; padding: 30px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
+.content-input { flex: 1; min-height: 260px; width: 100%; resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
 .editor-status { min-width: 0; flex: 1; margin: 0; padding: 0 4px; color: var(--muted); font-size: 13px; }
 .surface-footer { min-height: 76px; display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-top: 0; }
 .save-button { margin-left: auto; border: 1px solid var(--ink); border-radius: 10px; padding: 10px 20px; background: var(--ink); color: var(--paper); cursor: pointer; }
@@ -164,8 +165,8 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .viewer-header, .surface-header { height: 64px; min-height: 64px; padding: 8px 12px 7px 16px; }
   .viewer-actions { gap: 0; }
   .preview-title, .title-input { font-size: 19px; }
-  .preview-body { padding: 24px 22px 40px 66px; }
-  .content-input { padding: 24px 22px 40px 16px; }
+  .preview-body { padding: 8px 22px 40px 66px; }
+  .content-input { padding: 8px 22px 40px 16px; }
   .toolbar { height: 64px; padding: 8px 12px 7px 16px; }
   .results { padding-inline: 5px; }
   .settings-grid { grid-template-columns: 1fr; gap: 36px; padding: 28px 22px; }

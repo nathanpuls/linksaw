@@ -34,9 +34,14 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
 
 test("viewing and editing use the same text scale and vertical rhythm", () => {
   assert.match(css, /\.preview-title, \.title-input \{ font-size: 21px; font-weight: 550;/);
-  assert.match(css, /\.preview-body \{[^}]*padding: 30px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
-  assert.match(css, /\.content-input \{[^}]*padding: 30px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
+  assert.match(css, /\.preview-body \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
+  assert.match(css, /\.content-input \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
   assert.match(css, /\.preview-title, \.title-input \{ font-size: 19px; \}/);
+});
+
+test("sidebar identity places the Linksaw mark before the account avatar", () => {
+  assert.match(html, /<img class="identity-logo"[^>]*>\s*<img id="account-avatar"/);
+  assert.match(css, /\.identity-logo \{ width: 28px; height: 28px;/);
 });
 
 test("viewer always preserves an explicit title", () => {
