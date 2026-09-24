@@ -61,6 +61,9 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
   assert.match(source, /addEventListener\("blur", hideTooltip\)/);
   assert.match(source, /addEventListener\("pagehide", hideTooltip\)/);
   assert.match(source, /visibilitychange[\s\S]*?document\.hidden\) hideTooltip\(\)/);
+  assert.match(source, /matchMedia\("\(hover: none\), \(pointer: coarse\)"\)/);
+  assert.match(source, /function showTooltip\(target\) \{[\s\S]*?!tooltipsEnabled\(\)/);
+  assert.match(css, /@media \(hover: none\), \(pointer: coarse\) \{[\s\S]*?\.custom-tooltip \{ display: none !important; \}/);
   assert.match(source, /async function shareSnippet[\s\S]*?finally \{ hideTooltip\(\); \$\("preview-share"\)\.blur\(\); \}/);
   assert.match(source, /\$\("search"\)\.value = "";[\s\S]*?dispatchEvent\(new Event\("input"[\s\S]*?\$\("search"\)\.focus\(\)/);
   assert.match(source, /event\.key === "Escape"[\s\S]*?else if \(\$\("search"\)\.value\) \{ event\.preventDefault\(\); clearSearch\(\); \}/);

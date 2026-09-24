@@ -19,6 +19,8 @@ const state = { snippets: [], filtered: [], selected: -1, editing: null, editorC
 const isMacPlatform = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || "");
 const sidebarShortcutLabel = isMacPlatform ? "⌘\\" : "Ctrl+\\";
 const commandShortcut = key => isMacPlatform ? `⌘${key}` : `Ctrl+${key}`;
+const tooltipMedia = matchMedia("(hover: none), (pointer: coarse)");
+const tooltipsEnabled = () => !tooltipMedia.matches;
 let toastTimer;
 let copyFeedbackTimer;
 let tooltipTimer;
@@ -40,6 +42,7 @@ function hideTooltip() {
   $("linksaw-tooltip").hidden = true;
 }
 function placeTooltip(target) {
+  if (!tooltipsEnabled()) { hideTooltip(); return; }
   $("tooltip-label").textContent = target.dataset.tooltip;
   const shortcut = $("tooltip-shortcut");
   shortcut.textContent = target.dataset.shortcut || "";
@@ -54,7 +57,7 @@ function placeTooltip(target) {
   tooltip.style.top = `${below + tip.height <= innerHeight - 8 ? below : rect.top - tip.height - 8}px`;
 }
 function showTooltip(target) {
-  if (!target?.dataset.tooltip) return;
+  if (!tooltipsEnabled() || !target?.dataset.tooltip) return;
   tooltipTarget = target;
   tooltipTimer = setTimeout(() => {
     if (tooltipTarget !== target || (!target.matches(":hover") && document.activeElement !== target)) return;
@@ -81,6 +84,7 @@ addEventListener("resize", hideTooltip);
 addEventListener("blur", hideTooltip);
 addEventListener("pagehide", hideTooltip);
 document.addEventListener("visibilitychange", () => { if (document.hidden) hideTooltip(); });
+tooltipMedia.addEventListener?.("change", hideTooltip);
 
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
@@ -159,8 +163,10 @@ function showCopySuccess() {
   button.ariaLabel = "Copied";
   button.dataset.tooltip = "Copied";
   hideTooltip();
-  tooltipTarget = button;
-  placeTooltip(button);
+  if (tooltipsEnabled()) {
+    tooltipTarget = button;
+    placeTooltip(button);
+  }
   const announcement = $("copy-announcement");
   announcement.textContent = "";
   requestAnimationFrame(() => { announcement.textContent = "Copied to clipboard"; });

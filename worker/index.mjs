@@ -148,6 +148,7 @@ function publicSnippetPage(snippet) {
     .content a:hover,.content a:focus-visible{text-decoration-color:currentColor}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .copy-error{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:9px 15px;border-radius:9px;background:#b42318;color:#fff;font-size:13px}
+    @media(hover:none),(pointer:coarse){[data-tooltip]::after{display:none}}
     @media(max-width:700px){.topbar{min-height:64px;padding:10px 12px}.snippet-container{padding:8px 22px 40px}.title{font-size:19px}}
   </style>
 </head>

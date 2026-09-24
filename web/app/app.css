@@ -157,6 +157,10 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .custom-tooltip[hidden] { display: none; }
 .custom-tooltip kbd { border: 0; border-radius: 4px; padding: 2px 5px; background: var(--tooltip-kbd); color: inherit; font: inherit; font-size: 11px; line-height: 1.1; }
 
+@media (hover: none), (pointer: coarse) {
+  .custom-tooltip { display: none !important; }
+}
+
 @media (max-width: 900px) {
   .app { display: block; }
   .list-pane { height: 100vh; border-right: 0; }
