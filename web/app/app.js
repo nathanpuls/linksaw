@@ -117,11 +117,14 @@ function render() {
     const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim();
     text.append(title);
     if (snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim()) text.append(preview);
-    main.append(text); main.addEventListener("click", () => { if (!$("editor").hidden) closeSurface("editor"); setSelected(index); openPreview(snippet); });
+    main.append(text);
+    main.addEventListener("focus", () => setSelected(index, false));
+    main.addEventListener("click", () => { if (!$("editor").hidden) closeSurface("editor"); setSelected(index); openPreview(snippet); });
     row.append(main);
     if (url) {
       const open = document.createElement("a"); open.className = "row-open icon-button"; open.href = url; open.target = "_blank"; open.rel = "noopener noreferrer";
       open.ariaLabel = `Open ${label(snippet)} website`; open.title = "Open website"; open.innerHTML = icons.externalLink;
+      open.addEventListener("focus", () => setSelected(index, false));
       open.addEventListener("click", () => setSelected(index, false)); row.append(open);
     }
     results.append(row);
