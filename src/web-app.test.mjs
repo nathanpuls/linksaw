@@ -56,11 +56,12 @@ test("primary editor is content-only and supports quiet inline custom names", ()
 test("rows provide one-click link, viewer, and edit actions", () => {
   assert.doesNotMatch(source, /row-open|icons\.externalLink/);
   assert.match(source, /function activateSnippet\(snippet\)[\s\S]*?if \(url\) openInNewTab\(url\);[\s\S]*?else openPreview\(snippet\);/);
+  assert.match(source, /function runListActionAfterSave\(action\)[\s\S]*?navigateAfterSave[\s\S]*?closeSurface\("editor"\)[\s\S]*?action\(\)/);
   assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} website`/);
-  assert.match(source, /main\.addEventListener\("click"[\s\S]*?activateSnippet\(snippet\)/);
+  assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?activateSnippet\(snippet\)/);
   assert.match(source, /edit\.ariaLabel = "Edit"; edit\.dataset\.tooltip = "Edit"/);
   assert.match(source, /edit\.addEventListener\("click", event => \{ event\.stopPropagation\(\);[\s\S]*?openEditor\(snippet\)/);
-  assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?activateSnippet\(selected\)/);
+  assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?runListActionAfterSave\(\(\) => activateSnippet\(selected\)\)/);
   assert.match(css, /\.result-link-text \{ text-decoration: underline;/);
   assert.match(css, /\.result-edit \{[^}]*visibility: hidden;[^}]*pointer-events: none;/);
   assert.match(css, /\.result-row:hover \.result-edit,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-row\.selected \.result-edit,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-edit:focus-visible \{ visibility: visible; pointer-events: auto; \}/);

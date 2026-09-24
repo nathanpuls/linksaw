@@ -234,6 +234,12 @@ function activateSnippet(snippet) {
   if (url) openInNewTab(url);
   else openPreview(snippet);
 }
+function runListActionAfterSave(action) {
+  void navigateAfterSave(() => {
+    if (!$("editor").hidden) closeSurface("editor");
+    action();
+  });
+}
 function render() {
   const query = $("search").value.trim().toLowerCase();
   state.filtered = state.snippets.filter(s => !query || `${s.title}\n${s.body}`.toLowerCase().includes(query));
@@ -261,7 +267,7 @@ function render() {
     main.append(text);
     if (url) main.ariaLabel = `Open ${label(snippet)} website`;
     main.addEventListener("focus", () => setSelected(index, false));
-    main.addEventListener("click", () => navigateAfterSave(() => { setSelected(index); activateSnippet(snippet); }));
+    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); activateSnippet(snippet); }));
     row.append(main);
     const edit = document.createElement("button"); edit.type = "button"; edit.className = "result-edit icon-button";
     edit.ariaLabel = "Edit"; edit.dataset.tooltip = "Edit"; edit.innerHTML = icons.edit;
@@ -901,8 +907,8 @@ document.addEventListener("keydown", event => {
     if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
     setSelected(state.selected - 1);
   }
-  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); openPreview(selected); }
-  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); activateSnippet(selected); }
+  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => openPreview(selected)); }
+  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => activateSnippet(selected)); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });
 
