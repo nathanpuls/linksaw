@@ -75,6 +75,18 @@ test("rows provide one-click link, viewer, and edit actions", () => {
   assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });
 
+test("viewer delete is last, reversible, and restores stored metadata", () => {
+  assert.match(html, /id="preview-copy"[\s\S]*id="preview-share"[\s\S]*id="preview-edit"[\s\S]*id="preview-delete" class="icon-button viewer-delete"[^>]*aria-label="Delete"[^>]*data-tooltip="Delete"/);
+  assert.match(source, /icon\("preview-delete", "trash"\)/);
+  assert.match(css, /\.viewer-delete \{ margin-left: 9px; \}/);
+  assert.match(source, /\$\("preview-delete"\)\.addEventListener\("click", \(\) => deleteSnippet\(state\.previewing\)\)/);
+  assert.match(source, /async function deleteSnippet\(snippet\)[\s\S]*?method: "DELETE"[\s\S]*?state\.snippets = state\.snippets\.filter[\s\S]*?showDeleteUndo\(deleted, viewerWasOpen\)/);
+  assert.match(source, /"Snippet deleted ·"[\s\S]*?"Undo"[\s\S]*?}, 7000\)/);
+  assert.match(source, /\/snippets\/\$\{undo\.deleted\.id\}\/restore[\s\S]*?method: "POST"[\s\S]*?JSON\.stringify\(undo\.deleted\)/);
+  assert.match(html, /id="toast-message"[\s\S]*id="toast-action" class="toast-action"/);
+  assert.doesNotMatch(css, /\.viewer-delete[^}]*red|\.toast-action[^}]*red/);
+});
+
 test("mobile editor keeps destructive and save actions inside the viewport", () => {
   assert.match(html, /id="delete" class="icon-button delete-action"[^>]*aria-label="Delete snippet"[^>]*data-tooltip="Delete snippet"/);
   assert.match(source, /trash: '<svg[\s\S]*?icon\("delete", "trash"\)/);
@@ -91,7 +103,6 @@ test("destructive actions use branded cancellable dialogs", () => {
   assert.match(html, /id="action-confirm-button" class="confirm-action"/);
   assert.match(css, /\.confirm-action \{[^}]*background: #171717;[^}]*color: #fff;/);
   assert.match(source, /function cancelDialogOnBackdrop\(dialog\)[\s\S]*?event\.target === dialog[\s\S]*?dialog\.close\("cancel"\)/);
-  assert.match(source, /requestConfirmation\(\{ title: "Delete snippet\?"/);
   assert.match(source, /requestConfirmation\(\{ title: "Stop sharing\?"/);
 });
 

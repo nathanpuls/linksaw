@@ -300,3 +300,66 @@ test('account deletion requires typed confirmation and removes all owned data', 
   ]);
   assert.ok(deleted.every(statement => statement.values[0] === 'user'));
 });
+
+test('snippet deletion returns the exact stored record needed for undo', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  const stored = { id, title: 'Private name', body: 'Exact\ntext', created_at: 100, updated_at: 200, share_token: 'Ab3k9Qx7Lm2N4pRs' };
+  let deletedStatements = [];
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.startsWith('CREATE TABLE')) return { run: async () => ({}) };
+        return { bind(...values) {
+          if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql.includes('LEFT JOIN snippet_shares') && sql.includes('WHERE snippets.id')) return { first: async () => stored };
+          return { sql, values };
+        } };
+      },
+      async batch(statements) { deletedStatements = statements; return statements.map(() => ({ success: true })); },
+    },
+  };
+  const response = await handle(new Request(`https://linksaw.com/snippets/${id}`, {
+    method: 'DELETE',
+    headers: { Cookie: `linksaw_session=${'a'.repeat(64)}`, Origin: 'https://linksaw.com' },
+  }), env);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, deleted: stored });
+  assert.deepEqual(deletedStatements.map(statement => statement.sql), [
+    'DELETE FROM details WHERE snippet_id = ?',
+    'DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?',
+    'DELETE FROM snippets WHERE id = ? AND owner_id = ?',
+  ]);
+});
+
+test('undo restores identity, position timestamps, custom name, content, and share token', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  const stored = { id, title: 'Private name', body: 'Exact\ntext', created_at: 100, updated_at: 200, share_token: 'Ab3k9Qx7Lm2N4pRs' };
+  let restoredStatements = [];
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.startsWith('CREATE TABLE')) return { run: async () => ({}) };
+        return { bind(...values) {
+          if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql === 'SELECT id FROM snippets WHERE id = ?') return { first: async () => null };
+          return { sql, values };
+        } };
+      },
+      async batch(statements) { restoredStatements = statements; return statements.map(() => ({ success: true })); },
+    },
+  };
+  const response = await handle(new Request(`https://linksaw.com/snippets/${id}/restore`, {
+    method: 'POST',
+    headers: { Cookie: `linksaw_session=${'a'.repeat(64)}`, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' },
+    body: JSON.stringify(stored),
+  }), env);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(restoredStatements.map(statement => statement.sql), [
+    'INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)',
+  ]);
+  assert.deepEqual(restoredStatements[0].values, [id, 'user', stored.title, stored.body, stored.created_at, stored.updated_at]);
+  assert.deepEqual(restoredStatements[1].values, [stored.share_token, id, 'user', stored.created_at]);
+});

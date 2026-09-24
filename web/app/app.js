@@ -25,6 +25,9 @@ let toastTimer;
 let copyFeedbackTimer;
 let tooltipTimer;
 let tooltipTarget;
+let undoTimer;
+let pendingUndo;
+let deletingSnippetId = "";
 let editorSaving = false;
 let editorCustomName = "";
 let inlineRenameBaseline = "";
@@ -33,7 +36,7 @@ let unsavedResolver;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
-icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("close-settings", "back");
+icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "back");
 icon("editor-reader-toggle", "panelLeft"); icon("delete", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
@@ -158,8 +161,23 @@ function renderLinkedText(element, text) {
   element.replaceChildren(...nodes);
 }
 function showToast(message = "Copied") {
-  clearTimeout(toastTimer); $("toast").textContent = message; $("toast").hidden = false;
+  if (pendingUndo) return;
+  clearTimeout(toastTimer); $("toast-message").textContent = message; $("toast-action").hidden = true; $("toast").hidden = false;
   toastTimer = setTimeout(() => { $("toast").hidden = true; }, 1400);
+}
+function showDeleteUndo(deleted, viewerWasOpen) {
+  clearTimeout(toastTimer);
+  clearTimeout(undoTimer);
+  pendingUndo = { deleted, viewerWasOpen };
+  $("toast-message").textContent = "Snippet deleted ·";
+  $("toast-action").textContent = "Undo";
+  $("toast-action").disabled = false;
+  $("toast-action").hidden = false;
+  $("toast").hidden = false;
+  undoTimer = setTimeout(() => {
+    pendingUndo = null;
+    $("toast").hidden = true;
+  }, 7000);
 }
 function showCopySuccess() {
   clearTimeout(copyFeedbackTimer);
@@ -464,6 +482,7 @@ $("close-settings").addEventListener("click", leaveRoutedView);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showCopyError));
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
+$("preview-delete").addEventListener("click", () => deleteSnippet(state.previewing));
 $("editor-name").addEventListener("click", beginInlineRename);
 $("editor-name-input").addEventListener("keydown", event => {
   if (event.key === "Enter") { event.preventDefault(); finishInlineRename(); $("snippet-body").focus(); }
@@ -523,10 +542,51 @@ function cancelDialogOnBackdrop(dialog) {
 cancelDialogOnBackdrop($("action-confirm-dialog"));
 cancelDialogOnBackdrop($("unsaved-dialog"));
 cancelDialogOnBackdrop($("delete-account-dialog"));
-$("delete").addEventListener("click", async () => {
-  if (!state.editing || !await requestConfirmation({ title: "Delete snippet?", message: "This permanently removes this snippet.", action: "Delete" })) return;
-  try { await api(`/snippets/${state.editing.id}`, { method: "DELETE" }); state.snippets = state.snippets.filter(s => s.id !== state.editing.id); render(); updateUrl({ view: null, snippet: null }, false); applyUrlState(); }
-  catch (error) { $("editor-status").textContent = error.message; }
+async function deleteSnippet(snippet) {
+  if (!snippet || deletingSnippetId === snippet.id) return;
+  deletingSnippetId = snippet.id;
+  hideTooltip();
+  const filteredIndex = state.filtered.findIndex(item => item.id === snippet.id);
+  const filteredCount = state.filtered.length;
+  const viewerWasOpen = $("editor").hidden && state.previewing?.id === snippet.id;
+  try {
+    const { deleted } = await api(`/snippets/${snippet.id}`, { method: "DELETE" });
+    state.snippets = state.snippets.filter(item => item.id !== snippet.id);
+    state.selected = filteredCount > 1 ? Math.min(Math.max(filteredIndex, 0), filteredCount - 2) : -1;
+    if (!$("editor").hidden) closeSurface("editor");
+    render();
+    const next = state.filtered[state.selected] || null;
+    if (narrowLayout()) $("app").classList.toggle("viewer-open", Boolean(viewerWasOpen && next));
+    updateUrl({ view: null, snippet: next?.id || null }, false);
+    showDeleteUndo(deleted, viewerWasOpen);
+  } catch (error) {
+    if (!$("editor").hidden) $("editor-status").textContent = error.message;
+    else showError(error);
+  } finally {
+    deletingSnippetId = "";
+  }
+}
+$("delete").addEventListener("click", () => deleteSnippet(state.editing));
+$("toast-action").addEventListener("click", async () => {
+  if (!pendingUndo) return;
+  const undo = pendingUndo;
+  pendingUndo = null;
+  clearTimeout(undoTimer);
+  $("toast-action").disabled = true;
+  try {
+    await api(`/snippets/${undo.deleted.id}/restore`, { method: "POST", body: JSON.stringify(undo.deleted) });
+    const data = await api("/snippets");
+    state.snippets = data.snippets;
+    render();
+    const restoredIndex = state.filtered.findIndex(item => item.id === undo.deleted.id);
+    if (restoredIndex >= 0) setSelected(restoredIndex, false);
+    if (narrowLayout()) $("app").classList.toggle("viewer-open", Boolean(undo.viewerWasOpen && restoredIndex >= 0));
+    updateUrl({ view: null, snippet: restoredIndex >= 0 ? undo.deleted.id : null }, false);
+    $("toast").hidden = true;
+  } catch (error) {
+    $("toast").hidden = true;
+    showError(error);
+  }
 });
 $("unshare").addEventListener("click", async () => {
   if (!state.editing?.share_token || !await requestConfirmation({ title: "Stop sharing?", message: "Anyone using the current link will no longer be able to view this snippet.", action: "Stop sharing" })) return;

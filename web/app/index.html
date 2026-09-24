@@ -50,6 +50,7 @@
             <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
             <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" data-tooltip="Share snippet"></button>
             <button id="preview-edit" class="icon-button" type="button" aria-label="Edit" data-tooltip="Edit"></button>
+            <button id="preview-delete" class="icon-button viewer-delete" type="button" aria-label="Delete" data-tooltip="Delete"></button>
           </div>
         </header>
         <div class="viewer-scroll"><pre id="preview-body" class="preview-body"></pre></div>
@@ -179,9 +180,12 @@
     </form>
   </dialog>
 
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span id="toast-message">Copied</span>
+    <button id="toast-action" class="toast-action" type="button" hidden></button>
+  </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260924-5"></script>
+  <script type="module" src="/app/app.js?v=20260924-6"></script>
 </body>
 </html>

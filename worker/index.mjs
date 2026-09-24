@@ -365,6 +365,27 @@ export async function handle(request, env) {
     await env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).run();
     return json(request, { ok: true });
   }
+  const restoreMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/restore$/);
+  if (restoreMatch && request.method === "POST") {
+    const input = await bodyJson(request);
+    const value = validSnippet(input);
+    const validTimestamps = Number.isSafeInteger(input?.created_at) && input.created_at > 0
+      && Number.isSafeInteger(input?.updated_at) && input.updated_at > 0;
+    const validShare = input?.share_token == null || /^[A-Za-z0-9_-]{16}$/.test(input.share_token);
+    if (!value || input?.id !== restoreMatch[1] || !validTimestamps || !validShare) return fail(request, "Invalid deleted snippet");
+    const exists = await env.DB.prepare("SELECT id FROM snippets WHERE id = ?").bind(restoreMatch[1]).first();
+    if (exists) return fail(request, "Snippet already exists", 409);
+    const statements = [
+      env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(input.id, user.id, value.title, value.body, input.created_at, input.updated_at),
+    ];
+    if (input.share_token) {
+      statements.push(env.DB.prepare("INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)")
+        .bind(input.share_token, input.id, user.id, input.created_at));
+    }
+    await env.DB.batch(statements);
+    return json(request, { ok: true });
+  }
   const match = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})$/);
   if (match && request.method === "PUT") {
     const exists = await env.DB.prepare("SELECT id FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id).first();
@@ -378,14 +399,15 @@ export async function handle(request, env) {
     return json(request, { ok: true });
   }
   if (match && request.method === "DELETE") {
-    const exists = await env.DB.prepare("SELECT id FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id).first();
-    if (!exists) return fail(request, "Snippet not found", 404);
+    const deleted = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippet_shares.token AS share_token FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.id = ? AND snippets.owner_id = ?")
+      .bind(match[1], user.id).first();
+    if (!deleted) return fail(request, "Snippet not found", 404);
     await env.DB.batch([
       env.DB.prepare("DELETE FROM details WHERE snippet_id = ?").bind(match[1]),
       env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(match[1], user.id),
       env.DB.prepare("DELETE FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id),
     ]);
-    return json(request, { ok: true });
+    return json(request, { ok: true, deleted });
   }
   return fail(request, "Not found", 404);
 }
