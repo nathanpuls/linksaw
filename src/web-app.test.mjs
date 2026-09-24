@@ -106,6 +106,8 @@ test("viewer always preserves an explicit title", () => {
 
 test("settings offers working CSV and JSON transfer controls", () => {
   for (const label of ["Import CSV", "Import JSON", "Export CSV", "Export JSON"]) assert.match(html, new RegExp(`>${label}<`));
+  assert.match(html, /<div class="transfer-settings">[\s\S]*?<h2>Import and export<\/h2>/);
+  assert.match(css, /@media \(max-width: 700px\) \{\s*\.transfer-settings \{ display: none; \}\s*\}/);
   assert.match(source, /importLibrary\(event\.target, parseCsvSnippets\)/);
   assert.match(source, /importLibrary\(event\.target, parseJsonSnippets\)/);
   assert.match(source, /downloadLibrary\(snippetsToCsv\(state\.snippets\)/);

@@ -191,6 +191,10 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .shortcuts { padding: 28px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 }
 
+@media (max-width: 700px) {
+  .transfer-settings { display: none; }
+}
+
 @media (max-width: 520px) {
   .viewer-header { gap: 6px; }
   .viewer-actions .icon-button { width: 36px; }
