@@ -373,6 +373,17 @@ $("search").addEventListener("input", () => {
   if (query && state.filtered.length) setSelected(0, false);
   else if (!query && !hasExplicitRoute() && !narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
 });
+function defaultEditorOpen() { return state.editorContext === "default" && !$("editor").hidden; }
+$("search").addEventListener("keydown", event => {
+  if (event.key === "Tab" && !event.shiftKey && defaultEditorOpen()) {
+    event.preventDefault(); $("snippet-title").focus();
+  }
+});
+$("snippet-title").addEventListener("keydown", event => {
+  if (event.key === "Tab" && event.shiftKey && defaultEditorOpen()) {
+    event.preventDefault(); $("search").focus();
+  }
+});
 $("clear-search").addEventListener("pointerdown", event => event.preventDefault());
 function clearSearch() {
   $("search").value = "";

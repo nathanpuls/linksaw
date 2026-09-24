@@ -21,6 +21,11 @@ test("save button is gray and disabled until the snippet has a value", () => {
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("input", syncSaveButton\)/);
 });
 
+test("default workspace tabs directly between search and title", () => {
+  assert.match(source, /\$\("search"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && !event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("snippet-title"\)\.focus\(\)/);
+  assert.match(source, /\$\("snippet-title"\)\.addEventListener\("keydown",[\s\S]*?event\.key === "Tab" && event\.shiftKey && defaultEditorOpen\(\)[\s\S]*?\$\("search"\)\.focus\(\)/);
+});
+
 test("icon-only controls use delayed custom tooltips with shortcut badges", () => {
   assert.doesNotMatch(html, /\stitle=/);
   assert.match(html, /data-tooltip="Copy"/);
