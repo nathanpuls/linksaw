@@ -1,85 +1,29 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Linksaw — Cut to the Paste</title>
-  <meta name="description" content="Linksaw keeps your reusable snippets close and easy to copy on Mac and the web.">
-  <meta name="robots" content="index,follow">
-  <meta name="theme-color" content="#ffffff">
-  <link rel="canonical" href="https://linksaw.com/">
-  <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/app/site.webmanifest">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Linksaw">
-  <meta property="og:title" content="Linksaw — Cut to the Paste">
-  <meta property="og:description" content="Linksaw keeps your reusable snippets close and easy to copy on Mac and the web.">
-  <meta property="og:url" content="https://linksaw.com/">
-  <meta property="og:image" content="https://linksaw.com/icon.png">
+  <meta name="description" content="Save, find, and use snippets, notes, and links wherever you are."><meta name="robots" content="index,follow"><meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="https://linksaw.com/"><link rel="icon" href="/icon.png" type="image/png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="Linksaw"><meta property="og:title" content="Linksaw — Cut to the Paste"><meta property="og:description" content="Save, find, and use snippets, notes, and links wherever you are."><meta property="og:url" content="https://linksaw.com/"><meta property="og:image" content="https://linksaw.com/icon.png">
   <style>
-    * { box-sizing: border-box; }
-    html, body { min-height: 100%; margin: 0; }
-    body {
-      background: #fff;
-      color: #171717;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-    main {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 24px;
-    }
-    .hero {
-      width: 100%;
-      max-width: 680px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-    .logo { width: 108px; height: 108px; display: block; margin-bottom: 30px; }
-    h1 { margin: 0; font-size: 42px; line-height: 1; letter-spacing: -1.8px; font-weight: 650; }
-    .tagline { margin-top: 25px; color: #777b84; font-size: 13px; font-weight: 500; letter-spacing: .32em; }
-    .description { margin: 46px auto 0; color: #555; font-size: 18px; line-height: 1.65; }
-    .login {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 42px;
-      padding: 12px 19px;
-      border: 1px solid #d8d8d8;
-      border-radius: 999px;
-      background: #fff;
-      color: #171717;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background .15s ease;
-    }
-    .login:hover { background: #f5f5f3; }
-    .login:focus-visible { outline: 2px solid #171717; outline-offset: 3px; }
-    @media (max-width: 600px) {
-      main { padding: 36px 20px; }
-      .logo { width: 96px; height: 96px; }
-      h1 { font-size: 36px; }
-      .tagline { font-size: 12px; letter-spacing: .27em; }
-      .description { font-size: 16px; }
-    }
+    :root{color-scheme:light;--ink:#171717;--muted:#737373;--line:#e7e7e5;--soft:#f5f5f4}*{box-sizing:border-box}html{scroll-behavior:smooth}html,body{margin:0;min-height:100%}body{background:#fff;color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}button,a{font:inherit}.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center}.logo{display:block;width:108px;height:108px;margin-bottom:30px;object-fit:contain}h1{margin:0;font-size:42px;line-height:1;letter-spacing:-1.8px;font-weight:650}.tagline{margin-top:25px;color:#777b84;font-size:13px;font-weight:500;letter-spacing:.32em}.description{margin:46px auto 0;color:#555;font-size:18px;line-height:1.65}.primary-cta{display:inline-flex;align-items:center;justify-content:center;gap:9px;margin-top:42px;padding:12px 19px;border:1px solid #d8d8d8;border-radius:999px;color:var(--ink);background:#fff;font-size:14px;font-weight:600;text-decoration:none;transition:background .15s ease,transform .15s ease}.primary-cta:hover{background:var(--soft);transform:translateY(-1px)}.primary-cta:focus-visible,.platform:focus-visible,.contact-email:focus-visible,.footer-links button:focus-visible,.legal-close:focus-visible{outline:2px solid var(--ink);outline-offset:3px}.google-g{width:18px;height:18px;display:block;flex:0 0 18px}.section,footer{width:min(760px,calc(100% - 48px));margin:0 auto;border-top:1px solid #eeeeec}.section{padding:120px 0}.section h2{margin:0 0 22px;font-size:30px;line-height:1.15;letter-spacing:-.8px;font-weight:650}.linksaw-demo{display:grid;grid-template-columns:210px 1fr;height:390px;margin-top:48px;border:1px solid #e5e5e2;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 18px 55px #0000000b;transition:transform .2s ease,box-shadow .2s ease}.linksaw-demo:hover{transform:translateY(-2px);box-shadow:0 22px 65px #00000011}.demo-sidebar{position:relative;padding:15px 10px 48px;border-right:1px solid #ededeb}.demo-search-row{display:flex;align-items:center;gap:8px;padding:7px 6px 13px;color:#8a8a86;font-size:13px}.demo-search-row svg{width:14px;height:14px}.demo-plus{margin-left:auto}.demo-list{display:flex;flex-direction:column;gap:3px}.demo-row{padding:9px;border-radius:8px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:background .15s ease}.demo-row:hover,.demo-row.selected{background:#f1f1ef}.demo-row.selected{font-weight:600}.demo-account{position:absolute;left:14px;bottom:13px;display:flex;align-items:center;gap:8px;color:#555;font-size:11px}.demo-account img{width:20px;height:20px;object-fit:contain}.demo-viewer{position:relative;padding:18px 28px}.demo-viewer-actions{position:absolute;right:20px;top:17px;display:flex;gap:24px;color:#7d7d7a}.demo-viewer-actions svg{width:20px;height:20px}.demo-content{max-width:470px;margin:38px auto 0}.demo-title{margin-bottom:26px;font-size:14px;font-weight:600}.demo-content p{margin:0 0 18px;color:#333;font-size:13px;line-height:1.65}.platforms{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}.platform{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid #dededb;border-radius:999px;color:#444;font-size:13px;text-decoration:none;cursor:pointer;transition:background .15s ease,transform .15s ease}.platform:hover{background:var(--soft);transform:translateY(-1px)}.platform svg,.contact-email svg{width:16px;height:16px}.contact-section{padding-top:90px;padding-bottom:90px}.contact-email{display:inline-flex;align-items:center;gap:9px;margin-top:8px;color:var(--ink);font-size:16px;text-decoration:none}.contact-email:hover{text-decoration:underline}footer{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:40px 0 56px;color:#999;font-size:12px}.footer-links{display:flex;gap:18px}.footer-links button{border:0;padding:0;color:#888;background:none;cursor:pointer}.footer-links button:hover{color:var(--ink)}.legal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;background:#0004}.legal-backdrop[hidden]{display:none}.legal-modal{position:relative;width:min(680px,100%);max-height:min(760px,88vh);overflow:hidden;border:1px solid #e4e4e1;border-radius:18px;background:#fff;box-shadow:0 24px 80px #0003}.legal-scroll{max-height:min(760px,88vh);overflow:auto;padding:42px 46px}.legal-scroll h2{margin:0 0 8px;font-size:27px}.legal-scroll h3{margin:30px 0 8px;font-size:15px}.legal-scroll p{color:#555;font-size:14px;line-height:1.65}.legal-updated{margin-bottom:26px!important;color:#999!important;font-size:12px!important}.legal-close{position:absolute;right:15px;top:15px;z-index:2;width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:50%;background:#f4f4f2;cursor:pointer}svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    @media(max-width:600px){.hero{padding:36px 20px}.logo{width:96px;height:96px}h1{font-size:36px}.tagline{font-size:12px;letter-spacing:.27em}.description{font-size:16px}.section,footer{width:min(100% - 40px,760px)}.section{padding:90px 0}.section h2{font-size:27px}.linksaw-demo{grid-template-columns:135px 1fr;height:350px;margin-top:36px}.demo-sidebar{padding-left:6px;padding-right:6px}.demo-row{padding:8px 7px;font-size:10px}.demo-search-row{font-size:11px}.demo-viewer{padding:15px}.demo-viewer-actions{right:13px;gap:16px}.demo-content{margin-top:40px}.demo-content p{font-size:11px}.demo-account{left:10px;font-size:9px}footer{align-items:flex-start}.legal-backdrop{padding:12px}.legal-modal,.legal-scroll{max-height:92vh}.legal-scroll{padding:38px 24px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.primary-cta,.linksaw-demo,.platform{transition:none}}
   </style>
 </head>
 <body>
   <main>
-    <section class="hero" aria-labelledby="linksaw-title">
-      <img class="logo" src="/icon.png" alt="Linksaw">
-      <h1 id="linksaw-title">Linksaw</h1>
-      <div class="tagline">CUT TO THE PASTE</div>
-      <p class="description">Snippets, notes, and links</p>
-      <a class="login" href="/login">Continue with Google</a>
-    </section>
+    <section class="hero" aria-labelledby="linksaw-title"><img class="logo" src="/icon.png" alt="Linksaw"><h1 id="linksaw-title">Linksaw</h1><div class="tagline">CUT TO THE PASTE</div><p class="description">Snippets, notes, and links</p><a id="primary-cta" class="primary-cta" href="/login"><svg class="google-g" viewBox="0 0 18 18" aria-hidden="true" style="stroke:none"><path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.716v2.258h2.909c1.702-1.567 2.684-3.874 2.684-6.615Z"/><path fill="#34A853" d="M9 18c2.43 0 4.468-.806 5.956-2.18l-2.91-2.258c-.805.54-1.835.858-3.046.858-2.344 0-4.328-1.585-5.037-3.714H.956v2.333A9 9 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.963 10.706A5.42 5.42 0 0 1 3.68 9c0-.592.102-1.168.283-1.706V4.961H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.039l3.007-2.333Z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.507.454 3.441 1.346l2.581-2.58C13.464.892 11.426 0 9 0A9 9 0 0 0 .956 4.961l3.007 2.333C4.672 5.165 6.656 3.58 9 3.58Z"/></svg><span>Continue with Google</span></a></section>
+    <section class="section" aria-labelledby="product-heading"><h2 id="product-heading">Save · Find · Paste</h2><div class="linksaw-demo" aria-label="A simplified preview of Linksaw"><aside class="demo-sidebar"><div class="demo-search-row"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Search</span><svg class="demo-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></div><div class="demo-list"><div class="demo-row">Weekend packing list</div><div class="demo-row selected">Follow-up email</div><div class="demo-row">Favorite restaurants</div><div class="demo-row">Wi-Fi instructions</div><div class="demo-row">Project ideas</div></div><div class="demo-account"><img src="/icon.png" alt=""><span>Linksaw</span></div></aside><div class="demo-viewer"><div class="demo-viewer-actions" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><svg viewBox="0 0 24 24"><path d="M12 2v13m4-9-4-4-4 4M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg><svg viewBox="0 0 24 24"><path d="M21.2 6.8a1 1 0 0 0-4-4L3.8 16.2a2 2 0 0 0-.5.8L2 21.4a.5.5 0 0 0 .6.6L7 20.7a2 2 0 0 0 .8-.5zM15 5l4 4"/></svg><svg viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 5v6m4-6v6"/></svg></div><div class="demo-content"><div class="demo-title">Follow-up email</div><p>Hi — thanks again for your time today.</p><p>It was great talking with you. I wanted to follow up with the information we discussed and make sure you have everything you need.</p><p>Best,<br>Your name</p></div></div></div></section>
+    <section class="section" aria-labelledby="platform-heading"><h2 id="platform-heading">Linksaw, wherever you are.</h2><div class="platforms"><a class="platform" href="/home/"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>Web</a><a class="platform" href="/home/"><svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg>Mobile</a><a class="platform" href="https://github.com/nathanpuls/linksaw"><svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>Mac</a><a class="platform" href="https://github.com/nathanpuls/linksaw/tree/main/extension"><svg viewBox="0 0 24 24"><path d="M12.22 2h-4.4a2 2 0 0 0-2 2v4.4a2 2 0 1 1 0 3.2V16a2 2 0 0 0 2 2h4.4a2 2 0 1 0 3.2 0h4.4a2 2 0 0 0 2-2v-4.4a2 2 0 1 1 0-3.2V4a2 2 0 0 0-2-2h-4.4a2 2 0 1 1-3.2 0Z"/></svg>Chrome Extension</a></div></section>
+    <section class="section contact-section"><h2>Say hello.</h2><a class="contact-email" href="mailto:hello@linksaw.com"><svg viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/></svg>hello@linksaw.com</a></section>
   </main>
+  <footer><span>© 2026 Linksaw</span><span class="footer-links"><button type="button" data-legal="privacy">Privacy</button><button type="button" data-legal="terms">Terms</button></span></footer>
+  <div class="legal-backdrop" id="legal-backdrop" hidden><section class="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title"><button class="legal-close" type="button" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div class="legal-scroll"><h2 id="legal-title"></h2><div id="legal-content"></div></div></section></div>
+  <script>
+    const policies={privacy:{title:"Privacy",html:`<p class="legal-updated">Last updated September 24, 2026</p><p>Linksaw stores the account information needed for Google sign-in and the snippets you choose to save. We use this information to provide, secure, sync, and improve Linksaw.</p><h3>Your information</h3><p>Linksaw does not receive your Google password and does not sell your personal information. Service providers may process information only as needed to operate Linksaw. Content you intentionally share can be viewed by anyone with its share link.</p><h3>Your choices</h3><p>You can export your snippets or delete your account in Settings. Questions and deletion requests can be sent to <a href="mailto:hello@linksaw.com">hello@linksaw.com</a>.</p><h3>Security and changes</h3><p>We use reasonable safeguards, but no online service can guarantee absolute security. This policy may be updated as Linksaw changes.</p>`},terms:{title:"Terms",html:`<p class="legal-updated">Last updated September 24, 2026</p><p>By using Linksaw, you agree to use it lawfully and remain responsible for the content you save, copy, paste, or share.</p><h3>Your content</h3><p>You retain ownership of your content and grant Linksaw only the permission needed to store, process, sync, display, and transmit it to provide the service.</p><h3>The service</h3><p>Linksaw may evolve and is provided on an “as is” and “as available” basis to the extent permitted by law. We do not guarantee uninterrupted availability.</p><h3>Contact</h3><p>Questions can be sent to <a href="mailto:hello@linksaw.com">hello@linksaw.com</a>.</p>`}};
+    const backdrop=document.getElementById("legal-backdrop"),title=document.getElementById("legal-title"),content=document.getElementById("legal-content");function closeLegal(){backdrop.hidden=true;document.body.style.overflow=""}document.querySelectorAll("[data-legal]").forEach(button=>button.addEventListener("click",()=>{const policy=policies[button.dataset.legal];title.textContent=policy.title;content.innerHTML=policy.html;backdrop.hidden=false;document.body.style.overflow="hidden";document.querySelector(".legal-close").focus()}));document.querySelector(".legal-close").addEventListener("click",closeLegal);backdrop.addEventListener("click",event=>{if(event.target===backdrop)closeLegal()});document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!backdrop.hidden)closeLegal()});
+  </script>
 </body>
 </html>

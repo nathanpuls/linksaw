@@ -114,9 +114,14 @@ test("autosave queues newer edits behind active requests", () => {
   assert.match(source, /const snapshot = editorSnapshot\(\)[\s\S]*?editorBaseline = snapshot[\s\S]*?if \(editorSnapshot\(\) === editorBaseline\) setEditorStatus\("Saved"\)/);
 });
 
+test("a lost save response is recognized when the stored conflict matches the draft", () => {
+  assert.match(source, /conflict && conflict\.title === value\.title && conflict\.body === value\.body/);
+  assert.match(source, /clearEditorDraft\(\);[\s\S]*?upsertSavedSnippet\(conflict\);[\s\S]*?setEditorStatus\("Saved"\)/);
+});
+
 test("new snippet creation is idempotent across a lost response", () => {
   assert.match(source, /editorCreateId = snippet \? "" : crypto\.randomUUID\(\)/);
-  assert.match(source, /body: JSON\.stringify\(creating \? \{ \.\.\.value, importId: editorCreateId \} : value\)/);
+  assert.match(source, /body: JSON\.stringify\(creating \? \{ \.\.\.value, importId: editorCreateId \} : \{ \.\.\.value, version: state\.editing\.version \}\)/);
   assert.match(source, /if \(!savedSnippet\) \{[\s\S]*?api\("\/snippets"\)[\s\S]*?snippet\.id === result\.id/);
 });
 

@@ -9,7 +9,14 @@ test("Mac settings delegates import and export to the anchored web settings sect
   assert.match(html, /<h3 id="web-transfer-title">Import and export<\/h3>/);
   assert.match(html, /id="open-web-settings"[^>]*>Open web settings <span aria-hidden="true">↗<\/span>/);
   assert.doesNotMatch(html, /id="open-import"|id="import-dialog"|id="csv-file"/);
-  assert.match(source, /WEB_TRANSFER_SETTINGS_URL = "https:\/\/linksaw\.com\/app\/\?view=settings#import-export"/);
+  assert.match(source, /WEB_TRANSFER_SETTINGS_URL = "https:\/\/linksaw\.com\/home\/\?view=settings#import-export"/);
   assert.match(source, /await openUrl\(WEB_TRANSFER_SETTINGS_URL\)/);
   assert.doesNotMatch(source, /setupImporter/);
+});
+
+test("Mac editing autosaves with version checks and avoids duplicate list text", () => {
+  assert.match(source, /editorAutosaveTimer = setTimeout\(\(\) => \{ void saveEditor\(null, \{ closeAfter: false \}\); \}, 700\)/);
+  assert.match(source, /state\.editing \? \{ version: state\.editing\.version \} : \{\}/);
+  assert.match(source, /const STALE_AFTER_MS = 2_500/);
+  assert.match(source, /const repeatsTitle = item\.type === 'snippet' && trim\(item\.title\) === trim\(item\.body\)/);
 });

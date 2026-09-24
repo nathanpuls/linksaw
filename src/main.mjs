@@ -11,7 +11,7 @@ import { expandDynamic, rankedSnippets, searchTemplate, snippetLabel, standalone
 import linksawLogo from "../web/icon.png?url";
 
 const native = Boolean(window.__TAURI_INTERNALS__);
-const WEB_TRANSFER_SETTINGS_URL = "https://linksaw.com/app/?view=settings#import-export";
+const WEB_TRANSFER_SETTINGS_URL = "https://linksaw.com/home/?view=settings#import-export";
 setupIcons();
 setupTooltips();
 const ui = Object.fromEntries(["search", "clear-search", "results", "status", "paste-permission", "enable-pasting", "open-paste-settings", "back", "add", "settings", "settings-dialog",
@@ -98,6 +98,7 @@ async function api(path, options = {}) {
   if (!response.ok && response.status !== 202) {
     const error = new Error(data.error || `Server returned ${response.status}`);
     error.status = response.status;
+    error.data = data;
     throw error;
   }
   return data;
@@ -146,7 +147,8 @@ function render() {
     meta.textContent = item.type === 'search-query' ? 'Return to open in browser'
       : trim(item.body).replace(/\s+/g, ' ').slice(0, 110);
     left.append(title);
-    if (item.type === 'search-query' || (item.type === 'snippet' && trim(item.title))) left.append(meta);
+    const repeatsTitle = item.type === 'snippet' && trim(item.title) === trim(item.body);
+    if (item.type === 'search-query' || (item.type === 'snippet' && trim(item.title) && !repeatsTitle)) left.append(meta);
     const key = document.createElement("span"); key.className = "result-key"; key.textContent = index < 9 ? `${navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}${index + 1}` : "";
     row.append(left, key);
     row.addEventListener("click", () => act(item));
@@ -216,7 +218,7 @@ async function act(item) {
   } else { await copyText(expanded.text); copiedToast(); }
 }
 
-const STALE_AFTER_MS = 30_000;
+const STALE_AFTER_MS = 2_500;
 let refreshPromise = null, refreshAgain = false;
 function updateRefreshFeedback() {
   const feedback = document.getElementById('refresh-feedback');
@@ -331,7 +333,7 @@ function openSettings() {
   void settingsWindow.enter();
 }
 
-let editorBaseline = '', editorSaving = false;
+let editorBaseline = '', editorSaving = false, editorAutosaveTimer, editorSaveAgain = false, editorConflict = null;
 function resizeEditorArea(textarea) {
   textarea.style.height = 'auto';
   textarea.style.height = `${textarea.scrollHeight}px`;
@@ -342,6 +344,8 @@ function editorSnapshot() {
 function openEditor(snippet = null) {
   if (!state.user) { status("Sign in first."); return; }
   state.editing = snippet;
+  editorConflict = null;
+  clearTimeout(editorAutosaveTimer);
   document.getElementById('unsaved-confirmation').hidden = true;
   document.getElementById('delete-confirmation').hidden = true;
   document.getElementById('editor-feedback').textContent = '';
@@ -355,24 +359,60 @@ function openEditor(snippet = null) {
   resizeEditorArea(ui.snippetbody);
   ui.snippetbody.focus();
 }
-async function saveEditor(event) {
-  event.preventDefault();
-  if (editorSaving) return;
+async function saveEditor(event, { closeAfter = true } = {}) {
+  event?.preventDefault();
+  clearTimeout(editorAutosaveTimer);
+  if (editorSaving) { editorSaveAgain = true; return; }
+  if (!ui.snippettitle.value.trim() && !ui.snippetbody.value.trim()) return;
+  if (closeAfter && editorConflict && state.editing) { state.editing = { ...state.editing, ...editorConflict }; editorConflict = null; }
   editorSaving = true;
   const saveButton = ui.editorform.querySelector('.editor-actions .primary');
   saveButton.textContent = 'Saving…';
-  const controls = [...ui.editorform.querySelectorAll('button, input, textarea')];
+  const controls = closeAfter ? [...ui.editorform.querySelectorAll('button, input, textarea')] : [];
   const disabled = controls.map(control => control.disabled);
   controls.forEach(control => { control.disabled = true; });
   document.getElementById('editor-feedback').textContent = 'Saving…';
-  const body = { title: ui.snippettitle.value, body: ui.snippetbody.value };
+  const snapshot = editorSnapshot();
+  const body = { title: ui.snippettitle.value, body: ui.snippetbody.value, ...(state.editing ? { version: state.editing.version } : {}) };
   try {
-    if (state.editing) await api(`/snippets/${state.editing.id}`, { method: "PUT", body });
-    else await api("/snippets", { method: "POST", body });
-    const quitting = editorSafety.completeSave();
-    if (!quitting) await refresh();
-  } catch (error) { document.getElementById('editor-feedback').textContent = errorMessage(error); }
-  finally { editorSaving = false; saveButton.textContent = 'Save'; controls.forEach((control, index) => { control.disabled = disabled[index]; }); }
+    const result = state.editing
+      ? await api(`/snippets/${state.editing.id}`, { method: "PUT", body })
+      : await api("/snippets", { method: "POST", body });
+    if (result.snippet) state.editing = result.snippet;
+    editorBaseline = snapshot;
+    editorConflict = null;
+    document.getElementById('editor-feedback').textContent = 'Saved';
+    if (closeAfter) {
+      const quitting = editorSafety.completeSave();
+      if (!quitting) await refresh();
+    } else await refresh();
+  } catch (error) {
+    if (error.status === 409) {
+      const conflict = error.data?.snippet || null;
+      if (conflict && conflict.title === body.title && conflict.body === body.body) {
+        state.editing = conflict;
+        editorBaseline = snapshot;
+        editorConflict = null;
+        document.getElementById('editor-feedback').textContent = 'Saved';
+        if (closeAfter) {
+          const quitting = editorSafety.completeSave();
+          if (!quitting) await refresh();
+        } else await refresh();
+      } else {
+        editorConflict = conflict;
+        document.getElementById('editor-feedback').textContent = 'Changed elsewhere. Your edit is still here. Choose Save to keep yours.';
+      }
+    } else document.getElementById('editor-feedback').textContent = `Couldn’t save. ${errorMessage(error)}`;
+  } finally {
+    editorSaving = false; saveButton.textContent = 'Save'; controls.forEach((control, index) => { control.disabled = disabled[index]; });
+    if (editorSaveAgain && !editorConflict) { editorSaveAgain = false; void saveEditor(null, { closeAfter: false }); }
+  }
+}
+function scheduleEditorAutosave() {
+  clearTimeout(editorAutosaveTimer);
+  if (editorConflict || editorSnapshot() === editorBaseline) return;
+  document.getElementById('editor-feedback').textContent = 'Saving…';
+  editorAutosaveTimer = setTimeout(() => { void saveEditor(null, { closeAfter: false }); }, 700);
 }
 const editorSafety = setupEditorSafety({
   dialog: ui.editordialog, prompt: document.getElementById('unsaved-confirmation'),
@@ -394,7 +434,7 @@ ui.editordialog.addEventListener('click', event => {
 });
 
 ui.search.addEventListener("input", () => { state.query = ui.search.value; state.selected = 0; render(); });
-ui.snippetbody.addEventListener('input', () => resizeEditorArea(ui.snippetbody));
+ui.snippetbody.addEventListener('input', () => { resizeEditorArea(ui.snippetbody); scheduleEditorAutosave(); });
 ui.clearsearch.addEventListener("click", resetSearch);
 ui.back.addEventListener("click", goBack);
 ui.add.addEventListener("click", () => openEditor());
@@ -582,7 +622,7 @@ document.getElementById('rename-form').addEventListener('submit', async event =>
   if (!title.trim() && !renamingSnippet.body.trim()) { feedback.textContent = 'A snippet without content needs a name.'; return; }
   feedback.textContent = 'Saving…';
   try {
-    await api(`/snippets/${renamingSnippet.id}`, { method: 'PUT', body: { title, body: renamingSnippet.body } });
+    await api(`/snippets/${renamingSnippet.id}`, { method: 'PUT', body: { title, body: renamingSnippet.body, version: renamingSnippet.version } });
     document.getElementById('rename-dialog').close(); await refresh();
   } catch (error) { feedback.textContent = errorMessage(error); }
 });
@@ -620,4 +660,5 @@ async function boot() {
   try { await restoreSession(); } catch (error) { status(errorMessage(error)); }
   render();
 }
+setInterval(() => { void refreshIfStale(); }, 3000);
 boot();

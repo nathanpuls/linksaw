@@ -122,7 +122,7 @@ function publicSnippetPage(snippet) {
   <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex,nofollow">
   <title>${escapeHtml(pageTitle)} · Linksaw</title>
-  <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
+  <link rel="icon" href="/icon.png" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <style nonce="${nonce}">
     :root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#fff}
@@ -167,43 +167,48 @@ function publicSnippetPage(snippet) {
 export async function handle(request, env) {
   const url = new URL(request.url);
   const isWebHost = url.hostname === "linksaw.com";
+  const appAssetPaths = new Set(["/app/app.css", "/app/app.js", "/app/linkify.js", "/app/transfers.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"]);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(request) });
   if (!env.DB) return fail(request, "D1 database is not configured", 503);
 
   if (isWebHost && request.method === "GET" && url.pathname === "/") {
     const session = await currentSession(request, env);
-    if (session) return Response.redirect("https://linksaw.com/app/", 302);
-    return env.ASSETS.fetch(request);
+    if (session && url.searchParams.get("website") !== "1") return Response.redirect("https://linksaw.com/home/", 302);
+    const response = await env.ASSETS.fetch(new Request("https://linksaw.com/", request));
+    if (!session) return response;
+    const html = (await response.text())
+      .replace('id="primary-cta" class="primary-cta" href="/login"', 'id="primary-cta" class="primary-cta" href="/home/"')
+      .replace(/<svg class="google-g"[\s\S]*?<\/svg><span>Continue with Google<\/span>/, "<span>Open Linksaw</span>");
+    return new Response(html, { status: response.status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   }
   if (isWebHost && request.method === "GET" && ["/favicon.ico", "/icon.png", "/apple-touch-icon.png", "/robots.txt", "/sitemap.xml"].includes(url.pathname)) {
     return env.ASSETS.fetch(request);
   }
+  if (isWebHost && request.method === "GET" && appAssetPaths.has(url.pathname)) return env.ASSETS.fetch(request);
   if (isWebHost && request.method === "GET" && (url.pathname === "/login" || url.pathname === "/login/")) {
     const session = await currentSession(request, env);
-    if (session) return Response.redirect("https://linksaw.com/app/", 302);
+    if (session) return Response.redirect("https://linksaw.com/home/", 302);
     return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start`, 302);
   }
-  if (isWebHost && request.method === "GET" && url.pathname === "/app") {
-    return Response.redirect("https://linksaw.com/app/", 308);
+  if (isWebHost && request.method === "GET" && url.pathname === "/home") {
+    return Response.redirect(`https://linksaw.com/home/${url.search}`, 308);
   }
-  const oldPrivateLink = isWebHost && request.method === "GET" ? url.pathname.match(/^\/app\/snippets\/([a-f0-9-]{36})\/?$/) : null;
-  if (oldPrivateLink) return Response.redirect(`https://linksaw.com/app/s/${oldPrivateLink[1]}`, 302);
-  if (isWebHost && request.method === "GET" && (/^\/app\/s\/[a-f0-9-]{36}\/?$/.test(url.pathname) || url.pathname === "/app/new")) {
+  if (isWebHost && request.method === "GET" && (url.pathname === "/app" || url.pathname.startsWith("/app/"))) {
+    const suffix = url.pathname === "/app" || url.pathname === "/app/" ? "/" : url.pathname.slice(4);
+    const oldSnippet = suffix.match(/^\/snippets\/([a-f0-9-]{36})\/?$/)?.[1];
+    const destination = oldSnippet ? `/home/?snippet=${oldSnippet}` : `/home${suffix}${url.search}`;
+    return Response.redirect(`https://linksaw.com${destination}`, 308);
+  }
+  if (isWebHost && request.method === "GET" && (/^\/home\/s\/[a-f0-9-]{36}\/?$/.test(url.pathname) || url.pathname === "/home/new")) {
     const session = await currentSession(request, env);
     if (!session) return Response.redirect("https://linksaw.com/login", 302);
     // Resolve the app's directory index while preserving the deep link in the browser.
     return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
   }
-  if (isWebHost && request.method === "GET" && url.pathname === "/app/") {
+  if (isWebHost && request.method === "GET" && url.pathname === "/home/") {
     const session = await currentSession(request, env);
     if (!session) return Response.redirect("https://linksaw.com/login", 302);
-    // Let the asset binding resolve the directory index itself. Requesting
-    // /app/index.html makes Cloudflare canonicalize back to /app/, which would
-    // otherwise create a signed-in redirect loop.
-    return env.ASSETS.fetch(request);
-  }
-  if (isWebHost && request.method === "GET" && ["/app/app.css", "/app/app.js", "/app/linkify.js", "/app/transfers.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"].includes(url.pathname)) {
-    return env.ASSETS.fetch(request);
+    return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
   }
   const publicShare = isWebHost ? url.pathname.match(/^\/s\/([A-Za-z0-9_-]{16})\/?$/) : null;
   if (publicShare && request.method === "GET") {
@@ -260,7 +265,7 @@ export async function handle(request, env) {
         env.DB.prepare("UPDATE login_requests SET user_id = ?, consumed_at = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, timestamp, state),
         env.DB.prepare("INSERT INTO sessions(token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)").bind(await sha256Base64Url(token), profile.sub, timestamp, timestamp + 30 * 86400),
       ]);
-      return new Response(null, { status: 302, headers: { Location: "https://linksaw.com/app/", "Set-Cookie": webSessionCookie(token), "Cache-Control": "no-store" } });
+      return new Response(null, { status: 302, headers: { Location: "https://linksaw.com/home/", "Set-Cookie": webSessionCookie(token), "Cache-Control": "no-store" } });
     }
     await env.DB.prepare("UPDATE login_requests SET user_id = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, state).run();
     return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in · Linksaw</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;color:#171717;background:#fafafa}main{text-align:center;padding:32px}h1{font-size:28px;font-weight:500}p{color:#747474;line-height:1.6}.mark{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 24px}</style><main><img class="mark" src="https://linksaw.com/icon.png" alt="Linksaw"><h1>You're signed in</h1><p>Linksaw will open automatically.<br>You can close this tab.</p></main></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; img-src https://linksaw.com; style-src 'unsafe-inline'" } });
@@ -404,15 +409,20 @@ export async function handle(request, env) {
   if (match && request.method === "PUT") {
     const existing = await env.DB.prepare("SELECT id, title, body, version FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id).first();
     if (!existing) return fail(request, "Snippet not found", 404);
-    const value = validSnippet(await bodyJson(request));
+    const input = await bodyJson(request);
+    const value = validSnippet(input);
     if (!value) return fail(request, "Enter content or a title");
+    if (!Number.isSafeInteger(input?.version)) return fail(request, "A snippet version is required", 428);
+    if (input.version !== existing.version) return json(request, { error: "Snippet changed elsewhere", conflict: true, snippet: await storedSnippet(env, user.id, existing.id) }, 409);
     if (existing.title === value.title && existing.body === value.body) return json(request, { snippet: await storedSnippet(env, user.id, existing.id) });
     const nextVersion = existing.version + 1;
     const timestamp = nowSeconds();
+    const updated = await env.DB.prepare("UPDATE snippets SET title = ?, body = ?, updated_at = ?, version = ? WHERE id = ? AND owner_id = ? AND version = ?")
+      .bind(value.title, value.body, timestamp, nextVersion, match[1], user.id, existing.version).run();
+    if (!updated.meta?.changes) return json(request, { error: "Snippet changed elsewhere", conflict: true, snippet: await storedSnippet(env, user.id, existing.id) }, 409);
     await env.DB.batch([
       env.DB.prepare("INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(existing.id, user.id, existing.version, existing.title, existing.body, timestamp),
       env.DB.prepare("DELETE FROM snippet_revisions WHERE snippet_id = ? AND owner_id = ? AND version > ?").bind(existing.id, user.id, existing.version),
-      env.DB.prepare("UPDATE snippets SET title = ?, body = ?, updated_at = ?, version = ? WHERE id = ? AND owner_id = ?").bind(value.title, value.body, timestamp, nextVersion, match[1], user.id),
       env.DB.prepare("INSERT INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(existing.id, user.id, nextVersion, value.title, value.body, timestamp),
       env.DB.prepare("DELETE FROM details WHERE snippet_id = ?").bind(match[1]),
     ]);

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { handle } from "./index.mjs";
 import { sha256Base64Url } from "./lib.mjs";
 
-test("signed-in app route lets Cloudflare resolve its directory index without a redirect loop", async () => {
+test("signed-in home route resolves the app directory index without changing the visible route", async () => {
   let assetUrl = "";
   const env = {
     DB: {
@@ -22,7 +22,7 @@ test("signed-in app route lets Cloudflare resolve its directory index without a 
       },
     },
   };
-  const request = new Request("https://linksaw.com/app/", {
+  const request = new Request("https://linksaw.com/home/", {
     headers: { Cookie: `linksaw_session=${"a".repeat(64)}` },
   });
 
@@ -32,10 +32,27 @@ test("signed-in app route lets Cloudflare resolve its directory index without a 
   assert.equal(assetUrl, "https://linksaw.com/app/");
 });
 
-test("app route without a trailing slash has one canonical redirect", async () => {
-  const response = await handle(new Request("https://linksaw.com/app"), { DB: {} });
+test("home route without a trailing slash has one canonical redirect", async () => {
+  const response = await handle(new Request("https://linksaw.com/home"), { DB: {} });
   assert.equal(response.status, 308);
-  assert.equal(response.headers.get("Location"), "https://linksaw.com/app/");
+  assert.equal(response.headers.get("Location"), "https://linksaw.com/home/");
+});
+
+test("signed-in root visits enter the app unless the website override is present", async () => {
+  const user = { id: "user", email: "user@example.com" };
+  const env = {
+    DB: { prepare() { return { bind() { return { first: async () => user }; } }; } },
+    ASSETS: { async fetch() { return new Response('<a id="primary-cta" class="primary-cta" href="/login"><svg class="google-g"></svg><span>Continue with Google</span></a>', { headers: { "Content-Type": "text/html" } }); } },
+  };
+  const headers = { Cookie: `linksaw_session=${"a".repeat(64)}` };
+  const redirect = await handle(new Request("https://linksaw.com/", { headers }), env);
+  assert.equal(redirect.headers.get("Location"), "https://linksaw.com/home/");
+  const website = await handle(new Request("https://linksaw.com/?website=1", { headers }), env);
+  const html = await website.text();
+  assert.equal(website.status, 200);
+  assert.match(html, /href="\/home\/"/);
+  assert.match(html, />Open Linksaw</);
+  assert.doesNotMatch(html, /Continue with Google/);
 });
 
 test("signed-out homepage is served directly as a static asset", async () => {
@@ -112,7 +129,7 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.equal(response.status, 200);
   assert.match(response.headers.get("Content-Security-Policy"), /script-src 'nonce-/);
   assert.equal(response.headers.get("X-Robots-Tag"), "noindex, nofollow");
-  assert.match(html, /<link rel="icon" href="\/app\/favicon\.png\?v=20260923-1" type="image\/png">/);
+  assert.match(html, /<link rel="icon" href="\/icon\.png" type="image\/png">/);
   assert.match(html, /<a class="home" href="https:\/\/linksaw\.com\/" aria-label="Linksaw home" data-tooltip="Linksaw home">/);
   assert.match(html, /<header class="topbar">[\s\S]*id="copy"/);
   assert.match(html, /@media\(hover:none\),\(pointer:coarse\)\{\[data-tooltip\]::after\{display:none\}\}/);
@@ -171,7 +188,7 @@ test('private deep links serve the authenticated app and preserve the visible UR
     DB: { prepare() { return { bind() { return { first: async () => ({ id: 'user' }) }; } }; } },
     ASSETS: { async fetch(request) { assets.push(request.url); return new Response('app'); } },
   };
-  for (const path of [`/app/s/${id}`, '/app/new']) {
+  for (const path of [`/home/s/${id}`, '/home/new']) {
     const signedOut = await handle(new Request(`https://linksaw.com${path}`), env);
     assert.equal(signedOut.status, 302);
     assert.equal(signedOut.headers.get('Location'), 'https://linksaw.com/login');
@@ -183,11 +200,11 @@ test('private deep links serve the authenticated app and preserve the visible UR
   assert.deepEqual(assets, ['https://linksaw.com/app/', 'https://linksaw.com/app/']);
 });
 
-test('old extension private link redirects to the canonical /app/s route', async () => {
+test('legacy app links redirect to canonical home routes', async () => {
   const id = '12345678-1234-1234-1234-123456789abc';
   const response = await handle(new Request(`https://linksaw.com/app/snippets/${id}`), { DB: {} });
-  assert.equal(response.status, 302);
-  assert.equal(response.headers.get('Location'), `https://linksaw.com/app/s/${id}`);
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get('Location'), `https://linksaw.com/home/?snippet=${id}`);
 });
 
 test('authenticated users can read and update their autocomplete trigger', async () => {
@@ -369,4 +386,33 @@ test('undo restores identity, position timestamps, custom name, content, and sha
   assert.deepEqual(restoredStatements[0].values, [id, 'user', stored.title, stored.body, stored.created_at, stored.updated_at, 0]);
   assert.deepEqual(restoredStatements[1].values, [id, 'user', 0, stored.title, stored.body, stored.updated_at]);
   assert.deepEqual(restoredStatements[2].values, [stored.share_token, id, 'user', stored.created_at]);
+});
+
+test('snippet updates require the current version and return the stored row on conflict', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  const current = { id, title: 'Remote name', body: 'Remote text', created_at: 100, updated_at: 250, version: 4, share_token: null, can_undo: 1, can_redo: 0 };
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.startsWith('CREATE TABLE')) return { run: async () => ({}) };
+        return { bind() {
+          if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql.startsWith('SELECT id, title, body, version FROM snippets')) return { first: async () => current };
+          if (sql.includes('LEFT JOIN snippet_shares') && sql.includes('WHERE snippets.id')) return { first: async () => current };
+          throw new Error(`Unexpected SQL: ${sql}`);
+        } };
+      },
+    },
+  };
+  const headers = { Cookie: `linksaw_session=${'a'.repeat(64)}`, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' };
+  const missing = await handle(new Request(`https://linksaw.com/snippets/${id}`, {
+    method: 'PUT', headers, body: JSON.stringify({ title: 'Local', body: 'Draft' }),
+  }), env);
+  assert.equal(missing.status, 428);
+
+  const stale = await handle(new Request(`https://linksaw.com/snippets/${id}`, {
+    method: 'PUT', headers, body: JSON.stringify({ title: 'Local', body: 'Draft', version: 3 }),
+  }), env);
+  assert.equal(stale.status, 409);
+  assert.deepEqual(await stale.json(), { error: 'Snippet changed elsewhere', conflict: true, snippet: { ...current, can_undo: true, can_redo: false, details: [] } });
 });

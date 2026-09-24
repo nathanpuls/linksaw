@@ -1,10 +1,11 @@
 const API = 'https://snippets-api.linksaw.com';
 const $ = id => document.getElementById(id);
 const svg = paths => `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
-const icons = { plus: svg('<path d="M5 12h14M12 5v14"/>'), copy: svg('<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'), open: svg('<path d="M15 3h6v6M10 14 21 3"/><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/>') };
+const icons = { plus: svg('<path d="M5 12h14M12 5v14"/>'), copy: svg('<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'), open: svg('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>'), settings: svg('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/>') };
 $('new').innerHTML = icons.plus;
-let snippets = [], selected = 0, tabId, tooltipTimer, tooltipTarget;
-const status = message => { $('status').textContent = message; };
+$('website').innerHTML = icons.settings;
+let snippets = [], selected = 0, tabId, tooltipTimer, tooltipTarget, statusTimer;
+const status = message => { clearTimeout(statusTimer); $('status').textContent = message; if (/^Copied/.test(message)) statusTimer = setTimeout(() => { $('status').textContent = ''; }, 1800); };
 function hideTooltip() { clearTimeout(tooltipTimer); tooltipTarget = null; $('linksaw-tooltip').hidden = true; }
 function showTooltip(target) {
   if (!target?.dataset.tooltip) return;
@@ -80,8 +81,8 @@ function render() {
     const title = document.createElement('span'); title.className = 'title'; title.textContent = label(snippet); main.append(title);
     if (snippet.title.trim() && snippet.body.trim()) { const preview = document.createElement('span'); preview.className = 'preview'; preview.textContent = snippet.body.replace(/\s+/g, ' ').trim(); main.append(preview); }
     main.addEventListener('click', () => use(snippet).catch(error => status(error.message)));
-    const copyButton = document.createElement('button'); copyButton.className = 'action'; copyButton.type = 'button'; copyButton.dataset.tooltip = 'Copy snippet'; copyButton.ariaLabel = `Copy ${label(snippet)}`; copyButton.innerHTML = icons.copy; copyButton.addEventListener('click', () => copy(content(snippet)).catch(error => status(error.message)));
-    const open = document.createElement('button'); open.className = 'action'; open.type = 'button'; open.dataset.tooltip = 'Open in Linksaw'; open.ariaLabel = `Open ${label(snippet)} in Linksaw`; open.innerHTML = icons.open; open.addEventListener('click', () => chrome.tabs.create({ url: `https://linksaw.com/app/s/${snippet.id}` }));
+    const copyButton = document.createElement('button'); copyButton.className = 'action'; copyButton.type = 'button'; copyButton.dataset.tooltip = 'Copy'; copyButton.ariaLabel = 'Copy'; copyButton.innerHTML = icons.copy; copyButton.addEventListener('click', () => copy(content(snippet)).catch(error => status(error.message)));
+    const open = document.createElement('button'); open.className = 'action'; open.type = 'button'; open.dataset.tooltip = 'Open in Linksaw'; open.ariaLabel = 'Open in Linksaw'; open.innerHTML = icons.open; open.addEventListener('click', () => chrome.tabs.create({ url: `https://linksaw.com/home/?snippet=${snippet.id}` }));
     row.append(main, copyButton, open); $('results').append(row);
   });
 }
@@ -90,7 +91,8 @@ async function refresh() {
   catch (error) { $('login').hidden = false; status(error.message === 'Sign in required' ? 'Sign in on the Linksaw website, then reopen this popup' : error.message); }
 }
 $('login').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/login' }));
-$('new').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/app/new' }));
+$('website').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/home/' }));
+$('new').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/home/?view=new' }));
 $('search').addEventListener('input', () => { selected = 0; render(); });
 $('search').addEventListener('keydown', event => {
   const found = filtered();

@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#ffffff">
   <title>Linksaw</title>
-  <script>if (new URLSearchParams(location.search).get("view") || new URLSearchParams(location.search).get("snippet") || new URLSearchParams(location.search).has("new") || location.pathname !== "/app/") document.documentElement.classList.add("route-pending");</script>
+  <script>if (new URLSearchParams(location.search).get("view") || new URLSearchParams(location.search).get("snippet") || new URLSearchParams(location.search).has("new") || location.pathname !== "/home/") document.documentElement.classList.add("route-pending");</script>
   <style>html.route-pending body { visibility: hidden; }</style>
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -48,7 +48,7 @@
           <h1 id="preview-title" class="preview-title"></h1>
           <div class="viewer-actions">
             <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
-            <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" data-tooltip="Share snippet"></button>
+            <button id="preview-share" class="icon-button" type="button" aria-label="Share" data-tooltip="Share"></button>
             <button id="preview-edit" class="icon-button" type="button" aria-label="Edit" data-tooltip="Edit"></button>
             <button id="preview-delete" class="icon-button viewer-delete" type="button" aria-label="Delete" data-tooltip="Delete"></button>
           </div>
@@ -119,6 +119,7 @@
           <div class="account-block">
             <h2>Account</h2>
             <p id="account"></p>
+            <a class="settings-website-link" href="/?website=1">Linksaw website</a>
           </div>
         </div>
         <div class="shortcuts">

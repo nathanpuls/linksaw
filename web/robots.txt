@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
-Disallow: /app/
+Disallow: /home/
 Disallow: /login
 
 Sitemap: https://linksaw.com/sitemap.xml

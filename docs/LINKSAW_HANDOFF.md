@@ -45,9 +45,9 @@ The Mac app is the current interaction reference, but not a pixel-for-pixel temp
 - The Worker stores only a hash of each opaque session token. The desktop app stores the session in macOS Keychain or Windows Credential Manager, not browser local storage.
 - Every snippet read and mutation requires a valid session and is scoped to the authenticated owner.
 - Private API responses use `Cache-Control: no-store`, and the launcher does not persist a local snippet cache.
-- The responsive browser client lives at `https://linksaw.com/app` and uses the same Worker, OAuth client, user records, sessions table, snippets table, and D1 database as desktop.
+- The responsive browser client lives at `https://linksaw.com/home` and uses the same Worker, OAuth client, user records, sessions table, snippets table, and D1 database as desktop. Legacy `/app` links permanently redirect to the corresponding `/home` view.
 - `https://linksaw.com/login` starts the Google flow. Browser sessions use a Secure, HttpOnly cookie; desktop sessions continue to use the verifier exchange and native credential storage.
-- A standalone, indexable static marketing page now lives at the site root. It uses the Mac app icon for its favicon and page logo, offers **Continue with Google**, and redirects an already signed-in browser to `/app/` at the Worker layer.
+- A standalone, indexable static marketing page lives at the site root. It uses the Mac app icon for its favicon and page logo, offers **Continue with Google**, and redirects an already signed-in browser to `/home/` at the Worker layer. `/?website=1` deliberately keeps the marketing page visible and changes the primary action to **Open Linksaw**.
 - The former sheet-driven homepage code remains archived in the `LINKSAW` Google Sheet with a dated note pointing to `web/index.html` as the live source.
 
 ### Data model
@@ -91,7 +91,7 @@ Avoid renaming established concepts without a concrete user need. In particular,
 
 ## Responsive web app
 
-- Canonical signed-in location: `https://linksaw.com/app`.
+- Canonical signed-in location: `https://linksaw.com/home`.
 - The layout stays close to the Mac launcher: system typography, black-and-white neutral surfaces, search at the top, Lucide line icons, snippet rows, New and Settings beside Search, and restrained separators and selection states.
 - Copy is the browser's primary snippet action. It is represented by a Lucide copy icon, and the selected or hovered row also exposes the Lucide pencil icon for editing.
 - The first release supports search, keyboard selection, copy, create, edit, delete, preview, appearance, account display, and sign-out against the shared private database.
@@ -198,4 +198,4 @@ Deferred features should follow evidence from real use rather than precede the r
 
 ## Chrome extension v1 (2026-09-23)
 
-The extension in `extension/` is a compact search/insert popup. It reads the existing `/snippets` API and shared D1 model using the existing website session cookie sent to the permitted API host. The extension does not store a separate token or access the cookie value. A row inserts ordinary text into the focused page field, opens a standalone URL, or copies when insertion is unavailable; every row also has Copy and Open in Linksaw. New snippet opens `/app/new`, and private viewing uses `/app/s/{id}`; both route into the existing authenticated web app. `/s/{code}` remains the public sharing route. No snippet editor or new backend schema was added. Chrome installation, live sign-in, and insertion still require hands-on testing.
+The extension in `extension/` is a compact search/insert popup. It reads the existing `/snippets` API and shared D1 model using the existing website session cookie sent to the permitted API host. The extension does not store a separate token or access the cookie value. A row inserts ordinary text into the focused page field, opens a standalone URL, or copies when insertion is unavailable; every row also has quiet Copy and Open in Linksaw actions. New snippet and private viewing open the canonical `/home` web app, while the footer settings control opens the web workspace. `/s/{code}` remains the public sharing route. No snippet editor or separate backend schema was added. Chrome installation, live sign-in, and insertion still require hands-on testing.

@@ -2,7 +2,7 @@
 
 A separate Mac/Windows desktop app inspired by Trigger Search's Electron launcher. The new app uses a Cloudflare Worker with D1 instead of Google Sheets. Snippets are private per Google account: no API route lists, reads, creates, edits, or deletes snippets without a valid session, and every query is scoped to the signed-in owner.
 
-The responsive web app is served at `https://linksaw.com/app`, uses the same Worker and D1 database, and replaces the desktop app's native paste action with Copy. A standalone static marketing page is served at `https://linksaw.com`; `/login` starts the shared Google sign-in flow. Browser sessions use a Secure, HttpOnly cookie while desktop sessions continue to use the operating system credential vault.
+The responsive web app is served at `https://linksaw.com/home`, uses the same Worker and D1 database, and replaces the desktop app's native paste action with Copy. A standalone static marketing page is served at `https://linksaw.com`; signed-in visits to the root continue to the app unless `?website=1` is present, and `/login` starts the shared Google sign-in flow. Browser sessions use a Secure, HttpOnly cookie while desktop sessions continue to use the operating system credential vault.
 
 For the product decisions, settled interaction model, repository transition, and platform roadmap, read [`docs/LINKSAW_HANDOFF.md`](docs/LINKSAW_HANDOFF.md). Recommended instructions for the fresh ChatGPT project are in [`docs/CHATGPT_PROJECT_INSTRUCTIONS.md`](docs/CHATGPT_PROJECT_INSTRUCTIONS.md).
 
@@ -24,7 +24,7 @@ The editor is a sparse, single-column note with Title and Content, one scrolling
 
 On macOS the launcher joins all Spaces, including other apps’ full-screen Spaces, using AppKit collection behavior. The existing Right Command event tap, paste target capture, and session helper are preserved.
 
-- Snippets refresh on launcher reopen/focus when the last successful fetch is at least 30 seconds old, or a previous refresh failed. Existing results remain available during loading and after connection errors; Retry fetches again. Command/Control–R forces a manual refresh. Saves, deletes, and CSV imports still refresh immediately, queuing a new read if another request began before the write.
+- Snippets refresh on launcher reopen/focus and poll while the app is active so edits made by another client appear within a few seconds. Existing results remain available during loading and after connection errors; Retry fetches again. Command/Control–R forces a manual refresh. Version-checked saves prevent an older client from silently overwriting a newer edit.
 - Command–N on macOS or Control–N on Windows opens a new snippet from the launcher.
 - Right-click a result, or press Command/Control–K, for Preview, Edit, Copy, and Delete. Deletion still asks for confirmation.
 - Right Arrow or Command/Control–P opens a full-window, read-only Preview of the selected snippet. Return or Command/Control–1 uses it; Command/Control–C copies it; Left Arrow or Escape returns to Search. Existing paste, URL, template, and dynamic-placeholder behavior applies.
@@ -35,7 +35,7 @@ On macOS the launcher joins all Spaces, including other apps’ full-screen Spac
 
 - This is an unsigned experimental build, not a distributed release. Mac native compilation, the deployed D1 schema, unauthenticated API protection, and the start of the live Google sign-in flow were verified. Windows compilation, a completed sign-in, snippet editing against the live database, and real paste into third-party apps still need hands-on tests.
 - The D1 database, Worker, and dedicated Google OAuth client are configured. The Worker now runs at `https://snippets-api.linksaw.com`; this hostname was unused before it was connected, and the existing `linksaw.com` website was not changed. The API and sign-in start endpoint respond over HTTPS. Chrome's automated test browser still reports `ERR_BLOCKED_BY_CLIENT` for this API hostname, so sign-in cannot yet be claimed to work end-to-end in that browser setup.
-- No AI search, Google Sheets import/bulk editing, public sharing, categories, tab browsing, calculator, or offline storage. This intentionally keeps the first product focused on private snippets.
+- No AI search, categories, tab browsing, or calculator. Public link sharing and desktop-web CSV/JSON import and export are available; the Mac app links to the web transfer tools instead of duplicating them. Unsaved web drafts are retained locally through transient connection failures, but there is not yet a full offline library.
 
 ## Local development
 

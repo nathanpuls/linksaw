@@ -1,5 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#171717"/>
-  <path d="M150 140v232h212" fill="none" stroke="#fff" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M255 140h107M255 245h83" fill="none" stroke="#fff" stroke-width="42" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
+  <defs>
+    <clipPath id="app-icon-mask">
+      <rect x="48" y="48" width="928" height="928" rx="210"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#app-icon-mask)">
+    <rect x="48" y="48" width="928" height="928" fill="#fff"/>
+    <image x="48" y="48" width="928" height="928" preserveAspectRatio="xMidYMid meet" href="../../web/icon.png" xlink:href="../../web/icon.png"/>
+  </g>
 </svg>

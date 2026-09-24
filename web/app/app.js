@@ -38,6 +38,7 @@ let autosaveTimer;
 let saveInFlight;
 let saveAgain = false;
 let saveFailed = false;
+let editorConflict = null;
 let pendingNavigation;
 let editorSessionId = 0;
 let editorCreateId = "";
@@ -109,7 +110,12 @@ async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
   if (response.status === 401) { location.replace("/login"); throw new Error("Sign in required"); }
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Something went wrong");
+  if (!response.ok) {
+    const error = new Error(data.error || "Something went wrong");
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
   return data;
 }
 
@@ -281,7 +287,7 @@ function render() {
 function showError(error) { $("status").textContent = error.message || String(error); }
 function updateUrl(values, push = true) {
   const url = new URL(location.href);
-  url.pathname = "/app/";
+  url.pathname = "/home/";
   url.searchParams.delete("new");
   for (const [key, value] of Object.entries(values)) {
     if (value === null || value === undefined || value === "") url.searchParams.delete(key);
@@ -306,6 +312,12 @@ function editorSnapshot() {
   const title = $("editor-name-input").hidden ? editorCustomName : $("editor-name-input").value.trim();
   return JSON.stringify({ title, body: $("snippet-body").value });
 }
+function editorDraftKey() { return `linksaw-draft:${state.editing?.id || editorCreateId}`; }
+function persistEditorDraft() {
+  if ($("editor").hidden) return;
+  localStorage.setItem(editorDraftKey(), JSON.stringify({ snapshot: editorSnapshot(), version: state.editing?.version ?? null, savedAt: Date.now() }));
+}
+function clearEditorDraft(key = editorDraftKey()) { localStorage.removeItem(key); }
 function editorValue() { return JSON.parse(editorSnapshot()); }
 function setEditorStatus(status) {
   $("editor-status-text").textContent = status;
@@ -339,7 +351,9 @@ function applyEditorSnapshot(snapshot) {
 function scheduleAutosave() {
   clearTimeout(autosaveTimer);
   saveFailed = false;
+  editorConflict = null;
   $("editor-retry").hidden = true;
+  persistEditorDraft();
   if (saveInFlight) saveAgain = true;
   autosaveTimer = setTimeout(() => { void saveEditorNow(); }, 700);
 }
@@ -367,7 +381,7 @@ async function runSaveLoop(sessionId) {
       const creating = !state.editing;
       const result = await api(creating ? "/snippets" : `/snippets/${state.editing.id}`, {
         method: creating ? "POST" : "PUT",
-        body: JSON.stringify(creating ? { ...value, importId: editorCreateId } : value),
+        body: JSON.stringify(creating ? { ...value, importId: editorCreateId } : { ...value, version: state.editing.version }),
       });
       if (sessionId !== editorSessionId) return true;
       const wasNew = creating;
@@ -382,15 +396,33 @@ async function runSaveLoop(sessionId) {
       }
       editorBaseline = snapshot;
       saveFailed = false;
+      editorConflict = null;
+      clearEditorDraft();
       upsertSavedSnippet(savedSnippet);
       $("delete").hidden = false;
       $("unshare").hidden = !savedSnippet.share_token;
       if (wasNew && state.editorContext !== "default") updateUrl({ view: "edit", snippet: savedSnippet.id }, false);
       if (editorSnapshot() === editorBaseline) setEditorStatus("Saved");
-    } catch {
+    } catch (error) {
       if (sessionId !== editorSessionId) return false;
+      const conflict = error.status === 409 ? error.data?.snippet || null : null;
+      // A request can reach D1 even when its response is lost. If the server's
+      // newer row is exactly this settled edit, treat the retry as confirmed.
+      if (conflict && conflict.title === value.title && conflict.body === value.body) {
+        editorBaseline = snapshot;
+        saveFailed = false;
+        editorConflict = null;
+        clearEditorDraft();
+        upsertSavedSnippet(conflict);
+        setEditorStatus("Saved");
+        continue;
+      }
       saveFailed = true;
-      setEditorStatus("Couldn’t save ·");
+      editorConflict = conflict;
+      setEditorStatus(editorConflict ? "Changed elsewhere ·" : "Couldn’t save ·");
+      $("editor-retry").textContent = editorConflict ? "Save mine" : "Retry";
+      $("editor-retry").hidden = false;
+      persistEditorDraft();
       return false;
     }
   } while (saveAgain || editorSnapshot() !== editorBaseline);
@@ -463,13 +495,20 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   const { defaultDraft = false, focus = true } = options;
   state.editing = snippet; $("snippet-body").value = snippet?.body || ""; editorCustomName = snippet?.title || "";
   editorCreateId = snippet ? "" : crypto.randomUUID();
-  saveFailed = false; saveAgain = false; pendingNavigation = null; localUndo = []; localRedo = []; localInputGroup = null;
+  saveFailed = false; editorConflict = null; saveAgain = false; pendingNavigation = null; localUndo = []; localRedo = []; localInputGroup = null;
   state.editorContext = defaultDraft ? "default" : "routed";
   $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
   $("close-editor").hidden = defaultDraft;
   $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; setEditorStatus("");
   $("editor-name-input").hidden = true; $("editor-name").hidden = false; syncEditorName(); showSurface("editor");
   editorBaseline = editorSnapshot();
+  try {
+    const draft = JSON.parse(localStorage.getItem(editorDraftKey()) || "null");
+    if (draft?.snapshot && (draft.version === null || draft.version === snippet?.version)) {
+      applyEditorSnapshot(draft.snapshot);
+      setEditorStatus("Saving…");
+    }
+  } catch { clearEditorDraft(); }
   syncHistoryControls();
   if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
   if (focus) setTimeout(() => { $("snippet-body").focus(); if (!snippet) $("snippet-body").setSelectionRange(0, 0); }, 0);
@@ -519,7 +558,7 @@ function openSettings(pushHistory = true) {
 }
 function hasExplicitRoute() {
   const params = new URLSearchParams(location.search);
-  return Boolean(params.get("snippet") || params.get("view") || params.has("new") || location.pathname !== "/app/");
+  return Boolean(params.get("snippet") || params.get("view") || params.has("new") || location.pathname !== "/home/");
 }
 function showDefaultWorkspace() {
   state.selected = -1;
@@ -533,10 +572,10 @@ function applyUrlState() {
   closeSurface("editor"); closeSurface("settings-panel"); $("app").classList.remove("viewer-open");
   const params = new URLSearchParams(location.search);
   syncReaderMode();
-  const legacySnippet = location.pathname.match(/^\/app\/s\/([a-f0-9-]{36})\/?$/)?.[1];
+  const legacySnippet = location.pathname.match(/^\/home\/s\/([a-f0-9-]{36})\/?$/)?.[1];
   const snippetId = params.get("snippet") || legacySnippet;
-  const view = params.get("view") || (location.pathname === "/app/new" || params.get("new") === "1" ? "new" : "");
-  if (location.pathname !== "/app/" || params.has("new")) {
+  const view = params.get("view") || (location.pathname === "/home/new" || params.get("new") === "1" ? "new" : "");
+  if (location.pathname !== "/home/" || params.has("new")) {
     updateUrl({ view: view || null, snippet: snippetId || null }, false);
   }
   if (view === "settings") { openSettings(false); revealInitialView(); return; }
@@ -564,6 +603,51 @@ async function load() {
     $("autocomplete-trigger").value = preferences.autocompleteTrigger || ";";
     applyUrlState();
   } catch (error) { revealInitialView(); showError(error); }
+}
+
+let syncInFlight = false;
+async function syncFromServer() {
+  if (syncInFlight || document.hidden || !state.user) return;
+  syncInFlight = true;
+  try {
+    const { snippets } = await api("/snippets");
+    const selectedId = state.filtered[state.selected]?.id || state.previewing?.id || null;
+    if (!$('editor').hidden && state.editing) {
+      const remote = snippets.find(snippet => snippet.id === state.editing.id);
+      if (remote && remote.version !== state.editing.version) {
+        const hasLocalChanges = editorSnapshot() !== editorBaseline || Boolean(saveInFlight);
+        if (hasLocalChanges) {
+          editorConflict = remote;
+          saveFailed = true;
+          setEditorStatus("Changed elsewhere ·");
+          $("editor-retry").textContent = "Save mine";
+          $("editor-retry").hidden = false;
+          persistEditorDraft();
+        } else {
+          state.editing = remote;
+          editorCustomName = remote.title;
+          $("snippet-body").value = remote.body;
+          syncEditorName();
+          editorBaseline = editorSnapshot();
+          setEditorStatus("Updated elsewhere");
+        }
+      }
+    }
+    state.snippets = snippets;
+    render();
+    if (selectedId) {
+      const index = state.filtered.findIndex(snippet => snippet.id === selectedId);
+      if (index >= 0) setSelected(index, false);
+    }
+  } catch (error) {
+    if (!$('editor').hidden && editorSnapshot() !== editorBaseline) {
+      saveFailed = true;
+      setEditorStatus("Couldn’t sync ·");
+      $("editor-retry").textContent = "Retry";
+      $("editor-retry").hidden = false;
+      persistEditorDraft();
+    }
+  } finally { syncInFlight = false; }
 }
 
 $("search").addEventListener("input", () => {
@@ -661,6 +745,10 @@ async function performEditorHistory(direction) {
 $("editor-undo").addEventListener("click", () => { void performEditorHistory("undo"); });
 $("editor-redo").addEventListener("click", () => { void performEditorHistory("redo"); });
 $("editor-retry").addEventListener("click", async () => {
+  if (editorConflict) {
+    state.editing = { ...state.editing, ...editorConflict };
+    editorConflict = null;
+  }
   saveFailed = false;
   const saved = await saveEditorNow();
   if (saved && pendingNavigation) {
@@ -856,6 +944,12 @@ addEventListener("beforeunload", event => {
   event.preventDefault();
   event.returnValue = "";
 });
+addEventListener("online", () => {
+  if (!$('editor').hidden && editorSnapshot() !== editorBaseline) void saveEditorNow();
+  else void syncFromServer();
+});
+document.addEventListener("visibilitychange", () => { if (!document.hidden) void syncFromServer(); });
+setInterval(() => { void syncFromServer(); }, 3000);
 document.addEventListener("keydown", event => {
   const modifier = event.metaKey || event.ctrlKey;
   const saveShortcut = event.key.toLowerCase() === "s" && !event.altKey && !event.shiftKey
