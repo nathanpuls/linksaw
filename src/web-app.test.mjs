@@ -89,6 +89,10 @@ test("viewing and editing use the same text scale and vertical rhythm", () => {
 test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(html, /<a class="identity-logo-link" href="https:\/\/linksaw\.com"[^>]*>[\s\S]*?<img class="identity-logo"[^>]*>[\s\S]*?<button id="settings"/);
   assert.match(css, /\.identity-logo \{ width: 28px; height: 28px;/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.list-pane \{ height: 100dvh; border-right: 0; \}/);
+  assert.match(css, /\.sidebar-footer \{ z-index: 1; min-height: calc\(58px \+ env\(safe-area-inset-bottom\)\);[\s\S]*?background: var\(--paper\); \}/);
+  assert.match(css, /\.viewer-pane \{[^}]*z-index: 10; height: 100dvh;/);
+  assert.match(css, /\.viewer-content \{ height: 100dvh; \}/);
 });
 
 test("viewer always preserves an explicit title", () => {

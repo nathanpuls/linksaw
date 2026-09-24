@@ -164,9 +164,10 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 }
 
 @media (max-width: 900px) {
-  .app { display: block; }
-  .list-pane { height: 100vh; border-right: 0; }
-  .viewer-pane { display: none; position: fixed; inset: 0; z-index: 10; height: 100vh; background: var(--paper); }
+  .app { height: 100dvh; display: block; }
+  .list-pane { height: 100dvh; border-right: 0; }
+  .sidebar-footer { z-index: 1; min-height: calc(58px + env(safe-area-inset-bottom)); padding-bottom: max(5px, env(safe-area-inset-bottom)); background: var(--paper); }
+  .viewer-pane { display: none; position: fixed; inset: 0; z-index: 10; height: 100dvh; background: var(--paper); }
   .app.viewer-open .viewer-pane { display: block; }
   #editor { left: 0; }
   #editor { height: 100dvh; overflow: hidden; }
@@ -174,7 +175,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   #editor .surface-header, #editor .surface-footer { flex: 0 0 auto; }
   #editor .content-input { min-height: 0; }
   #editor .surface-footer { min-height: 68px; padding: 10px 16px max(10px, env(safe-area-inset-bottom)); background: var(--paper); }
-  .viewer-content { height: 100vh; }
+  .viewer-content { height: 100dvh; }
   .viewer-back { display: inline-grid; }
   .reader-toggle { display: none; }
   .viewer-header, .surface-header { height: 64px; min-height: 64px; padding: 8px 12px 7px 16px; }
