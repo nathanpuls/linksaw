@@ -8,7 +8,6 @@ const icons = {
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>',
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
-  externalLink: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5h6v6"/><path d="M19 5 5 19"/></svg>',
   panelLeft: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>',
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
@@ -205,6 +204,11 @@ function setSelected(index, scroll = true) {
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
   renderViewer(state.filtered[state.selected] || null);
 }
+function activateSnippet(snippet) {
+  const url = standaloneUrl(snippet);
+  if (url) openInNewTab(url);
+  else openPreview(snippet);
+}
 function render() {
   const query = $("search").value.trim().toLowerCase();
   state.filtered = state.snippets.filter(s => !query || `${s.title}\n${s.body}`.toLowerCase().includes(query));
@@ -218,24 +222,27 @@ function render() {
   }
   state.filtered.forEach((snippet, index) => {
     const url = standaloneUrl(snippet);
-    const hasPreview = snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim();
+    const hasTitle = Boolean(snippet.title.trim());
+    const hasPreview = hasTitle && snippet.body.trim() && (url || snippet.title.trim() !== snippet.body.trim());
     const row = document.createElement("article"); row.className = `result-row${url ? " has-url" : ""}${hasPreview ? " has-preview" : ""}${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
     const main = document.createElement("button"); main.type = "button"; main.className = "result-main";
     const text = document.createElement("span"); text.className = "result-text";
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = label(snippet);
     const preview = document.createElement("div"); preview.className = "result-preview"; preview.textContent = snippet.body.replace(/\s+/g, " ").trim();
+    if (url && !hasTitle) title.classList.add("result-link-text");
+    if (url) preview.classList.add("result-link-text");
     text.append(title);
     if (hasPreview) text.append(preview);
     main.append(text);
+    if (url) main.ariaLabel = `Open ${label(snippet)} website`;
     main.addEventListener("focus", () => setSelected(index, false));
-    main.addEventListener("click", () => { if (!$("editor").hidden) closeSurface("editor"); setSelected(index); openPreview(snippet); });
+    main.addEventListener("click", () => { if (!$("editor").hidden) closeSurface("editor"); setSelected(index); activateSnippet(snippet); });
     row.append(main);
-    if (url) {
-      const open = document.createElement("a"); open.className = "row-open icon-button"; open.href = url; open.target = "_blank"; open.rel = "noopener noreferrer";
-      open.ariaLabel = `Open ${label(snippet)} website`; open.dataset.tooltip = "Open website"; open.dataset.shortcut = commandShortcut("↵"); open.innerHTML = icons.externalLink;
-      open.addEventListener("focus", () => setSelected(index, false));
-      open.addEventListener("click", () => setSelected(index, false)); row.append(open);
-    }
+    const edit = document.createElement("button"); edit.type = "button"; edit.className = "result-edit icon-button";
+    edit.ariaLabel = "Edit"; edit.dataset.tooltip = "Edit"; edit.innerHTML = icons.edit;
+    edit.addEventListener("focus", () => setSelected(index, false));
+    edit.addEventListener("click", event => { event.stopPropagation(); setSelected(index, false); openEditor(snippet); });
+    row.append(edit);
     results.append(row);
   });
   renderViewer(state.selected >= 0 ? state.filtered[state.selected] : null);
@@ -280,6 +287,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
   $("close-editor").hidden = defaultDraft;
   $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; $("editor-status").textContent = ""; showSurface("editor");
+  $("rename").hidden = !snippet;
   if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
   if (focus) setTimeout(() => $("snippet-body").focus(), 0);
 }
@@ -404,22 +412,14 @@ $("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", leaveRoutedView);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showCopyError));
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
-let editActionSnippet = null;
 let renamingSnippet = null;
-function openEditActions(snippet) {
-  if (!snippet) return;
-  hideTooltip(); editActionSnippet = snippet;
-  $("edit-actions-dialog").showModal(); $("edit-content").focus();
-}
 function openRename(snippet) {
   if (!snippet) return;
   renamingSnippet = snippet; $("rename-input").value = snippet.title || ""; $("rename-status").textContent = "";
   $("rename-dialog").showModal(); $("rename-input").focus(); $("rename-input").select();
 }
-$("preview-edit").addEventListener("click", () => openEditActions(state.previewing));
-$("edit-content").addEventListener("click", () => { $("edit-actions-dialog").close(); openEditor(editActionSnippet); });
-$("rename-snippet").addEventListener("click", () => { $("edit-actions-dialog").close(); openRename(editActionSnippet); });
-$("edit-actions-dialog").addEventListener("click", event => { if (event.target === $("edit-actions-dialog")) $("edit-actions-dialog").close(); });
+$("preview-edit").addEventListener("click", () => openEditor(state.previewing));
+$("rename").addEventListener("click", () => openRename(state.editing));
 $("cancel-rename").addEventListener("click", () => $("rename-dialog").close());
 $("rename-dialog").addEventListener("click", event => { if (event.target === $("rename-dialog")) $("rename-dialog").close(); });
 $("rename-form").addEventListener("submit", async event => {
@@ -435,7 +435,10 @@ $("rename-form").addEventListener("submit", async event => {
     state.selected = Math.max(0, state.filtered.findIndex(snippet => snippet.id === id));
     render();
     const renamed = state.snippets.find(snippet => snippet.id === id);
-    if (renamed) { state.previewing = renamed; renderViewer(renamed); }
+    if (renamed) {
+      state.previewing = renamed; renderViewer(renamed);
+      if (state.editing?.id === id) state.editing = renamed;
+    }
     $("rename-dialog").close();
   } catch (error) { $("rename-status").textContent = error.message; }
 });
@@ -636,7 +639,7 @@ document.addEventListener("keydown", event => {
     setSelected(state.selected - 1);
   }
   else if (event.key === "ArrowRight" && selected) { event.preventDefault(); openPreview(selected); }
-  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); openPreview(selected); }
+  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); activateSnippet(selected); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });
 

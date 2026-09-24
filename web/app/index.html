@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260924-2">
+  <link rel="stylesheet" href="/app/app.css?v=20260924-3">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -49,7 +49,7 @@
           <div class="viewer-actions">
             <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
             <button id="preview-share" class="icon-button" type="button" aria-label="Share snippet" data-tooltip="Share snippet"></button>
-            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit options" data-tooltip="Edit options"></button>
+            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit" data-tooltip="Edit"></button>
           </div>
         </header>
         <div class="viewer-scroll"><pre id="preview-body" class="preview-body"></pre></div>
@@ -69,6 +69,7 @@
       <textarea id="snippet-body" class="content-input" autocomplete="off"></textarea>
       <footer class="surface-footer">
         <button id="delete" class="icon-button delete-action" type="button" tabindex="-1" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
+        <button id="rename" class="text-button rename-action" type="button" tabindex="-1" hidden>Rename</button>
         <button id="unshare" class="text-button danger" type="button" tabindex="-1" hidden>Unshare</button>
         <p id="editor-status" class="editor-status" role="status" aria-live="polite"></p>
         <button id="save-snippet" class="save-button" type="submit" disabled>Save</button>
@@ -140,13 +141,6 @@
     </div>
   </section>
 
-  <dialog id="edit-actions-dialog" class="action-menu" aria-label="Edit options">
-    <div>
-      <button id="edit-content" type="button">Edit content</button>
-      <button id="rename-snippet" type="button">Rename</button>
-    </div>
-  </dialog>
-
   <dialog id="rename-dialog" class="confirm-dialog" aria-labelledby="rename-title">
     <form id="rename-form">
       <h2 id="rename-title">Rename snippet</h2>
@@ -188,6 +182,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite" hidden>Copied</div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260924-1"></script>
+  <script type="module" src="/app/app.js?v=20260924-2"></script>
 </body>
 </html>

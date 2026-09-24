@@ -33,8 +33,24 @@ test("primary editor is content-only and private names use Rename", () => {
   assert.match(source, /const payload = \{ title: state\.editing\?\.title \|\| "", body: \$\("snippet-body"\)\.value \}/);
   assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| ""; \}/);
   assert.match(source, /return snippet\.title\.trim\(\) \|\| snippet\.body\.trim\(\)\.split/);
-  assert.match(html, /id="edit-actions-dialog"[\s\S]*?>Edit content<[\s\S]*?>Rename</);
+  assert.match(html, /id="rename" class="text-button rename-action"[^>]*>Rename<\/button>/);
+  assert.match(source, /\$\("rename"\)\.addEventListener\("click", \(\) => openRename\(state\.editing\)\)/);
   assert.match(source, /body: JSON\.stringify\(\{ title, body: renamingSnippet\.body \}\)/);
+});
+
+test("rows provide one-click link, viewer, and edit actions", () => {
+  assert.doesNotMatch(source, /row-open|icons\.externalLink/);
+  assert.match(source, /function activateSnippet\(snippet\)[\s\S]*?if \(url\) openInNewTab\(url\);[\s\S]*?else openPreview\(snippet\);/);
+  assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} website`/);
+  assert.match(source, /main\.addEventListener\("click"[\s\S]*?activateSnippet\(snippet\)/);
+  assert.match(source, /edit\.ariaLabel = "Edit"; edit\.dataset\.tooltip = "Edit"/);
+  assert.match(source, /edit\.addEventListener\("click", event => \{ event\.stopPropagation\(\);[\s\S]*?openEditor\(snippet\)/);
+  assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?activateSnippet\(selected\)/);
+  assert.match(css, /\.result-link-text \{ text-decoration: underline;/);
+  assert.match(css, /\.result-edit \{[^}]*visibility: hidden;[^}]*pointer-events: none;/);
+  assert.match(css, /\.result-row:hover \.result-edit, \.result-row\.selected \.result-edit, \.result-edit:focus-visible \{ visibility: visible; pointer-events: auto; \}/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-edit \{ width: 44px; height: 44px; visibility: visible; pointer-events: auto; \}/);
+  assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });
 
 test("mobile editor keeps destructive and save actions inside the viewport", () => {
