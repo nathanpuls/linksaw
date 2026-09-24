@@ -13,6 +13,14 @@ test("empty snippets are rejected before the saving state begins", () => {
   assert.ok(submitHandler.indexOf("Enter content or a title") < submitHandler.indexOf("Saving…"));
 });
 
+test("save button is gray and disabled until the snippet has a value", () => {
+  assert.match(html, /id="save-snippet" class="save-button" type="submit" disabled/);
+  assert.match(css, /\.save-button:disabled \{[^}]*background: #9a9a9a;[^}]*color: #fff;[^}]*opacity: 1;[^}]*cursor: default;/);
+  assert.match(source, /function syncSaveButton\(\)[\s\S]*?editorSaving \|\| !hasValue/);
+  assert.match(source, /\$\("snippet-title"\)\.addEventListener\("input", syncSaveButton\)/);
+  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("input", syncSaveButton\)/);
+});
+
 test("icon-only controls use delayed custom tooltips with shortcut badges", () => {
   assert.doesNotMatch(html, /\stitle=/);
   assert.match(html, /data-tooltip="Copy"/);

@@ -23,6 +23,7 @@ let toastTimer;
 let copyFeedbackTimer;
 let tooltipTimer;
 let tooltipTarget;
+let editorSaving = false;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
@@ -254,6 +255,10 @@ function closeSurface(id) {
   if (!["editor", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = "";
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
+function syncSaveButton() {
+  const hasValue = $("snippet-title").value.trim() || $("snippet-body").value.trim();
+  $("save-snippet").disabled = editorSaving || !hasValue;
+}
 function leaveRoutedView() {
   if (history.state?.linksawPushed) { history.back(); return; }
   const params = new URLSearchParams(location.search);
@@ -264,6 +269,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   hideTooltip();
   const { defaultDraft = false, focus = true } = options;
   state.editing = snippet; $("snippet-title").value = snippet?.title || ""; $("snippet-body").value = snippet?.body || "";
+  editorSaving = false; syncSaveButton();
   state.editorContext = defaultDraft ? "default" : "routed";
   $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
   $("close-editor").hidden = defaultDraft;
@@ -392,6 +398,8 @@ function isSidebarShortcut(event) {
 }
 $("reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-reader-toggle").addEventListener("click", toggleReaderMode);
+$("snippet-title").addEventListener("input", syncSaveButton);
+$("snippet-body").addEventListener("input", syncSaveButton);
 $("editor-form").addEventListener("submit", async event => {
   event.preventDefault();
   const payload = { title: $("snippet-title").value, body: $("snippet-body").value };
@@ -399,13 +407,13 @@ $("editor-form").addEventListener("submit", async event => {
     $("editor-status").textContent = "Enter content or a title";
     return;
   }
-  const submit = event.submitter; submit.disabled = true; $("editor-status").textContent = "Saving…";
+  editorSaving = true; syncSaveButton(); $("editor-status").textContent = "Saving…";
   try {
     const saved = await api(state.editing ? `/snippets/${state.editing.id}` : "/snippets", { method: state.editing ? "PUT" : "POST", body: JSON.stringify(payload) });
     const savedId = state.editing?.id || saved.id;
     const data = await api("/snippets"); state.snippets = data.snippets; state.selected = Math.max(0, data.snippets.findIndex(snippet => snippet.id === savedId)); render();
     updateUrl({ view: null, snippet: savedId }, false); applyUrlState();
-  } catch (error) { $("editor-status").textContent = error.message; } finally { submit.disabled = false; }
+  } catch (error) { $("editor-status").textContent = error.message; } finally { editorSaving = false; syncSaveButton(); }
 });
 $("delete").addEventListener("click", async () => {
   if (!state.editing || !confirm("Delete this snippet?")) return;
