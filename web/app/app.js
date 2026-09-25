@@ -124,6 +124,12 @@ function derivedLabel(body) {
   return body.split(/\r?\n/).find(line => line.trim())?.trim().slice(0, 90) || "Untitled";
 }
 function label(snippet) { return snippet.title.trim() || derivedLabel(snippet.body); }
+function libraryFingerprint(snippets) {
+  return JSON.stringify(snippets.map(snippet => [
+    snippet.id, snippet.title, snippet.body, snippet.version, snippet.share_token,
+    snippet.can_undo, snippet.can_redo,
+  ]));
+}
 function renderIdentity(user) {
   const name = user.display_name?.trim() || user.email?.split("@", 1)[0] || "Account";
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(part => Array.from(part)[0]?.toUpperCase()).join("") || "A";
@@ -259,7 +265,7 @@ function render() {
     const url = standaloneUrl(snippet);
     const hasTitle = Boolean(snippet.title.trim());
     const hasPreview = hasTitle && snippet.body.trim() && (url || snippet.title.trim() !== snippet.body.trim());
-    const row = document.createElement("article"); row.className = `result-row${url ? " has-url" : ""}${hasPreview ? " has-preview" : ""}${index === state.selected ? " selected" : ""}`; row.dataset.index = index;
+    const row = document.createElement("article"); row.className = `result-row${url ? " has-url" : ""}${hasPreview ? " has-preview" : ""}${index === state.selected ? " selected" : ""}`; row.dataset.index = index; row.setAttribute("role", "listitem");
     const main = document.createElement("button"); main.type = "button"; main.className = "result-main";
     main.setAttribute("aria-current", index === state.selected ? "true" : "false");
     const text = document.createElement("span"); text.className = "result-text";
@@ -270,7 +276,8 @@ function render() {
     text.append(title);
     if (hasPreview) text.append(preview);
     main.append(text);
-    main.ariaLabel = `Open ${label(snippet)} in Linksaw`;
+    main.ariaLabel = label(snippet);
+    main.setAttribute("aria-description", "Open in Linksaw");
     main.addEventListener("focus", () => setSelected(index, false));
     main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); openSnippet(snippet); }));
     row.append(main);
@@ -632,11 +639,14 @@ async function syncFromServer() {
         }
       }
     }
+    const libraryChanged = libraryFingerprint(state.snippets) !== libraryFingerprint(snippets);
     state.snippets = snippets;
-    render();
-    if (selectedId) {
-      const index = state.filtered.findIndex(snippet => snippet.id === selectedId);
-      if (index >= 0) setSelected(index, false);
+    if (libraryChanged) {
+      render();
+      if (selectedId) {
+        const index = state.filtered.findIndex(snippet => snippet.id === selectedId);
+        if (index >= 0) setSelected(index, false);
+      }
     }
   } catch (error) {
     if (!$('editor').hidden && editorSnapshot() !== editorBaseline) {

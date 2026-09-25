@@ -59,7 +59,7 @@ test("web rows open on click and Enter while their chevron and Right Arrow use t
   assert.match(source, /function openSnippet\(snippet\) \{[\s\S]*?openPreview\(snippet\);/);
   assert.match(source, /async function useSnippet\(snippet\)[\s\S]*?if \(url\) \{ openInNewTab\(url\); return; \}[\s\S]*?navigator\.clipboard\.writeText/);
   assert.match(source, /function runListActionAfterSave\(action\)[\s\S]*?navigateAfterSave[\s\S]*?closeSurface\("editor"\)[\s\S]*?action\(\)/);
-  assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} in Linksaw`/);
+  assert.match(source, /main\.ariaLabel = label\(snippet\);[\s\S]*?aria-description", "Open in Linksaw"/);
   assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?openSnippet\(snippet\)/);
   assert.match(source, /use\.ariaLabel = url \? "Open website" : "Copy"; use\.dataset\.tooltip = "Use"; use\.innerHTML = icons\.chevronRight/);
   assert.match(source, /use\.addEventListener\("click", event => \{ event\.stopPropagation\(\);[\s\S]*?useSnippet\(snippet\)/);
@@ -164,9 +164,17 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
 test("interactive web controls expose Voice Control names without changing the primary tab path", () => {
   assert.match(html, /id="search-icon"[^>]*tabindex="-1"[^>]*aria-label="Focus search"/);
   assert.match(html, /id="preview" class="viewer-pane" aria-label="Snippet viewer"/);
-  assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} in Linksaw`/);
+  assert.match(source, /main\.ariaLabel = label\(snippet\);[\s\S]*?aria-description", "Open in Linksaw"/);
   assert.match(source, /main\.setAttribute\("aria-current", index === state\.selected \? "true" : "false"\)/);
   assert.match(source, /row\.querySelector\("\.result-main"\)\?\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
+  assert.match(html, /id="results" class="results" role="list" aria-label="Snippets"/);
+  assert.match(source, /row\.setAttribute\("role", "listitem"\)/);
+});
+
+test("unchanged background sync preserves Voice Control targets", () => {
+  assert.match(source, /function libraryFingerprint\(snippets\)/);
+  assert.match(source, /const libraryChanged = libraryFingerprint\(state\.snippets\) !== libraryFingerprint\(snippets\)/);
+  assert.match(source, /if \(libraryChanged\) \{[\s\S]*?render\(\)/);
 });
 
 test("content editing keeps the same plain-text scale and vertical rhythm", () => {
