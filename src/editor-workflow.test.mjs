@@ -64,6 +64,14 @@ test('content editor preserves private names, protects drafts and previews liter
     assert.equal(title.type,'hidden','the private name is not part of everyday editing');
     assert.equal(d.activeElement,body,'a new snippet starts directly in content');
     assert.equal(body.hasAttribute('placeholder'),false,'content has no instructional placeholder');
+    assert.equal(d.getElementById('editor-undo').disabled,true,'Undo starts disabled');
+    assert.equal(d.getElementById('editor-redo').disabled,true,'Redo starts disabled');
+    body.value='First';body.dispatchEvent(new w.Event('input',{bubbles:true}));
+    d.getElementById('editor-undo').click();
+    assert.equal(body.value,'','editor Undo restores the prior text');
+    assert.equal(d.getElementById('editor-redo').disabled,false,'Redo becomes available after Undo');
+    d.getElementById('editor-redo').click();
+    assert.equal(body.value,'First','editor Redo restores the undone text');
     const paste=new w.Event('paste',{bubbles:true,cancelable:true});
     Object.defineProperty(paste,'clipboardData',{value:{getData:()=> 'First line\nSecond line'}});
     body.dispatchEvent(paste);

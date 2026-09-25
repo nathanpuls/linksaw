@@ -184,6 +184,10 @@ test("content editing keeps the same plain-text scale and vertical rhythm", () =
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.preview-body, \.content-input \{ padding: 8px 22px 40px 16px; \}/);
 });
 
+test("mobile Back glyph aligns with the content gutter", () => {
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.viewer-back \{ margin-left: -9px; \}/);
+});
+
 test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(html, /<a class="identity-logo-link" href="https:\/\/linksaw\.com"[^>]*>[\s\S]*?<img class="identity-logo"[^>]*>[\s\S]*?<button id="settings"/);
   assert.match(css, /\.identity-logo \{ width: 28px; height: 28px;/);
@@ -224,6 +228,15 @@ test("settings offers working CSV and JSON transfer controls", () => {
   assert.match(source, /importLibrary\(event\.target, parseJsonSnippets\)/);
   assert.match(source, /downloadLibrary\(snippetsToCsv\(state\.snippets\)/);
   assert.match(source, /downloadLibrary\(snippetsToJson\(state\.snippets\)/);
+});
+
+test("settings exposes 30-day Recently Deleted recovery with confirmed permanent deletion", () => {
+  assert.match(html, /id="recently-deleted"[\s\S]*?Deleted snippets remain available for 30 days\./);
+  assert.match(html, /id="deleted-snippet-list"[^>]*role="list"/);
+  assert.match(source, /api\("\/deleted-snippets"\)[\s\S]*?renderDeletedSnippets/);
+  assert.match(source, /`\/deleted-snippets\/\$\{snippet\.id\}\/restore`[\s\S]*?method: "POST"/);
+  assert.match(source, /requestConfirmation\(\{ title: "Delete permanently\?"[\s\S]*?api\(`\/deleted-snippets\/\$\{snippet\.id\}`[\s\S]*?method: "DELETE"/);
+  assert.match(css, /\.deleted-snippet-row \{[^}]*display: flex;/);
 });
 
 test("deep links wait to reveal the resolved view", () => {

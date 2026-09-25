@@ -23,6 +23,22 @@ test("Mac editing autosaves with version checks and avoids duplicate list text",
   assert.match(source, /const repeatsTitle = item\.type === 'snippet' && trim\(item\.title\) === trim\(item\.body\)/);
 });
 
+test("Mac editor provides local Undo and Redo without adding viewer actions", () => {
+  assert.match(html, /id="editor-undo"[^>]*aria-label="Undo"[^>]*disabled[\s\S]*id="editor-redo"[^>]*aria-label="Redo"[^>]*disabled/);
+  assert.match(source, /function moveEditorHistory\(direction\)[\s\S]*?scheduleEditorAutosave\(\)/);
+  assert.match(source, /const undo = key === 'z'[\s\S]*?const redo = \(key === 'z' && event\.shiftKey\) \|\| \(key === 'y'/);
+  assert.doesNotMatch(html, /class="preview-actions"[\s\S]*id="preview-undo"/);
+});
+
+test("Mac editor preserves an unsaved local draft across a crash", () => {
+  assert.match(source, /LOCAL_EDITOR_DRAFT_KEY = "linksaw-mac-editor-draft-v1"/);
+  assert.match(source, /function persistLocalEditorDraft\(\)[\s\S]*?localStorage\.setItem\(LOCAL_EDITOR_DRAFT_KEY/);
+  assert.match(source, /function readLocalEditorDraft\(\)[\s\S]*?draft\.owner === state\.user\?\.email/);
+  assert.match(source, /function recoverLocalEditorDraft\(\)[\s\S]*?openEditor\(snippet, \{ draft \}\)/);
+  assert.match(source, /restoreSession\(\); recoverLocalEditorDraft\(\)/);
+  assert.match(source, /if \(editorSnapshot\(\) === snapshot\) clearLocalEditorDraft\(\)/);
+});
+
 test("Mac refresh and autosave status never insert transient layout rows", () => {
   assert.doesNotMatch(source, /box\.textContent = state\.loading \? "Refreshing…"/);
   assert.match(source, /setTimeout\(\(\) => \{ if \(state\.loading\) \{ state\.refreshSlow = true; updateRefreshFeedback\(\); \} \}, 1600\)/);

@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024">
   <defs>
     <clipPath id="app-icon-mask">
-      <rect x="48" y="48" width="928" height="928" rx="210"/>
+      <rect x="104" y="104" width="816" height="816" rx="185"/>
     </clipPath>
   </defs>
   <g clip-path="url(#app-icon-mask)">
-    <rect x="48" y="48" width="928" height="928" fill="#fff"/>
-    <image x="48" y="48" width="928" height="928" preserveAspectRatio="xMidYMid meet" href="../../web/icon.png" xlink:href="../../web/icon.png"/>
+    <rect x="104" y="104" width="816" height="816" fill="#fff"/>
+    <image x="104" y="104" width="816" height="816" preserveAspectRatio="xMidYMid meet" href="../../web/icon.png" xlink:href="../../web/icon.png"/>
   </g>
 </svg>

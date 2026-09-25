@@ -56,6 +56,11 @@ test('falls back for protected or unsupported target', () => {
   assert.equal(run('<p>plain text</p>', 'p').result, false);
 });
 
+test('result row supplies the only pointer-hover background', () => {
+  const css = readFileSync(new URL('./popup.css', import.meta.url), 'utf8');
+  assert.match(css, /\.row \.primary:hover\{background:transparent\}/);
+});
+
 test('manifest limits fetch permission to the API and installs the autocomplete listener', () => {
   const manifest = JSON.parse(readFileSync(new URL('./manifest.json', import.meta.url)));
   assert.deepEqual(manifest.host_permissions, ['https://snippets-api.linksaw.com/*']);

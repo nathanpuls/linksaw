@@ -367,6 +367,7 @@ test('account deletion requires typed confirmation and removes all owned data', 
   assert.deepEqual(deleted.map(statement => statement.sql), [
     'DELETE FROM details WHERE snippet_id IN (SELECT id FROM snippets WHERE owner_id = ?)',
     'DELETE FROM snippet_shares WHERE owner_id = ?',
+    'DELETE FROM deleted_snippets WHERE owner_id = ?',
     'DELETE FROM snippets WHERE owner_id = ?',
     'DELETE FROM user_preferences WHERE user_id = ?',
     'DELETE FROM user_profiles WHERE user_id = ?',
@@ -380,7 +381,7 @@ test('account deletion requires typed confirmation and removes all owned data', 
 
 test('snippet deletion returns the exact stored record needed for undo', async () => {
   const id = '12345678-1234-1234-1234-123456789abc';
-  const stored = { id, title: 'Private name', body: 'Exact\ntext', created_at: 100, updated_at: 200, share_token: 'Ab3k9Qx7Lm2N4pRs' };
+  const stored = { id, title: 'Private name', body: 'Exact\ntext', created_at: 100, updated_at: 200, version: 0, share_token: 'Ab3k9Qx7Lm2N4pRs' };
   let deletedStatements = [];
   const env = {
     DB: {
@@ -403,6 +404,7 @@ test('snippet deletion returns the exact stored record needed for undo', async (
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, deleted: stored });
   assert.deepEqual(deletedStatements.map(statement => statement.sql), [
+    'INSERT OR REPLACE INTO deleted_snippets(id, owner_id, title, body, created_at, updated_at, version, share_token, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     'DELETE FROM details WHERE snippet_id = ?',
     'DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?',
     'DELETE FROM snippets WHERE id = ? AND owner_id = ?',
@@ -419,6 +421,7 @@ test('undo restores identity, position timestamps, custom name, content, and sha
         if (sql.startsWith('CREATE TABLE')) return { run: async () => ({}) };
         return { bind(...values) {
           if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql.includes('FROM deleted_snippets')) return { first: async () => null };
           if (sql === 'SELECT id FROM snippets WHERE id = ?') return { first: async () => null };
           return { sql, values };
         } };
@@ -441,6 +444,40 @@ test('undo restores identity, position timestamps, custom name, content, and sha
   assert.deepEqual(restoredStatements[0].values, [id, 'user', stored.title, stored.body, stored.created_at, stored.updated_at, 0]);
   assert.deepEqual(restoredStatements[1].values, [id, 'user', 0, stored.title, stored.body, stored.updated_at]);
   assert.deepEqual(restoredStatements[2].values, [stored.share_token, id, 'user', stored.created_at]);
+});
+
+test('recently deleted snippets can be listed and restored from server storage', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  const stored = { id, title: 'Private name', body: 'Exact text', created_at: 100, updated_at: 200, version: 3, share_token: 'Ab3k9Qx7Lm2N4pRs', deleted_at: 300 };
+  let restoredStatements = [];
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.startsWith('CREATE TABLE')) return { run: async () => ({}) };
+        return { bind(...values) {
+          if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql.startsWith('DELETE FROM deleted_snippets WHERE owner_id') && sql.includes('deleted_at')) return { run: async () => ({ meta: { changes: 0 } }) };
+          if (sql.startsWith('SELECT id, title, body') && sql.includes('FROM deleted_snippets') && sql.includes('ORDER BY')) return { all: async () => ({ results: [stored] }) };
+          if (sql.startsWith('SELECT id, title, body') && sql.includes('FROM deleted_snippets')) return { first: async () => stored };
+          if (sql === 'SELECT id FROM snippets WHERE id = ?') return { first: async () => null };
+          if (sql.includes('LEFT JOIN snippet_shares') && sql.includes('WHERE snippets.id')) return { first: async () => ({ ...stored, can_undo: 0, can_redo: 0 }) };
+          return { sql, values };
+        } };
+      },
+      async batch(statements) { restoredStatements = statements; return statements.map(() => ({ success: true })); },
+    },
+  };
+  const headers = { Cookie: `linksaw_session=${'a'.repeat(64)}`, Origin: 'https://linksaw.com' };
+  const list = await handle(new Request('https://linksaw.com/deleted-snippets', { headers }), env);
+  assert.deepEqual(await list.json(), { snippets: [stored] });
+  const restored = await handle(new Request(`https://linksaw.com/deleted-snippets/${id}/restore`, { method: 'POST', headers }), env);
+  assert.equal(restored.status, 200);
+  assert.deepEqual(restoredStatements.map(statement => statement.sql), [
+    'INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)',
+    'DELETE FROM deleted_snippets WHERE id = ? AND owner_id = ?',
+  ]);
 });
 
 test('snippet updates require the current version and return the stored row on conflict', async () => {

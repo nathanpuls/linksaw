@@ -20,6 +20,7 @@ const icons = {
 
 const $ = id => document.getElementById(id);
 const state = { snippets: [], filtered: [], selected: -1, editing: null, editorContext: null, previewing: null, user: null };
+let deletedSnippets = [];
 const isMacPlatform = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || "");
 const sidebarShortcutLabel = isMacPlatform ? "⌘\\" : "Ctrl+\\";
 const commandShortcut = key => isMacPlatform ? `⌘${key}` : `Ctrl+${key}`;
@@ -557,10 +558,64 @@ function closePreview() {
 function openSettings(pushHistory = true) {
   hideTooltip();
   showSurface("settings-panel");
+  void loadDeletedSnippets();
   if (pushHistory) updateUrl({ view: "settings", snippet: null });
   if (location.hash === "#import-export" && !matchMedia("(max-width: 700px)").matches) {
     requestAnimationFrame(() => $("import-export").scrollIntoView({ block: "start" }));
   }
+}
+
+function deletedSnippetLabel(snippet) {
+  return snippet.title?.trim() || snippet.body?.trim().split(/\r?\n/, 1)[0].slice(0, 80) || "Untitled";
+}
+function renderDeletedSnippets() {
+  const list = $("deleted-snippet-list");
+  list.replaceChildren();
+  if (!deletedSnippets.length) {
+    const empty = document.createElement("p");
+    empty.className = "deleted-snippet-empty";
+    empty.textContent = "No recently deleted snippets.";
+    list.append(empty);
+    return;
+  }
+  for (const snippet of deletedSnippets) {
+    const row = document.createElement("div"); row.className = "deleted-snippet-row"; row.role = "listitem";
+    const name = document.createElement("span"); name.className = "deleted-snippet-name"; name.textContent = deletedSnippetLabel(snippet);
+    const restore = document.createElement("button"); restore.type = "button"; restore.className = "deleted-snippet-action"; restore.textContent = "Restore";
+    restore.ariaLabel = `Restore ${deletedSnippetLabel(snippet)}`;
+    restore.addEventListener("click", () => { void restoreDeletedSnippet(snippet); });
+    const remove = document.createElement("button"); remove.type = "button"; remove.className = "deleted-snippet-action"; remove.textContent = "Delete permanently";
+    remove.ariaLabel = `Permanently delete ${deletedSnippetLabel(snippet)}`;
+    remove.addEventListener("click", () => { void permanentlyDeleteSnippet(snippet, remove); });
+    row.append(name, restore, remove); list.append(row);
+  }
+}
+async function loadDeletedSnippets() {
+  const status = $("deleted-snippet-status");
+  status.textContent = "";
+  try {
+    deletedSnippets = (await api("/deleted-snippets")).snippets;
+    renderDeletedSnippets();
+  } catch (error) { status.textContent = error.message; }
+}
+async function restoreDeletedSnippet(snippet) {
+  const status = $("deleted-snippet-status"); status.textContent = "Restoring…";
+  try {
+    await api(`/deleted-snippets/${snippet.id}/restore`, { method: "POST" });
+    deletedSnippets = deletedSnippets.filter(item => item.id !== snippet.id);
+    state.snippets = (await api("/snippets")).snippets;
+    render(); renderDeletedSnippets(); status.textContent = "Restored";
+  } catch (error) { status.textContent = error.message; }
+}
+async function permanentlyDeleteSnippet(snippet, returnFocus) {
+  const confirmed = await requestConfirmation({ title: "Delete permanently?", message: "This snippet cannot be recovered after permanent deletion.", action: "Delete permanently" });
+  if (!confirmed) return;
+  const status = $("deleted-snippet-status"); status.textContent = "Deleting…";
+  try {
+    await api(`/deleted-snippets/${snippet.id}`, { method: "DELETE" });
+    deletedSnippets = deletedSnippets.filter(item => item.id !== snippet.id);
+    renderDeletedSnippets(); status.textContent = "Permanently deleted";
+  } catch (error) { status.textContent = error.message; returnFocus?.focus(); }
 }
 function hasExplicitRoute() {
   const params = new URLSearchParams(location.search);

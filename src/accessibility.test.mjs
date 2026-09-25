@@ -10,6 +10,8 @@ test("Mac surfaces and fields expose stable accessible names", () => {
   assert.match(html, /id="status" class="status" role="status" aria-live="polite"/);
   assert.match(html, /id="results" class="results" aria-label="Snippets"/);
   assert.match(html, /id="editor-dialog" aria-labelledby="editor-title"/);
+  assert.match(html, /id="editor-undo"[^>]*aria-label="Undo"[^>]*data-tooltip="Undo"[^>]*disabled/);
+  assert.match(html, /id="editor-redo"[^>]*aria-label="Redo"[^>]*data-tooltip="Redo"[^>]*disabled/);
 });
 
 test("Mac result actions announce their behavior and selection", () => {

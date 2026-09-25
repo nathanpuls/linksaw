@@ -2,3 +2,4 @@
 .custom-tooltip{position:fixed;z-index:100;max-width:260px;border-radius:6px;padding:6px 8px;background:#18181b;color:#fff;font-size:12px;line-height:1.2;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px #0004}.custom-tooltip[hidden]{display:none}
 footer{align-items:center;justify-content:space-between;padding:4px 7px}footer button{padding:7px 9px}.footer-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:8px}.footer-icon svg{width:17px;height:17px}
 .row .action{opacity:0}.row:hover .action,.row.selected .action,.action:focus-visible{opacity:1}
+.row .primary:hover{background:transparent}

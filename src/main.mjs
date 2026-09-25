@@ -12,6 +12,7 @@ import { renderMarkdown } from "../web/app/markdown.js";
 
 const native = Boolean(window.__TAURI_INTERNALS__);
 const WEB_TRANSFER_SETTINGS_URL = "https://linksaw.com/home/?view=settings#import-export";
+const LOCAL_EDITOR_DRAFT_KEY = "linksaw-mac-editor-draft-v1";
 setupIcons();
 setupTooltips();
 const ui = Object.fromEntries(["search", "clear-search", "results", "status", "paste-permission", "enable-pasting", "open-paste-settings", "back", "add", "settings", "settings-dialog",
@@ -344,6 +345,7 @@ function openSettings() {
 }
 
 let editorBaseline = '', editorSaving = false, editorAutosaveTimer, editorSaveAgain = false, editorConflict = null;
+let editorHistory = [], editorHistoryIndex = -1, editorHistoryTimer;
 function resizeEditorArea(textarea) {
   textarea.style.height = 'auto';
   textarea.style.height = `${textarea.scrollHeight}px`;
@@ -351,7 +353,72 @@ function resizeEditorArea(textarea) {
 function editorSnapshot() {
   return JSON.stringify({ title: ui.snippettitle.value, body: ui.snippetbody.value });
 }
-function openEditor(snippet = null) {
+function clearLocalEditorDraft() {
+  try { localStorage.removeItem(LOCAL_EDITOR_DRAFT_KEY); } catch {}
+}
+function persistLocalEditorDraft() {
+  if (!state.user || editorSnapshot() === editorBaseline || (!ui.snippettitle.value.trim() && !ui.snippetbody.value.trim())) {
+    clearLocalEditorDraft(); return;
+  }
+  try {
+    localStorage.setItem(LOCAL_EDITOR_DRAFT_KEY, JSON.stringify({
+      owner: state.user.email,
+      snippetId: state.editing?.id || "",
+      title: ui.snippettitle.value,
+      body: ui.snippetbody.value,
+      savedAt: Date.now(),
+    }));
+  } catch {}
+}
+function readLocalEditorDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(LOCAL_EDITOR_DRAFT_KEY) || "null");
+    const valid = draft && draft.owner === state.user?.email && typeof draft.snippetId === "string"
+      && typeof draft.title === "string" && typeof draft.body === "string" && Number.isFinite(draft.savedAt)
+      && Date.now() - draft.savedAt < 30 * 24 * 60 * 60 * 1000;
+    if (valid && (draft.title.trim() || draft.body.trim())) return draft;
+  } catch {}
+  clearLocalEditorDraft();
+  return null;
+}
+function updateEditorHistoryControls() {
+  const pendingText = editorHistoryIndex >= 0 && ui.snippetbody.value !== editorHistory[editorHistoryIndex];
+  document.getElementById('editor-undo').disabled = !pendingText && editorHistoryIndex <= 0;
+  document.getElementById('editor-redo').disabled = pendingText || editorHistoryIndex < 0 || editorHistoryIndex >= editorHistory.length - 1;
+}
+function resetEditorHistory() {
+  clearTimeout(editorHistoryTimer);
+  editorHistory = [ui.snippetbody.value];
+  editorHistoryIndex = 0;
+  updateEditorHistoryControls();
+}
+function commitEditorHistory() {
+  clearTimeout(editorHistoryTimer);
+  const value = ui.snippetbody.value;
+  if (value === editorHistory[editorHistoryIndex]) { updateEditorHistoryControls(); return; }
+  editorHistory.splice(editorHistoryIndex + 1);
+  editorHistory.push(value);
+  if (editorHistory.length > 100) editorHistory.shift();
+  editorHistoryIndex = editorHistory.length - 1;
+  updateEditorHistoryControls();
+}
+function scheduleEditorHistoryCommit() {
+  clearTimeout(editorHistoryTimer);
+  editorHistoryTimer = setTimeout(commitEditorHistory, 400);
+  updateEditorHistoryControls();
+}
+function moveEditorHistory(direction) {
+  commitEditorHistory();
+  const next = editorHistoryIndex + direction;
+  if (next < 0 || next >= editorHistory.length) return;
+  editorHistoryIndex = next;
+  ui.snippetbody.value = editorHistory[next];
+  resizeEditorArea(ui.snippetbody);
+  scheduleEditorAutosave();
+  updateEditorHistoryControls();
+  ui.snippetbody.focus();
+}
+function openEditor(snippet = null, { draft = null } = {}) {
   if (!state.user) { status("Sign in first."); return; }
   state.editing = snippet;
   editorConflict = null;
@@ -360,13 +427,23 @@ function openEditor(snippet = null) {
   document.getElementById('delete-confirmation').hidden = true;
   document.getElementById('editor-feedback').textContent = '';
   ui.editortitle.textContent = snippet ? "Edit snippet" : "New snippet";
-  ui.snippettitle.value = snippet?.title || "";
-  ui.snippetbody.value = snippet?.body || "";
+  const storedSnapshot = JSON.stringify({ title: snippet?.title || "", body: snippet?.body || "" });
+  ui.snippettitle.value = draft?.title ?? snippet?.title ?? "";
+  ui.snippetbody.value = draft?.body ?? snippet?.body ?? "";
   ui.deletesnippet.hidden = !snippet;
-  editorBaseline = editorSnapshot();
+  editorBaseline = draft ? storedSnapshot : editorSnapshot();
+  resetEditorHistory();
   ui.editordialog.showModal();
   resizeEditorArea(ui.snippetbody);
   ui.snippetbody.focus();
+  if (draft) document.getElementById('editor-feedback').textContent = 'Recovered draft';
+}
+function recoverLocalEditorDraft() {
+  if (!native || ui.editordialog.open) return;
+  const draft = readLocalEditorDraft();
+  if (!draft) return;
+  const snippet = draft.snippetId ? state.snippets.find(item => item.id === draft.snippetId) || null : null;
+  openEditor(snippet, { draft });
 }
 async function saveEditor(event, { closeAfter = false } = {}) {
   event?.preventDefault();
@@ -391,6 +468,8 @@ async function saveEditor(event, { closeAfter = false } = {}) {
     editorBaseline = snapshot;
     editorConflict = null;
     document.getElementById('editor-feedback').textContent = 'Saved';
+    if (editorSnapshot() === snapshot) clearLocalEditorDraft();
+    else persistLocalEditorDraft();
     saved = true;
     await refresh();
   } catch (error) {
@@ -401,6 +480,8 @@ async function saveEditor(event, { closeAfter = false } = {}) {
         editorBaseline = snapshot;
         editorConflict = null;
         document.getElementById('editor-feedback').textContent = 'Saved';
+        if (editorSnapshot() === snapshot) clearLocalEditorDraft();
+        else persistLocalEditorDraft();
         saved = true;
         await refresh();
       } else {
@@ -420,6 +501,7 @@ async function saveEditor(event, { closeAfter = false } = {}) {
 }
 function scheduleEditorAutosave() {
   clearTimeout(editorAutosaveTimer);
+  persistLocalEditorDraft();
   if (editorConflict || editorSnapshot() === editorBaseline) return;
   document.getElementById('editor-feedback').textContent = 'Saving…';
   editorAutosaveTimer = setTimeout(() => { void saveEditor(null, { closeAfter: false }); }, 700);
@@ -432,6 +514,7 @@ async function closeEditorAfterAutosave() {
     while (editorSaving) await new Promise(resolve => setTimeout(resolve, 30));
   }
   if (editorSnapshot() === editorBaseline || (!state.editing && !ui.snippettitle.value.trim() && !ui.snippetbody.value.trim())) {
+    clearLocalEditorDraft();
     ui.editordialog.close();
     return true;
   }
@@ -452,12 +535,18 @@ ui.editordialog.addEventListener('click', event => {
 ui.editordialog.addEventListener('cancel', event => { event.preventDefault(); void closeEditorAfterAutosave(); });
 ui.canceleditor.addEventListener('click', () => { void closeEditorAfterAutosave(); });
 ui.editordialog.addEventListener('keydown', event => {
-  if (event.isComposing || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 's') return;
-  event.preventDefault(); void saveEditor(null, { closeAfter: false });
+  if (event.isComposing || !(event.metaKey || event.ctrlKey)) return;
+  const key = event.key.toLowerCase();
+  if (key === 's') { event.preventDefault(); void saveEditor(null, { closeAfter: false }); return; }
+  const undo = key === 'z' && !event.shiftKey;
+  const redo = (key === 'z' && event.shiftKey) || (key === 'y' && !event.metaKey);
+  if (undo || redo) { event.preventDefault(); moveEditorHistory(undo ? -1 : 1); }
 });
 
 ui.search.addEventListener("input", () => { state.query = ui.search.value; state.selected = 0; render(); });
-ui.snippetbody.addEventListener('input', () => { resizeEditorArea(ui.snippetbody); scheduleEditorAutosave(); });
+ui.snippetbody.addEventListener('input', () => { resizeEditorArea(ui.snippetbody); scheduleEditorHistoryCommit(); scheduleEditorAutosave(); });
+document.getElementById('editor-undo').addEventListener('click', () => moveEditorHistory(-1));
+document.getElementById('editor-redo').addEventListener('click', () => moveEditorHistory(1));
 ui.clearsearch.addEventListener("click", resetSearch);
 ui.back.addEventListener("click", goBack);
 ui.add.addEventListener("click", () => openEditor());
@@ -479,6 +568,7 @@ ui.settingsform.addEventListener("submit", event => {
 ui.signout.addEventListener("click", async () => {
   try { await api("/auth/logout", { method: "POST" }); } catch { /* local sign-out still completes */ }
   await clearToken(); state.user = null; state.snippets = [];
+  clearLocalEditorDraft();
   ui.settingsdialog.close(); status("Signed out"); render();
 });
 ui.editorform.addEventListener("submit", event => { event.preventDefault(); void saveEditor(null, { closeAfter: false }); });
@@ -493,6 +583,7 @@ document.getElementById('confirm-delete').addEventListener('click', async event 
   const button = event.currentTarget; button.disabled = true;
   try {
     await api(`/snippets/${state.editing.id}`, { method: 'DELETE' });
+    clearLocalEditorDraft();
     ui.editordialog.close(); state.editing = null; await refresh();
   } catch (error) { document.getElementById('editor-feedback').textContent = `Could not delete: ${errorMessage(error)}`; }
   finally { button.disabled = false; }
@@ -718,7 +809,7 @@ async function boot() {
     await listen("right-command-tap", () => { if (rightCommandEnabled()) return toggleLauncher(); });
     await setupSettings(toggleLauncher);
   } else { await setupSettings(() => {}); }
-  try { await restoreSession(); } catch (error) { status(errorMessage(error)); }
+  try { await restoreSession(); recoverLocalEditorDraft(); } catch (error) { status(errorMessage(error)); }
   render();
 }
 setInterval(() => { void refreshIfStale(); }, 3000);

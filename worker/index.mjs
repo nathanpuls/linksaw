@@ -2,6 +2,7 @@ import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64
 import { markdownToSafeHtml } from "../web/app/markdown.js";
 
 const allowedOrigins = new Set(["https://linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
+const DELETED_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 const profileSchemaReady = new WeakMap();
 const apiKeySchemaReady = new WeakMap();
 async function ensureProfileSchema(env) {
@@ -83,6 +84,29 @@ async function storedSnippet(env, userId, snippetId) {
   const row = await env.DB.prepare("SELECT snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippets.version, snippet_shares.token AS share_token, EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version < snippets.version) AS can_undo, EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version > snippets.version) AS can_redo FROM snippets LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippets.id = ? AND snippets.owner_id = ?")
     .bind(snippetId, userId).first();
   return row ? { ...row, can_undo: Boolean(row.can_undo), can_redo: Boolean(row.can_redo), details: [] } : null;
+}
+
+async function deletedSnippet(env, userId, snippetId) {
+  return env.DB.prepare("SELECT id, title, body, created_at, updated_at, version, share_token, deleted_at FROM deleted_snippets WHERE id = ? AND owner_id = ?")
+    .bind(snippetId, userId).first();
+}
+
+async function restoreStoredDeletion(env, userId, deleted) {
+  const exists = await env.DB.prepare("SELECT id FROM snippets WHERE id = ?").bind(deleted.id).first();
+  if (exists) return false;
+  const statements = [
+    env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .bind(deleted.id, userId, deleted.title, deleted.body, deleted.created_at, deleted.updated_at, deleted.version),
+    env.DB.prepare("INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(deleted.id, userId, deleted.version, deleted.title, deleted.body, deleted.updated_at),
+  ];
+  if (deleted.share_token) {
+    statements.push(env.DB.prepare("INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)")
+      .bind(deleted.share_token, deleted.id, userId, deleted.created_at));
+  }
+  statements.push(env.DB.prepare("DELETE FROM deleted_snippets WHERE id = ? AND owner_id = ?").bind(deleted.id, userId));
+  await env.DB.batch(statements);
+  return true;
 }
 
 async function autocompleteTrigger(env, userId) {
@@ -324,6 +348,7 @@ export async function handle(request, env) {
     await env.DB.batch([
       env.DB.prepare("DELETE FROM details WHERE snippet_id IN (SELECT id FROM snippets WHERE owner_id = ?)").bind(user.id),
       env.DB.prepare("DELETE FROM snippet_shares WHERE owner_id = ?").bind(user.id),
+      env.DB.prepare("DELETE FROM deleted_snippets WHERE owner_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM snippets WHERE owner_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM user_preferences WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM user_profiles WHERE user_id = ?").bind(user.id),
@@ -339,6 +364,25 @@ export async function handle(request, env) {
     return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0) } : {});
   }
   if (url.pathname === "/snippets" && request.method === "GET") return json(request, { snippets: await listSnippets(env, user.id) });
+  if (url.pathname === "/deleted-snippets" && request.method === "GET") {
+    await env.DB.prepare("DELETE FROM deleted_snippets WHERE owner_id = ? AND deleted_at < ?")
+      .bind(user.id, nowSeconds() - DELETED_RETENTION_SECONDS).run();
+    const { results } = await env.DB.prepare("SELECT id, title, body, created_at, updated_at, version, share_token, deleted_at FROM deleted_snippets WHERE owner_id = ? ORDER BY deleted_at DESC, id DESC LIMIT 2000")
+      .bind(user.id).all();
+    return json(request, { snippets: results });
+  }
+  const deletedMatch = url.pathname.match(/^\/deleted-snippets\/([a-f0-9-]{36})(?:\/(restore))?$/);
+  if (deletedMatch && request.method === "POST" && deletedMatch[2] === "restore") {
+    const deleted = await deletedSnippet(env, user.id, deletedMatch[1]);
+    if (!deleted) return fail(request, "Deleted snippet not found", 404);
+    if (!await restoreStoredDeletion(env, user.id, deleted)) return fail(request, "Snippet already exists", 409);
+    return json(request, { ok: true, snippet: await storedSnippet(env, user.id, deleted.id) });
+  }
+  if (deletedMatch && request.method === "DELETE" && !deletedMatch[2]) {
+    const result = await env.DB.prepare("DELETE FROM deleted_snippets WHERE id = ? AND owner_id = ?").bind(deletedMatch[1], user.id).run();
+    if (!result.meta?.changes) return fail(request, "Deleted snippet not found", 404);
+    return json(request, { ok: true });
+  }
   if (url.pathname === "/details" && request.method === "DELETE") {
     const result = await env.DB.prepare("DELETE FROM details WHERE snippet_id IN (SELECT id FROM snippets WHERE owner_id = ?)").bind(user.id).run();
     return json(request, { ok: true, deleted: result.meta?.changes || 0 });
@@ -380,6 +424,11 @@ export async function handle(request, env) {
   }
   const restoreMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/restore$/);
   if (restoreMatch && request.method === "POST") {
+    const storedDeletion = await deletedSnippet(env, user.id, restoreMatch[1]);
+    if (storedDeletion) {
+      if (!await restoreStoredDeletion(env, user.id, storedDeletion)) return fail(request, "Snippet already exists", 409);
+      return json(request, { ok: true });
+    }
     const input = await bodyJson(request);
     const value = validSnippet(input);
     const validTimestamps = Number.isSafeInteger(input?.created_at) && input.created_at > 0
@@ -444,6 +493,8 @@ export async function handle(request, env) {
       .bind(match[1], user.id).first();
     if (!deleted) return fail(request, "Snippet not found", 404);
     await env.DB.batch([
+      env.DB.prepare("INSERT OR REPLACE INTO deleted_snippets(id, owner_id, title, body, created_at, updated_at, version, share_token, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(deleted.id, user.id, deleted.title, deleted.body, deleted.created_at, deleted.updated_at, deleted.version, deleted.share_token || null, nowSeconds()),
       env.DB.prepare("DELETE FROM details WHERE snippet_id = ?").bind(match[1]),
       env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(match[1], user.id),
       env.DB.prepare("DELETE FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id),
