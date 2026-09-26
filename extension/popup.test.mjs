@@ -89,9 +89,8 @@ test('Chrome extension uses the current Linksaw brand icon', () => {
 });
 
 test('background registers contextual save actions and posts captured snippets', () => {
-  assert.match(backgroundSource, /Save selection to Linksaw/);
-  assert.match(backgroundSource, /Save page to Linksaw/);
-  assert.match(backgroundSource, /Save link to Linksaw/);
+  assert.match(backgroundSource, /title: 'Save to Linksaw', contexts: \['page', 'selection', 'link'\]/);
+  assert.match(backgroundSource, /chrome\.runtime\.onStartup\.addListener\(registerContextMenus\);\s*registerContextMenus\(\);/);
   assert.match(backgroundSource, /chrome\.contextMenus\.onClicked\.addListener/);
   assert.match(backgroundSource, /api\('\/snippets', \{[\s\S]*method: 'POST'/);
   assert.match(backgroundSource, /body: JSON\.stringify\(snippet\)/);
@@ -103,9 +102,9 @@ test('context-menu captures preserve selection and save page titles separately f
   const contextSnippetSource = backgroundSource.match(/function contextSnippet\(info, tab\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(httpUrlSource && contextSnippetSource);
   const contextSnippet = vm.runInNewContext(`(() => { ${httpUrlSource}\n${contextSnippetSource}\nreturn contextSnippet; })()`, { URL });
-  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save-selection', selectionText: ' First\nSecond ' }, {}) }, { title: '', body: ' First\nSecond ' });
-  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save-page', pageUrl: 'https://example.com/path' }, { title: 'Example page' }) }, { title: 'Example page', body: 'https://example.com/path' });
-  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save-link', linkUrl: 'https://example.com/file' }, {}) }, { title: '', body: 'https://example.com/file' });
+  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save', selectionText: ' First\nSecond ' }, {}) }, { title: '', body: ' First\nSecond ' });
+  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save', pageUrl: 'https://example.com/path' }, { title: 'Example page' }) }, { title: 'Example page', body: 'https://example.com/path' });
+  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save', linkUrl: 'https://example.com/file' }, {}) }, { title: '', body: 'https://example.com/file' });
 });
 
 test('configurable Chrome command opens autocomplete in the focused field', () => {

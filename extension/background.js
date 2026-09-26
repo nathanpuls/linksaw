@@ -4,11 +4,7 @@ let cacheTime = 0;
 let pending = null;
 let badgeTimer = null;
 
-const contextMenus = [
-  { id: 'linksaw-save-selection', title: 'Save selection to Linksaw', contexts: ['selection'] },
-  { id: 'linksaw-save-page', title: 'Save page to Linksaw', contexts: ['page'] },
-  { id: 'linksaw-save-link', title: 'Save link to Linksaw', contexts: ['link'] },
-];
+const contextMenu = { id: 'linksaw-save', title: 'Save to Linksaw', contexts: ['page', 'selection', 'link'] };
 
 async function api(path, options = {}) {
   const response = await fetch(API + path, { credentials: 'include', ...options });
@@ -30,7 +26,7 @@ function showBadge(text, title) {
 
 function registerContextMenus() {
   chrome.contextMenus.removeAll(() => {
-    for (const item of contextMenus) chrome.contextMenus.create(item);
+    chrome.contextMenus.create(contextMenu);
   });
 }
 
@@ -42,16 +38,14 @@ function httpUrl(value) {
 }
 
 function contextSnippet(info, tab) {
-  if (info.menuItemId === 'linksaw-save-selection') {
+  if (info.menuItemId !== 'linksaw-save') return null;
+  if (info.selectionText?.trim()) {
     return { title: '', body: info.selectionText || '' };
   }
-  if (info.menuItemId === 'linksaw-save-link') {
+  if (info.linkUrl) {
     return { title: '', body: httpUrl(info.linkUrl) };
   }
-  if (info.menuItemId === 'linksaw-save-page') {
-    return { title: (tab?.title || '').trim().slice(0, 160), body: httpUrl(info.pageUrl || tab?.url) };
-  }
-  return null;
+  return { title: (tab?.title || '').trim().slice(0, 160), body: httpUrl(info.pageUrl || tab?.url) };
 }
 
 async function saveFromContextMenu(info, tab) {
@@ -69,8 +63,9 @@ async function saveFromContextMenu(info, tab) {
 
 chrome.runtime.onInstalled.addListener(registerContextMenus);
 chrome.runtime.onStartup.addListener(registerContextMenus);
+registerContextMenus();
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (!String(info.menuItemId).startsWith('linksaw-save-')) return;
+  if (info.menuItemId !== contextMenu.id) return;
   saveFromContextMenu(info, tab).catch(error => showBadge('!', error.message || 'Couldn’t save to Linksaw'));
 });
 
