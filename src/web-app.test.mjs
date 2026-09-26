@@ -170,12 +170,19 @@ test("interactive web controls expose Voice Control names without changing the p
   assert.match(source, /main\.setAttribute\("aria-description", "Open snippet viewer"\)/);
   assert.match(source, /main\.setAttribute\("aria-current", index === state\.selected \? "true" : "false"\)/);
   assert.match(source, /row\.querySelector\("\.result-main"\)\?\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
-  assert.match(html, /id="results" class="results" role="list" aria-label="Snippets"/);
+  assert.match(html, /id="results" class="results" role="list" aria-label="Snippets" tabindex="-1"/);
   assert.match(source, /row\.setAttribute\("role", "listitem"\)/);
   assert.match(html, /id="preview-title" class="preview-title" type="button" aria-label="Edit title"/);
   assert.match(html, /id="preview-body" class="preview-body markdown-body" role="region" tabindex="0" aria-label="Edit snippet content"/);
+  assert.match(html, /class="viewer-scroll" role="region" aria-label="Snippet content" tabindex="-1"/);
   assert.match(source, /\$\("preview-title"\)\.addEventListener\("click"[\s\S]*?openEditor\(state\.previewing\)[\s\S]*?beginInlineRename/);
   assert.match(source, /\$\("preview-body"\)\.addEventListener\("keydown"[\s\S]*?event\.key !== "Enter"[\s\S]*?openEditor\(snippet/);
+});
+
+test("desktop viewer is the active Voice Control scroll region and rename stays compact", () => {
+  assert.match(source, /if \(!narrowLayout\(\)\) \{[\s\S]*?requestAnimationFrame\(\(\) => \$\("preview-body"\)\.focus\(\{ preventScroll: true \}\)\)[\s\S]*?return;/);
+  assert.match(css, /\.editor-name-input \{[^}]*width: min\(420px, 42vw\);[^}]*flex: 0 1 420px;/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?#editor \.editor-name-input \{ width: auto; flex: 1; \}/);
 });
 
 test("unchanged background sync preserves Voice Control targets", () => {

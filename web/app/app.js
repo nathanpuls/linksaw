@@ -560,7 +560,10 @@ function openPreview(snippet, pushHistory = true) {
   hideTooltip();
   renderViewer(snippet);
   if (pushHistory) updateUrl({ view: null, snippet: snippet.id });
-  if (!narrowLayout()) return;
+  if (!narrowLayout()) {
+    requestAnimationFrame(() => $("preview-body").focus({ preventScroll: true }));
+    return;
+  }
   const opening = !$("app").classList.contains("viewer-open");
   $("app").classList.add("viewer-open");
   setTimeout(() => $("close-preview").focus(), 0);
