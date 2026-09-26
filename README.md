@@ -20,7 +20,7 @@ For the product decisions, settled interaction model, repository transition, and
 
 Icon controls use near-black, rounded tooltips with white labels after a short hover delay (350 ms), also available on keyboard focus. Tooltips include shortcuts where useful; clearing search retains focus in Search.
 
-The editor is a sparse, single-column note with Title and Content, one scrolling content area, and a fixed footer for Delete and Save. Settings fills a moderately larger window, with narrower controls and preferences/account information on the left and always-visible shortcuts on the right. Back or Escape restores the launcher’s previous size and position. On smaller screens the layout stacks and scrolls.
+The editor is a sparse, single-column note centered on one scrolling Content area. Title remains an optional stored field exposed through Rename: an untitled editor stays labeled “Untitled,” while the first content line is used only as the derived list label. Settings fills a moderately larger window, with narrower controls and preferences/account information on the left and always-visible shortcuts on the right. Back or Escape restores the launcher’s previous size and position. On smaller screens the layout stacks and scrolls.
 
 On macOS the launcher joins all Spaces, including other apps’ full-screen Spaces, using AppKit collection behavior. The existing Right Command event tap, paste target capture, and session helper are preserved.
 

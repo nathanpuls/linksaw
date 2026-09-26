@@ -96,3 +96,12 @@ test('extension opens on click and Enter while its chevron and Right Arrow use t
   assert.match(source, /https:\/\/linksaw\.com\/\?website=1/);
   assert.match(source, /setTimeout\([\s\S]*450\)/);
 });
+
+test('popup refreshes quietly while open without rebuilding unchanged Voice Control targets', () => {
+  assert.match(source, /function libraryFingerprint\(items\)/);
+  assert.match(source, /if \(refreshInFlight\) return;/);
+  assert.match(source, /const changed = !hasLoaded \|\| libraryFingerprint\(snippets\) !== libraryFingerprint\(incoming\)/);
+  assert.match(source, /if \(changed\) \{[\s\S]*?render\(\)/);
+  assert.match(source, /setInterval\(\(\) => \{ if \(!document\.hidden\) void refresh\(\{ quiet: true \}\); \}, 3000\)/);
+  assert.match(source, /visibilitychange/);
+});

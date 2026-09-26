@@ -46,12 +46,15 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.match(source, /function derivedLabel\(body\)[\s\S]*?find\(line => line\.trim\(\)\)/);
   assert.match(source, /function label\(snippet\) \{ return snippet\.title\.trim\(\) \|\| derivedLabel\(snippet\.body\); \}/);
   assert.match(html, /id="editor-name" class="editor-name-action"[^>]*aria-label="Rename"[^>]*data-tooltip="Rename"/);
+  assert.match(html, /<label class="sr-only" for="editor-name-input">Title<\/label>/);
   assert.match(html, /id="editor-name-input" class="editor-name-input"[^>]*maxlength="160"[^>]*hidden/);
   assert.doesNotMatch(html, /id="rename-dialog"/);
   assert.match(source, /event\.key === "Enter"[\s\S]*?finishInlineRename\(\)/);
   assert.match(source, /event\.key === "Escape"[\s\S]*?finishInlineRename\(\{ cancel: true \}\)/);
-  assert.match(source, /const unchangedAutomaticName = !inlineRenameBaseline\.trim\(\) && enteredName === derivedLabel/);
-  assert.match(source, /editorCustomName = cancel \? inlineRenameBaseline : unchangedAutomaticName \? "" : enteredName/);
+  assert.match(source, /\$\("editor-name"\)\.textContent = editorCustomName\.trim\(\) \|\| "Untitled"/);
+  assert.match(source, /\$\("editor-name-input"\)\.value = editorCustomName;/);
+  assert.match(source, /editorCustomName = cancel \? inlineRenameBaseline : enteredName/);
+  assert.doesNotMatch(source, /unchangedAutomaticName/);
 });
 
 test("web rows open on click and Enter while their chevron and Right Arrow use the item", () => {
@@ -186,6 +189,7 @@ test("content editing keeps the same plain-text scale and vertical rhythm", () =
 
 test("mobile Back glyph aligns with the content gutter", () => {
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.viewer-back \{ margin-left: -9px; \}/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.viewer-back svg \{ transform: translateX\(-1px\); \}/);
 });
 
 test("sidebar Linksaw mark links home before the account control", () => {

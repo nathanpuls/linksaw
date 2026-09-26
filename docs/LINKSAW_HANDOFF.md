@@ -71,7 +71,7 @@ The Apple Shortcut named **Save to Linksaw** reads the clipboard, stops when it 
 - Product name in the app: **Linksaw**.
 - The saved object is a **snippet**, not an item, link, card, record, or note.
 - Its two fields are **Title** and **Content**.
-- Title is optional. When absent, the first content line is the result label (trimmed to a compact display length).
+- Title is optional and is never populated automatically. When absent, the first content line is used only as the result label (trimmed to a compact display length); it is not displayed as a separate heading or stored as Title.
 - A title-only snippet is accepted and remains usable, although ordinary snippets center on content. CSV import currently requires a Content column.
 - Linksaw's current product model is only an optional Title and Content. Nathan explicitly confirmed that `$` query mode and Trigger Search-style dynamic placeholders are predecessor behavior and must not be carried into the web app. The desktop source still contains some of that legacy behavior and should be cleaned up in a separate, deliberately tested desktop change.
 
@@ -99,9 +99,10 @@ Avoid renaming established concepts without a concrete user need. In particular,
 
 ### Editor
 
-- Sparse, single-column editing surface with Title and Content.
-- Title is visually prominent and borderless; Content is the one main scrolling writing region.
-- The editor's close control is an `X` at top right so the left edge remains free for the title.
+- Sparse, single-column editing surface centered on Content. Title is an optional stored field exposed through the quiet Rename action rather than a permanent second input.
+- Until the user explicitly sets a Title, the editor header remains **Untitled**. The first content line may label the snippet in lists but must not silently become a custom Title.
+- View and public-share pages render a title heading only when the user explicitly set one.
+- The editor's close control is an `X` at top right.
 - Delete and Save stay in a fixed footer. Delete requires confirmation.
 - A save in progress locks editing. A failed save preserves the draft.
 - Closing a changed draft, closing the window, or quitting offers Save, Discard, or Keep editing. Quit completes only after a successful requested save.

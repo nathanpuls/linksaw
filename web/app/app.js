@@ -313,7 +313,7 @@ function closeSurface(id) {
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
 function syncEditorName() {
-  $("editor-name").textContent = editorCustomName.trim() || derivedLabel($("snippet-body").value);
+  $("editor-name").textContent = editorCustomName.trim() || "Untitled";
 }
 function editorSnapshot() {
   const title = $("editor-name-input").hidden ? editorCustomName : $("editor-name-input").value.trim();
@@ -473,8 +473,7 @@ async function navigateAfterSave(destination) {
 function beginInlineRename() {
   hideTooltip();
   inlineRenameBaseline = editorCustomName;
-  const automaticName = derivedLabel($("snippet-body").value);
-  $("editor-name-input").value = editorCustomName || (automaticName === "Untitled" ? "" : automaticName);
+  $("editor-name-input").value = editorCustomName;
   $("editor-name").hidden = true;
   $("editor-name-input").hidden = false;
   $("editor-name-input").focus();
@@ -482,8 +481,7 @@ function beginInlineRename() {
 }
 function finishInlineRename({ cancel = false } = {}) {
   const enteredName = $("editor-name-input").value.trim();
-  const unchangedAutomaticName = !inlineRenameBaseline.trim() && enteredName === derivedLabel($("snippet-body").value);
-  editorCustomName = cancel ? inlineRenameBaseline : unchangedAutomaticName ? "" : enteredName;
+  editorCustomName = cancel ? inlineRenameBaseline : enteredName;
   $("editor-name-input").hidden = true;
   $("editor-name").hidden = false;
   syncEditorName();

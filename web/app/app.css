@@ -215,6 +215,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .viewer-content { height: 100dvh; }
   .viewer-back { display: inline-grid; }
   .viewer-back { margin-left: -9px; }
+  .viewer-back svg { transform: translateX(-1px); }
   .reader-toggle { display: none; }
   .viewer-header, .surface-header { height: 64px; min-height: 64px; padding: 8px 12px 7px 16px; }
   .viewer-actions { gap: 0; }

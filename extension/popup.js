@@ -5,7 +5,7 @@ const icons = { plus: svg('<path d="M5 12h14M12 5v14"/>'), copy: svg('<rect widt
 icons.open = svg('<path d="m9 18 6-6-6-6"/>');
 $('new').innerHTML = icons.plus;
 $('website').innerHTML = icons.settings;
-let snippets = [], selected = 0, tabId, tooltipTimer, tooltipTarget, statusTimer;
+let snippets = [], selected = 0, tabId, tooltipTimer, tooltipTarget, statusTimer, refreshInFlight = false, hasLoaded = false;
 const status = message => { clearTimeout(statusTimer); $('status').textContent = message; if (/^Copied/.test(message)) statusTimer = setTimeout(() => { $('status').textContent = ''; }, 1800); };
 function hideTooltip() { clearTimeout(tooltipTimer); tooltipTarget = null; $('linksaw-tooltip').hidden = true; }
 function showTooltip(target) {
@@ -30,6 +30,7 @@ const label = snippet => snippet.title.trim() || snippet.body.trim().split(/\r?\
 function urlFor(text) { const value = text.trim(); if (/^https?:\/\/[^\s]+$/i.test(value)) return value; if (/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(value)) return `https://${value}`; return ''; }
 function openInLinksaw(snippet) { return chrome.tabs.create({ url: `https://linksaw.com/home/?snippet=${snippet.id}` }).then(() => window.close()); }
 function filtered() { const q = $('search').value.trim().toLowerCase(); return snippets.map((item, order) => ({ item, order, rank: !q ? 0 : label(item).toLowerCase() === q ? 0 : label(item).toLowerCase().startsWith(q) ? 1 : label(item).toLowerCase().includes(q) ? 2 : item.body.toLowerCase().includes(q) ? 3 : 99 })).filter(x => x.rank < 99).sort((a,b) => a.rank - b.rank || a.order - b.order).map(x => x.item); }
+function libraryFingerprint(items) { return JSON.stringify(items.map(item => [item.id, item.title, item.body, item.version, item.updated_at, item.share_token])); }
 async function api(path) {
   const response = await fetch(API + path, { credentials: 'include' });
   const data = await response.json().catch(() => ({}));
@@ -87,9 +88,28 @@ function render() {
     row.append(main, useButton); $('results').append(row);
   });
 }
-async function refresh() {
-  try { status(''); snippets = (await api('/snippets')).snippets; $('login').hidden = true; render(); }
-  catch (error) { $('login').hidden = false; status(error.message === 'Sign in required' ? 'Sign in on the Linksaw website, then reopen this popup' : error.message); }
+async function refresh({ quiet = false } = {}) {
+  if (refreshInFlight) return;
+  refreshInFlight = true;
+  try {
+    const selectedId = filtered()[selected]?.id;
+    const incoming = (await api('/snippets')).snippets;
+    const changed = !hasLoaded || libraryFingerprint(snippets) !== libraryFingerprint(incoming);
+    const wasSignedOut = !$('login').hidden;
+    hasLoaded = true;
+    if (changed) {
+      snippets = incoming;
+      const found = filtered();
+      const nextSelected = found.findIndex(item => item.id === selectedId);
+      selected = nextSelected >= 0 ? nextSelected : Math.min(selected, Math.max(0, found.length - 1));
+      render();
+    }
+    $('login').hidden = true;
+    if (!quiet || wasSignedOut) status('');
+  } catch (error) {
+    $('login').hidden = false;
+    status(error.message === 'Sign in required' ? 'Sign in on the Linksaw website, then reopen this popup' : error.message);
+  } finally { refreshInFlight = false; }
 }
 $('login').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/login' }));
 $('website').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/?website=1' }));
@@ -104,3 +124,5 @@ $('search').addEventListener('keydown', event => {
 const [active] = await chrome.tabs.query({ active: true, currentWindow: true }); tabId = active?.id;
 await refresh();
 $('search').focus();
+setInterval(() => { if (!document.hidden) void refresh({ quiet: true }); }, 3000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) void refresh({ quiet: true }); });
