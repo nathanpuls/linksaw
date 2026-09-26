@@ -312,7 +312,7 @@ function closeSurface(id) {
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
 function syncEditorName() {
-  $("editor-name").textContent = editorCustomName.trim() || "Untitled";
+  $("editor-name").textContent = editorCustomName.trim() || "Title";
 }
 function editorSnapshot() {
   const title = $("editor-name-input").hidden ? editorCustomName : $("editor-name-input").value.trim();

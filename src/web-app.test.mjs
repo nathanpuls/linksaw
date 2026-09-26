@@ -51,7 +51,7 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.doesNotMatch(html, /id="rename-dialog"/);
   assert.match(source, /event\.key === "Enter"[\s\S]*?finishInlineRename\(\)/);
   assert.match(source, /event\.key === "Escape"[\s\S]*?finishInlineRename\(\{ cancel: true \}\)/);
-  assert.match(source, /\$\("editor-name"\)\.textContent = editorCustomName\.trim\(\) \|\| "Untitled"/);
+  assert.match(source, /\$\("editor-name"\)\.textContent = editorCustomName\.trim\(\) \|\| "Title"/);
   assert.match(source, /\$\("editor-name-input"\)\.value = editorCustomName;/);
   assert.match(source, /editorCustomName = cancel \? inlineRenameBaseline : enteredName/);
   assert.doesNotMatch(source, /unchangedAutomaticName/);
