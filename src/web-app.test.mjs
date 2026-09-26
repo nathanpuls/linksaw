@@ -197,13 +197,13 @@ test("mobile Back glyph aligns with the content gutter", () => {
 test("mobile view and edit are distinct states on one stable visual surface", () => {
   assert.match(html, /id="editor-copy"[^>]*class="icon-button mobile-editor-action"[^>]*aria-label="Copy snippet"/);
   assert.match(html, /id="editor-share"[^>]*class="icon-button mobile-editor-action"[^>]*aria-label="Share"/);
-  assert.match(html, /id="mobile-snippet-view" class="content-input mobile-snippet-view" role="button" tabindex="0" aria-label="Edit snippet text" hidden/);
+  assert.match(html, /id="mobile-snippet-view" class="content-input mobile-snippet-view markdown-body" role="button" tabindex="0" aria-label="Edit snippet text" hidden/);
   assert.match(source, /function openPreview\(snippet, pushHistory = true\) \{[\s\S]*?if \(narrowLayout\(\)\) \{ openEditor\(snippet, pushHistory, \{ focus: false \}\); return; \}/);
   assert.match(source, /\$\("editor"\)\.classList\.toggle\("mobile-unified", mobileUnified\)/);
   assert.match(source, /\$\("close-editor"\)\.innerHTML = icons\[mobileUnified \? "back" : "close"\]/);
   assert.match(source, /function setMobileEditorState\(editing\)[\s\S]*?classList\.toggle\("is-editing", editing\)[\s\S]*?aria-hidden/);
   assert.match(source, /function enterMobileEdit\(offset[\s\S]*?setMobileEditorState\(true\)[\s\S]*?focus\(\{ preventScroll: true \}\)[\s\S]*?setSelectionRange\(offset, offset\)/);
-  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("click", \(\) => enterMobileEdit\(\)\)/);
+  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("click", event => \{[\s\S]*?!event\.target\.closest\?\.\("a"\)[\s\S]*?enterMobileEdit\(\)/);
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("focus"[\s\S]*?setMobileEditorState\(true\)/);
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("blur"[\s\S]*?setMobileEditorState\(false\)/);
   assert.match(source, /visualViewport\?\.addEventListener\("resize"[\s\S]*?document\.activeElement !== input[\s\S]*?input\.blur\(\)/);
@@ -212,8 +212,14 @@ test("mobile view and edit are distinct states on one stable visual surface", ()
   assert.match(css, /#editor\.mobile-unified \.surface-inner \{ display: grid; grid-template-rows: auto minmax\(0, 1fr\) auto; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #snippet-body \{ color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; pointer-events: none; \}/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view a \{ pointer-events: auto; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-editor-action \{ display: inline-grid; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #editor-undo,[\s\S]*?#editor\.mobile-unified:not\(\.is-editing\) #editor-redo \{ display: none; \}/);
+});
+
+test("mobile view preserves safe automatic links without sacrificing one-tap editing", () => {
+  assert.match(source, /renderMarkdown\(\$\("mobile-snippet-view"\), \$\("snippet-body"\)\.value\)/);
+  assert.match(css, /\.preview-body a, \.mobile-snippet-view a \{[^}]*text-decoration: underline;/);
 });
 
 test("viewer text enters desktop editing at the clicked caret without hijacking links", () => {
@@ -250,7 +256,7 @@ test("viewer uses safe Markdown plus shared QK-style linkification and underline
   assert.match(linkifier, /const PROTOCOL_URL =/);
   assert.match(linkifier, /const PHONE =/);
   assert.match(linkifier, /const STREET_ADDRESS =/);
-  assert.match(css, /\.preview-body a \{[^}]*text-decoration-thickness: 1\.2px;[^}]*text-decoration-skip-ink: none;[^}]*word-break: break-word;/);
+  assert.match(css, /\.preview-body a, \.mobile-snippet-view a \{[^}]*text-decoration-thickness: 1\.2px;[^}]*text-decoration-skip-ink: none;[^}]*word-break: break-word;/);
 });
 
 test("settings offers working CSV and JSON transfer controls", () => {

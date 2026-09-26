@@ -91,8 +91,8 @@ button { color: inherit; }
 .viewer-delete { margin-left: 9px; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
 .preview-body { width: min(900px, 100%); margin: 0; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
-.preview-body a { color: inherit; text-decoration: underline; text-decoration-color: var(--control); text-decoration-thickness: 1.2px; text-underline-offset: 2px; text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; cursor: pointer; word-break: break-word; }
-.preview-body a:hover, .preview-body a:focus-visible { text-decoration-color: currentColor; }
+.preview-body a, .mobile-snippet-view a { color: inherit; text-decoration: underline; text-decoration-color: var(--control); text-decoration-thickness: 1.2px; text-underline-offset: 2px; text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; cursor: pointer; word-break: break-word; }
+.preview-body a:hover, .preview-body a:focus-visible, .mobile-snippet-view a:hover, .mobile-snippet-view a:focus-visible { text-decoration-color: currentColor; }
 .markdown-body > :first-child { margin-top: 0; }
 .markdown-body > :last-child { margin-bottom: 0; }
 .markdown-body p { margin: 0 0 1em; white-space: pre-wrap; }
@@ -216,6 +216,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   #editor .surface-header, #editor .surface-footer { flex: 0 0 auto; }
   #editor .content-input { min-height: 0; }
   #editor.mobile-unified:not(.is-editing) .mobile-snippet-view { display: block; pointer-events: none; }
+  #editor.mobile-unified:not(.is-editing) .mobile-snippet-view a { pointer-events: auto; }
   #editor.mobile-unified:not(.is-editing) #snippet-body { color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; }
   #editor .surface-footer { min-height: 68px; padding: 10px 16px max(10px, env(safe-area-inset-bottom)); background: var(--paper); }
   .viewer-content { height: 100dvh; }

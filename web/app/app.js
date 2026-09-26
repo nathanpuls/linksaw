@@ -506,7 +506,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   state.editorContext = defaultDraft ? "default" : mobileUnified ? "mobile" : "routed";
   $("editor").classList.toggle("mobile-unified", mobileUnified);
   $("editor").classList.toggle("is-editing", mobileUnified && focus);
-  $("mobile-snippet-view").textContent = $("snippet-body").value;
+  renderMarkdown($("mobile-snippet-view"), $("snippet-body").value);
   $("mobile-snippet-view").hidden = !mobileUnified;
   $("mobile-snippet-view").setAttribute("aria-hidden", mobileUnified && !focus ? "false" : "true");
   $("mobile-snippet-view").tabIndex = mobileUnified && !focus ? 0 : -1;
@@ -814,7 +814,7 @@ for (const input of [$("snippet-body"), $("editor-name-input")]) {
   });
 }
 $("snippet-body").addEventListener("input", () => {
-  $("mobile-snippet-view").textContent = $("snippet-body").value;
+  renderMarkdown($("mobile-snippet-view"), $("snippet-body").value);
   if (!editorCustomName.trim()) syncEditorName();
   scheduleAutosave();
 });
@@ -835,7 +835,9 @@ function enterMobileEdit(offset = $("snippet-body").value.length) {
   input.setSelectionRange(offset, offset);
   requestAnimationFrame(() => input.setSelectionRange(offset, offset));
 }
-$("mobile-snippet-view").addEventListener("click", () => enterMobileEdit());
+$("mobile-snippet-view").addEventListener("click", event => {
+  if (!event.target.closest?.("a")) enterMobileEdit();
+});
 $("mobile-snippet-view").addEventListener("keydown", event => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); enterMobileEdit(); }
 });
@@ -844,7 +846,7 @@ $("snippet-body").addEventListener("focus", () => {
 });
 $("snippet-body").addEventListener("blur", () => {
   if (!$("editor").classList.contains("mobile-unified")) return;
-  $("mobile-snippet-view").textContent = $("snippet-body").value;
+  renderMarkdown($("mobile-snippet-view"), $("snippet-body").value);
   setMobileEditorState(false);
 });
 window.visualViewport?.addEventListener("resize", () => {
