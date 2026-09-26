@@ -200,14 +200,24 @@ test("mobile view and edit are distinct states on one stable visual surface", ()
   assert.match(source, /\$\("editor"\)\.classList\.toggle\("mobile-unified", mobileUnified\)/);
   assert.match(source, /\$\("close-editor"\)\.innerHTML = icons\[mobileUnified \? "back" : "close"\]/);
   assert.match(source, /function mobileCaretOffset\(event\)[\s\S]*?caretPositionFromPoint[\s\S]*?caretRangeFromPoint/);
-  assert.match(source, /function enterMobileEdit\(offset[\s\S]*?classList\.add\("is-editing"\)[\s\S]*?setSelectionRange\(offset, offset\)/);
+  assert.match(source, /function setMobileEditorState\(editing\)[\s\S]*?classList\.toggle\("is-editing", editing\)[\s\S]*?aria-hidden/);
+  assert.match(source, /function enterMobileEdit\(offset[\s\S]*?setMobileEditorState\(true\)[\s\S]*?focus\(\{ preventScroll: true \}\)[\s\S]*?setSelectionRange\(offset, offset\)/);
   assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("pointerdown"[\s\S]*?mobileCaretOffset\(event\)[\s\S]*?enterMobileEdit\(offset\)/);
-  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("blur"[\s\S]*?\$\("snippet-body"\)\.hidden = true[\s\S]*?classList\.remove\("is-editing"\)/);
+  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("blur"[\s\S]*?setMobileEditorState\(false\)/);
+  assert.match(source, /visualViewport\?\.addEventListener\("resize"[\s\S]*?document\.activeElement !== input[\s\S]*?input\.blur\(\)/);
   assert.match(source, /updateUrl\(\{ view: state\.editorContext === "mobile" \? null : "edit", snippet: savedSnippet\.id \}, false\)/);
   assert.match(css, /\.mobile-snippet-view \{[^}]*white-space: pre-wrap;[^}]*cursor: text;/);
+  assert.match(css, /#editor\.mobile-unified \.surface-inner \{ display: grid; grid-template-rows: auto minmax\(0, 1fr\) auto; \}/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #snippet-body \{ visibility: hidden; pointer-events: none; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-editor-action \{ display: inline-grid; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #editor-undo,[\s\S]*?#editor\.mobile-unified:not\(\.is-editing\) #editor-redo \{ display: none; \}/);
+});
+
+test("viewer text enters desktop editing at the clicked caret without hijacking links", () => {
+  assert.match(source, /\$\("preview-body"\)\.addEventListener\("click"[\s\S]*?event\.target\.closest\?\.\("a"\)[\s\S]*?narrowLayout\(\)/);
+  assert.match(source, /document\.caretPositionFromPoint[\s\S]*?document\.caretRangeFromPoint/);
+  assert.match(source, /openEditor\(snippet, true, \{ focus: false \}\)[\s\S]*?\$\("snippet-body"\)\.focus\(\{ preventScroll: true \}\)[\s\S]*?setSelectionRange\(offset, offset\)/);
 });
 
 test("sidebar Linksaw mark links home before the account control", () => {

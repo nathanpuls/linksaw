@@ -507,8 +507,12 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   $("editor").classList.toggle("mobile-unified", mobileUnified);
   $("editor").classList.toggle("is-editing", mobileUnified && focus);
   $("mobile-snippet-view").textContent = $("snippet-body").value;
-  $("mobile-snippet-view").hidden = !mobileUnified || focus;
-  $("snippet-body").hidden = mobileUnified && !focus;
+  $("mobile-snippet-view").hidden = !mobileUnified;
+  $("mobile-snippet-view").setAttribute("aria-hidden", mobileUnified && !focus ? "false" : "true");
+  $("mobile-snippet-view").tabIndex = mobileUnified && !focus ? 0 : -1;
+  $("snippet-body").hidden = false;
+  $("snippet-body").setAttribute("aria-hidden", mobileUnified && !focus ? "true" : "false");
+  $("snippet-body").tabIndex = mobileUnified && !focus ? -1 : 0;
   $("close-editor").innerHTML = icons[mobileUnified ? "back" : "close"];
   $("close-editor").ariaLabel = mobileUnified ? "Back to snippets" : "Close editor";
   $("close-editor").dataset.tooltip = mobileUnified ? "Back to snippets" : "Close editor";
@@ -758,6 +762,26 @@ $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 $("preview-delete").addEventListener("click", () => deleteSnippet(state.previewing));
+$("preview-body").addEventListener("click", event => {
+  if (event.target.closest?.("a") || !state.previewing || narrowLayout()) return;
+  const point = document.caretPositionFromPoint?.(event.clientX, event.clientY);
+  const range = document.caretRangeFromPoint?.(event.clientX, event.clientY);
+  const node = point?.offsetNode || range?.startContainer;
+  const nodeOffset = point?.offset ?? range?.startOffset ?? state.previewing.body.length;
+  let offset = state.previewing.body.length;
+  if (node && $("preview-body").contains(node)) {
+    const prefix = document.createRange();
+    prefix.selectNodeContents($("preview-body"));
+    prefix.setEnd(node, nodeOffset);
+    offset = Math.min(prefix.toString().length, state.previewing.body.length);
+  }
+  const snippet = state.previewing;
+  openEditor(snippet, true, { focus: false });
+  requestAnimationFrame(() => {
+    $("snippet-body").focus({ preventScroll: true });
+    $("snippet-body").setSelectionRange(offset, offset);
+  });
+});
 $("editor-copy").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText($("snippet-body").value);
@@ -802,13 +826,22 @@ function mobileCaretOffset(event) {
   if (range?.startContainer === view.firstChild) return range.startOffset;
   return view.textContent.length;
 }
+function setMobileEditorState(editing) {
+  const view = $("mobile-snippet-view");
+  const input = $("snippet-body");
+  $("editor").classList.toggle("is-editing", editing);
+  view.setAttribute("aria-hidden", editing ? "true" : "false");
+  view.tabIndex = editing ? -1 : 0;
+  input.setAttribute("aria-hidden", editing ? "false" : "true");
+  input.tabIndex = editing ? 0 : -1;
+}
 function enterMobileEdit(offset = $("snippet-body").value.length) {
   if (!$("editor").classList.contains("mobile-unified")) return;
-  $("mobile-snippet-view").hidden = true;
-  $("snippet-body").hidden = false;
-  $("editor").classList.add("is-editing");
-  $("snippet-body").focus({ preventScroll: true });
-  $("snippet-body").setSelectionRange(offset, offset);
+  const input = $("snippet-body");
+  setMobileEditorState(true);
+  input.focus({ preventScroll: true });
+  input.setSelectionRange(offset, offset);
+  requestAnimationFrame(() => input.setSelectionRange(offset, offset));
 }
 $("mobile-snippet-view").addEventListener("pointerdown", event => {
   const offset = mobileCaretOffset(event);
@@ -821,9 +854,12 @@ $("mobile-snippet-view").addEventListener("keydown", event => {
 $("snippet-body").addEventListener("blur", () => {
   if (!$("editor").classList.contains("mobile-unified")) return;
   $("mobile-snippet-view").textContent = $("snippet-body").value;
-  $("snippet-body").hidden = true;
-  $("mobile-snippet-view").hidden = false;
-  $("editor").classList.remove("is-editing");
+  setMobileEditorState(false);
+});
+window.visualViewport?.addEventListener("resize", () => {
+  const input = $("snippet-body");
+  if (!$("editor").classList.contains("mobile-unified") || document.activeElement !== input) return;
+  if (window.visualViewport.height >= document.documentElement.clientHeight - 80) input.blur();
 });
 $("editor-name-input").addEventListener("input", scheduleAutosave);
 $("editor-form").addEventListener("submit", event => { event.preventDefault(); void saveEditorNow(); });
