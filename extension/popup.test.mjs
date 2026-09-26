@@ -82,6 +82,12 @@ test('manifest limits fetch permission to the API and installs the autocomplete 
   assert.match(contentSource, /pointerenter[\s\S]*selected = index/);
 });
 
+test('Chrome extension uses the current Linksaw brand icon', () => {
+  const extensionIcon = readFileSync(new URL('./icon.png', import.meta.url));
+  const websiteIcon = readFileSync(new URL('../web/app/favicon.png', import.meta.url));
+  assert.deepEqual(extensionIcon, websiteIcon);
+});
+
 test('background registers contextual save actions and posts captured snippets', () => {
   assert.match(backgroundSource, /Save selection to Linksaw/);
   assert.match(backgroundSource, /Save page to Linksaw/);
