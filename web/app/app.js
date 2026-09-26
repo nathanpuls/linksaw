@@ -51,7 +51,7 @@ let localInputGroup = null;
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "back");
-icon("editor-reader-toggle", "panelLeft"); icon("editor-copy", "copy"); icon("editor-share", "share"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash");
+icon("editor-reader-toggle", "panelLeft"); icon("editor-copy", "copy"); icon("editor-share", "share"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash"); icon("mobile-delete", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
 $("preview-copy").dataset.shortcut = commandShortcut("C");
@@ -327,7 +327,21 @@ function clearEditorDraft(key = editorDraftKey()) { localStorage.removeItem(key)
 function editorValue() { return JSON.parse(editorSnapshot()); }
 function setEditorStatus(status) {
   $("editor-status-text").textContent = status;
-  $("editor-retry").hidden = status !== "Couldn’t save ·";
+  $("mobile-editor-status-text").textContent = status;
+  $("mobile-editor-status").hidden = !status;
+  setEditorRetryVisible(status === "Couldn’t save ·");
+}
+function setEditorRetryVisible(visible) {
+  $("editor-retry").hidden = !visible;
+  $("mobile-editor-retry").hidden = !visible;
+}
+function setEditorRetryLabel(label) {
+  $("editor-retry").textContent = label;
+  $("mobile-editor-retry").textContent = label;
+}
+function setEditorDeleteVisible(visible) {
+  $("delete").hidden = !visible;
+  $("mobile-delete").hidden = !visible;
 }
 function syncHistoryControls() {
   $("editor-undo").disabled = !localUndo.length && !state.editing?.can_undo;
@@ -358,7 +372,7 @@ function scheduleAutosave() {
   clearTimeout(autosaveTimer);
   saveFailed = false;
   editorConflict = null;
-  $("editor-retry").hidden = true;
+  setEditorRetryVisible(false);
   persistEditorDraft();
   if (saveInFlight) saveAgain = true;
   autosaveTimer = setTimeout(() => { void saveEditorNow(); }, 700);
@@ -405,7 +419,7 @@ async function runSaveLoop(sessionId) {
       editorConflict = null;
       clearEditorDraft();
       upsertSavedSnippet(savedSnippet);
-      $("delete").hidden = false;
+      setEditorDeleteVisible(true);
       $("unshare").hidden = !savedSnippet.share_token;
       if (wasNew && state.editorContext !== "default") {
         updateUrl({ view: state.editorContext === "mobile" ? null : "edit", snippet: savedSnippet.id }, false);
@@ -428,8 +442,8 @@ async function runSaveLoop(sessionId) {
       saveFailed = true;
       editorConflict = conflict;
       setEditorStatus(editorConflict ? "Changed elsewhere ·" : "Couldn’t save ·");
-      $("editor-retry").textContent = editorConflict ? "Save mine" : "Retry";
-      $("editor-retry").hidden = false;
+      setEditorRetryLabel(editorConflict ? "Save mine" : "Retry");
+      setEditorRetryVisible(true);
       persistEditorDraft();
       return false;
     }
@@ -518,7 +532,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   $("close-editor").dataset.tooltip = mobileUnified ? "Back to snippets" : "Close editor";
   $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
   $("close-editor").hidden = defaultDraft;
-  $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; setEditorStatus("");
+  setEditorDeleteVisible(Boolean(snippet)); $("unshare").hidden = !snippet?.share_token; setEditorStatus("");
   $("editor-name-input").hidden = true; $("editor-name").hidden = false; syncEditorName(); showSurface("editor");
   editorBaseline = editorSnapshot();
   try {
@@ -697,8 +711,8 @@ async function syncFromServer() {
           editorConflict = remote;
           saveFailed = true;
           setEditorStatus("Changed elsewhere ·");
-          $("editor-retry").textContent = "Save mine";
-          $("editor-retry").hidden = false;
+          setEditorRetryLabel("Save mine");
+          setEditorRetryVisible(true);
           persistEditorDraft();
         } else {
           state.editing = remote;
@@ -723,8 +737,8 @@ async function syncFromServer() {
     if (!$('editor').hidden && editorSnapshot() !== editorBaseline) {
       saveFailed = true;
       setEditorStatus("Couldn’t sync ·");
-      $("editor-retry").textContent = "Retry";
-      $("editor-retry").hidden = false;
+      setEditorRetryLabel("Retry");
+      setEditorRetryVisible(true);
       persistEditorDraft();
     }
   } finally { syncInFlight = false; }
@@ -933,6 +947,7 @@ $("editor-retry").addEventListener("click", async () => {
     destination();
   }
 });
+$("mobile-editor-retry").addEventListener("click", () => $("editor-retry").click());
 let confirmationResolver;
 let confirmationReturnFocus;
 function requestConfirmation({ title, message, action }) {
@@ -983,6 +998,7 @@ async function deleteSnippet(snippet) {
   }
 }
 $("delete").addEventListener("click", () => deleteSnippet(state.editing));
+$("mobile-delete").addEventListener("click", () => deleteSnippet(state.editing));
 $("toast-action").addEventListener("click", async () => {
   if (!pendingUndo) return;
   const undo = pendingUndo;

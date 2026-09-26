@@ -66,11 +66,13 @@
         <button id="editor-name" class="editor-name-action" type="button" aria-label="Rename" data-tooltip="Rename"></button>
         <label class="sr-only" for="editor-name-input">Title</label>
         <input id="editor-name-input" class="editor-name-input" type="text" maxlength="160" autocomplete="off" hidden>
+        <p id="mobile-editor-status" class="editor-status mobile-editor-status" role="status" aria-live="polite" hidden><span id="mobile-editor-status-text"></span><button id="mobile-editor-retry" class="editor-retry" type="button" hidden>Retry</button></p>
         <div class="editor-actions">
           <button id="editor-copy" class="icon-button mobile-editor-action" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
           <button id="editor-share" class="icon-button mobile-editor-action" type="button" aria-label="Share" data-tooltip="Share"></button>
           <button id="editor-undo" class="icon-button" type="button" aria-label="Undo" data-tooltip="Undo" disabled></button>
           <button id="editor-redo" class="icon-button" type="button" aria-label="Redo" data-tooltip="Redo" disabled></button>
+          <button id="mobile-delete" class="icon-button delete-action mobile-delete" type="button" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
         </div>
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
       </header>
@@ -190,6 +192,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260926-11"></script>
+  <script type="module" src="/app/app.js?v=20260926-12"></script>
 </body>
 </html>

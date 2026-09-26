@@ -126,6 +126,7 @@ button { color: inherit; }
 .editor-name-input:focus { border-color: var(--focus); outline: 0; box-shadow: none; }
 .editor-actions { display: flex; align-items: center; gap: 1px; }
 .mobile-editor-action { display: none; }
+.mobile-editor-status, .mobile-delete { display: none; }
 .icon-button:disabled { color: var(--control); cursor: default; }
 .icon-button:disabled:hover { color: var(--control); }
 .content-input { flex: 1; min-width: 0; min-height: 260px; width: min(900px, 100%); max-width: 100%; resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
@@ -210,19 +211,18 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   #editor { left: 0; }
   #editor { height: 100dvh; overflow: hidden; }
   #editor .surface-inner { height: 100%; min-height: 0; }
-  #editor.mobile-unified .surface-inner { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+  #editor.mobile-unified .surface-inner { display: grid; grid-template-rows: auto minmax(0, 1fr); }
   #editor.mobile-unified .surface-header { grid-row: 1; }
   #editor.mobile-unified .content-input { grid-row: 2; grid-column: 1; align-self: stretch; justify-self: stretch; }
   #editor.mobile-unified #snippet-body { z-index: 0; }
   #editor.mobile-unified .mobile-snippet-view { z-index: 1; }
-  #editor.mobile-unified .surface-footer { grid-row: 3; }
-  #editor .surface-header, #editor .surface-footer { flex: 0 0 auto; }
+  #editor .surface-header { flex: 0 0 auto; }
   #editor .editor-name-input { width: auto; flex: 1; }
   #editor .content-input { min-height: 0; }
   #editor.mobile-unified:not(.is-editing) .mobile-snippet-view { display: block; pointer-events: none; }
   #editor.mobile-unified:not(.is-editing) .mobile-snippet-view a { pointer-events: auto; }
   #editor.mobile-unified:not(.is-editing) #snippet-body { color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; }
-  #editor .surface-footer { min-height: 68px; padding: 10px 16px max(10px, env(safe-area-inset-bottom)); background: var(--paper); }
+  #editor .surface-footer { display: none; }
   .viewer-content { height: 100dvh; }
   .viewer-back { display: inline-grid; }
   .viewer-back { margin-left: -9px; }
@@ -231,6 +231,10 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .viewer-header, .surface-header { height: 64px; min-height: 64px; padding: 8px 12px 7px 16px; }
   #editor.mobile-unified:not(.is-editing) .mobile-editor-action { display: inline-grid; }
   #editor.mobile-unified.is-editing .mobile-editor-action { display: none; }
+  #editor.mobile-unified .mobile-editor-status { min-width: 0; flex: 0 1 auto; overflow: hidden; padding: 0 2px; white-space: nowrap; font-size: 12px; }
+  #editor.mobile-unified .mobile-delete { display: inline-grid; margin-left: 5px; }
+  #editor.mobile-unified .editor-actions { flex: 0 0 auto; }
+  #editor.mobile-unified .editor-header { gap: 3px; }
   #editor.mobile-unified:not(.is-editing) #editor-undo,
   #editor.mobile-unified:not(.is-editing) #editor-redo { display: none; }
   #editor.mobile-unified #close-editor { order: -1; margin-left: -9px; }

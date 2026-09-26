@@ -88,12 +88,19 @@ test("viewer delete is last, reversible, and restores stored metadata", () => {
 
 test("mobile editor keeps destructive and save actions inside the viewport", () => {
   assert.match(html, /id="delete" class="icon-button delete-action"[^>]*aria-label="Delete snippet"[^>]*data-tooltip="Delete snippet"/);
-  assert.match(source, /trash: '<svg[\s\S]*?icon\("delete", "trash"\)/);
+  assert.match(html, /id="mobile-editor-status"[^>]*class="editor-status mobile-editor-status"[^>]*aria-live="polite"[^>]*hidden/);
+  assert.match(html, /id="mobile-delete" class="icon-button delete-action mobile-delete"[^>]*aria-label="Delete snippet"[^>]*data-tooltip="Delete snippet"[^>]*hidden/);
+  assert.match(source, /trash: '<svg[\s\S]*?icon\("delete", "trash"\); icon\("mobile-delete", "trash"\)/);
+  assert.match(source, /function setEditorStatus\(status\)[\s\S]*?mobile-editor-status-text[\s\S]*?mobile-editor-status/);
+  assert.match(source, /function setEditorDeleteVisible\(visible\)[\s\S]*?mobile-delete/);
+  assert.match(source, /\$\("mobile-delete"\)\.addEventListener\("click", \(\) => deleteSnippet\(state\.editing\)\)/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?#editor \{ height: 100dvh; overflow: hidden; \}/);
   assert.match(css, /#editor \.surface-inner \{ height: 100%; min-height: 0; \}/);
-  assert.match(css, /#editor \.surface-header, #editor \.surface-footer \{ flex: 0 0 auto; \}/);
+  assert.match(css, /#editor \.surface-header \{ flex: 0 0 auto; \}/);
+  assert.match(css, /#editor \.surface-footer \{ display: none; \}/);
+  assert.match(css, /#editor\.mobile-unified \.mobile-editor-status \{[^}]*font-size: 12px;/);
+  assert.match(css, /#editor\.mobile-unified \.mobile-delete \{ display: inline-grid;/);
   assert.match(css, /#editor \.content-input \{ min-height: 0; \}/);
-  assert.match(css, /env\(safe-area-inset-bottom\)/);
 });
 
 test("destructive actions use branded cancellable dialogs", () => {
@@ -220,7 +227,7 @@ test("mobile view and edit are distinct states on one stable visual surface", ()
   assert.match(source, /visualViewport\?\.addEventListener\("resize"[\s\S]*?document\.activeElement !== input[\s\S]*?input\.blur\(\)/);
   assert.match(source, /updateUrl\(\{ view: state\.editorContext === "mobile" \? null : "edit", snippet: savedSnippet\.id \}, false\)/);
   assert.match(css, /\.mobile-snippet-view \{[^}]*overflow: auto;[^}]*cursor: text;/);
-  assert.match(css, /#editor\.mobile-unified \.surface-inner \{ display: grid; grid-template-rows: auto minmax\(0, 1fr\) auto; \}/);
+  assert.match(css, /#editor\.mobile-unified \.surface-inner \{ display: grid; grid-template-rows: auto minmax\(0, 1fr\); \}/);
   assert.match(css, /#editor\.mobile-unified #snippet-body \{ z-index: 0; \}/);
   assert.match(css, /#editor\.mobile-unified \.mobile-snippet-view \{ z-index: 1; \}/);
   assert.match(css, /\.content-input \{[^}]*min-width: 0;[^}]*max-width: 100%;[^}]*white-space: pre-wrap;[^}]*overflow-wrap: anywhere;[^}]*word-break: break-word;/);
