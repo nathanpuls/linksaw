@@ -276,15 +276,15 @@ function render() {
     text.append(title);
     if (hasPreview) text.append(preview);
     main.append(text);
-    main.ariaLabel = url ? `Open ${label(snippet)} website` : `Copy ${label(snippet)}`;
-    main.setAttribute("aria-description", url ? "Open website" : "Copy snippet");
+    main.ariaLabel = `Open ${label(snippet)} in Linksaw`;
+    main.setAttribute("aria-description", "Open snippet viewer");
     main.addEventListener("focus", () => setSelected(index, false));
-    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); void useSnippet(snippet).catch(showCopyError); }));
+    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index, false); openSnippet(snippet); }));
     row.append(main);
     const view = document.createElement("button"); view.type = "button"; view.className = "result-view icon-button";
-    view.ariaLabel = "View details"; view.dataset.tooltip = "View details"; view.innerHTML = icons.chevronRight;
+    view.ariaLabel = url ? "Open website" : "Copy snippet"; view.dataset.tooltip = url ? "Open website" : "Copy"; view.innerHTML = icons.chevronRight;
     view.addEventListener("focus", () => setSelected(index, false));
-    view.addEventListener("click", event => { event.stopPropagation(); runListActionAfterSave(() => { setSelected(index, false); openSnippet(snippet); }); });
+    view.addEventListener("click", event => { event.stopPropagation(); runListActionAfterSave(() => { setSelected(index, false); void useSnippet(snippet).catch(showCopyError); }); });
     row.append(view);
     results.append(row);
   });
@@ -1146,8 +1146,8 @@ document.addEventListener("keydown", event => {
     if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
     setSelected(state.selected - 1);
   }
-  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => openSnippet(selected)); }
-  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => { void useSnippet(selected).catch(showCopyError); }); }
+  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => { void useSnippet(selected).catch(showCopyError); }); }
+  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => openSnippet(selected)); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });
 
