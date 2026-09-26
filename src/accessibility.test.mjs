@@ -21,7 +21,8 @@ test("Mac result actions announce their behavior and selection", () => {
   assert.match(source, /row\.addEventListener\("click", \(\) => act\(item\)\)/);
   assert.match(source, /event\.key === "Enter"[\s\S]*?await act\(items\[state\.selected\]\)/);
   assert.match(source, /event\.key === "ArrowRight"[\s\S]*?openPreview\(item\)/);
-  assert.match(source, /view\.setAttribute\("aria-label", "View"\)/);
+  assert.match(source, /view\.setAttribute\("aria-label", "View details"\)/);
+  assert.match(source, /view\.dataset\.tooltip = 'View details'/);
   assert.match(source, /key\.className = "result-key"[\s\S]*?navigator\.platform\.includes\("Mac"\) \? "⌘" : "Ctrl"/);
   assert.match(source, /row\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
 });

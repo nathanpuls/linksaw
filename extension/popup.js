@@ -83,9 +83,10 @@ function render() {
     const main = document.createElement('button'); main.className = 'primary'; main.type = 'button';
     const title = document.createElement('span'); title.className = 'title'; title.textContent = label(snippet); main.append(title);
     if (snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim()) { const preview = document.createElement('span'); preview.className = 'preview'; preview.textContent = snippet.body.replace(/\s+/g, ' ').trim(); main.append(preview); }
-    main.addEventListener('click', () => openInLinksaw(snippet).catch(error => status(error.message)));
-    const useButton = document.createElement('button'); useButton.className = 'action'; useButton.type = 'button'; useButton.dataset.tooltip = 'Use'; useButton.ariaLabel = urlFor(content(snippet)) ? 'Open website' : 'Paste'; useButton.innerHTML = icons.open; useButton.addEventListener('click', () => use(snippet).catch(error => status(error.message)));
-    row.append(main, useButton); $('results').append(row);
+    main.ariaLabel = urlFor(content(snippet)) ? `Open ${label(snippet)} website` : `Paste ${label(snippet)}`;
+    main.addEventListener('click', () => use(snippet).catch(error => status(error.message)));
+    const viewButton = document.createElement('button'); viewButton.className = 'action'; viewButton.type = 'button'; viewButton.dataset.tooltip = 'View details'; viewButton.ariaLabel = 'View details'; viewButton.innerHTML = icons.open; viewButton.addEventListener('click', event => { event.stopPropagation(); openInLinksaw(snippet).catch(error => status(error.message)); });
+    row.append(main, viewButton); $('results').append(row);
   });
 }
 async function refresh({ quiet = false } = {}) {
@@ -118,8 +119,8 @@ $('search').addEventListener('input', () => { selected = 0; render(); });
 $('search').addEventListener('keydown', event => {
   const found = filtered();
   if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); selected = Math.max(0, Math.min(found.length - 1, selected + (event.key === 'ArrowDown' ? 1 : -1))); render(); }
-  if (event.key === 'Enter' && found[selected]) { event.preventDefault(); openInLinksaw(found[selected]).catch(error => status(error.message)); }
-  if (event.key === 'ArrowRight' && found[selected]) { event.preventDefault(); use(found[selected]).catch(error => status(error.message)); }
+  if (event.key === 'Enter' && found[selected]) { event.preventDefault(); use(found[selected]).catch(error => status(error.message)); }
+  if (event.key === 'ArrowRight' && found[selected]) { event.preventDefault(); openInLinksaw(found[selected]).catch(error => status(error.message)); }
 });
 const [active] = await chrome.tabs.query({ active: true, currentWindow: true }); tabId = active?.id;
 await refresh();

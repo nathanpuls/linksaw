@@ -277,16 +277,16 @@ function render() {
     text.append(title);
     if (hasPreview) text.append(preview);
     main.append(text);
-    main.ariaLabel = label(snippet);
-    main.setAttribute("aria-description", "Open in Linksaw");
+    main.ariaLabel = url ? `Open ${label(snippet)} website` : `Copy ${label(snippet)}`;
+    main.setAttribute("aria-description", url ? "Open website" : "Copy snippet");
     main.addEventListener("focus", () => setSelected(index, false));
-    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); openSnippet(snippet); }));
+    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index); void useSnippet(snippet).catch(showCopyError); }));
     row.append(main);
-    const use = document.createElement("button"); use.type = "button"; use.className = "result-use icon-button";
-    use.ariaLabel = url ? "Open website" : "Copy"; use.dataset.tooltip = "Use"; use.innerHTML = icons.chevronRight;
-    use.addEventListener("focus", () => setSelected(index, false));
-    use.addEventListener("click", event => { event.stopPropagation(); runListActionAfterSave(() => { setSelected(index, false); void useSnippet(snippet).catch(showCopyError); }); });
-    row.append(use);
+    const view = document.createElement("button"); view.type = "button"; view.className = "result-view icon-button";
+    view.ariaLabel = "View details"; view.dataset.tooltip = "View details"; view.innerHTML = icons.chevronRight;
+    view.addEventListener("focus", () => setSelected(index, false));
+    view.addEventListener("click", event => { event.stopPropagation(); runListActionAfterSave(() => { setSelected(index, false); openSnippet(snippet); }); });
+    row.append(view);
     results.append(row);
   });
   renderViewer(state.selected >= 0 ? state.filtered[state.selected] : null);
@@ -1064,8 +1064,8 @@ document.addEventListener("keydown", event => {
     if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
     setSelected(state.selected - 1);
   }
-  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => { void useSnippet(selected).catch(showCopyError); }); }
-  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => openSnippet(selected)); }
+  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => openSnippet(selected)); }
+  else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => { void useSnippet(selected).catch(showCopyError); }); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });
 

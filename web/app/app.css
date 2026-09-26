@@ -65,10 +65,10 @@ button { color: inherit; }
 .result-preview { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.25; }
 .result-link-text { text-decoration: underline; text-decoration-color: var(--control); text-underline-offset: 2px; }
 .result-row:hover .result-link-text, .result-main:focus-visible .result-link-text { text-decoration-color: currentColor; }
-.result-use { width: 38px; height: 38px; visibility: hidden; pointer-events: none; color: var(--muted); }
-.result-row:hover .result-use,
-.results:not(:has(.result-row:hover)) .result-row.selected .result-use,
-.results:not(:has(.result-row:hover)) .result-use:focus-visible { visibility: visible; pointer-events: auto; }
+.result-view { width: 38px; height: 38px; visibility: hidden; pointer-events: none; color: var(--muted); }
+.result-row:hover .result-view,
+.results:not(:has(.result-row:hover)) .result-row.selected .result-view,
+.results:not(:has(.result-row:hover)) .result-view:focus-visible { visibility: visible; pointer-events: auto; }
 .empty { padding: 84px 24px; color: var(--muted); text-align: center; }
 .empty button { margin-top: 14px; }
 .sidebar-footer { min-height: 58px; display: flex; align-items: center; gap: 3px; padding: 5px 7px; }
@@ -223,7 +223,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .toolbar { height: 64px; padding: 8px 12px 7px 16px; }
   .results { padding-inline: 5px; }
   .result-row { grid-template-columns: minmax(0, 1fr) 46px; }
-  .result-use { width: 44px; height: 44px; visibility: visible; pointer-events: auto; }
+  .result-view { width: 44px; height: 44px; visibility: visible; pointer-events: auto; }
   .settings-grid { grid-template-columns: 1fr; gap: 36px; padding: 28px 22px; }
   .settings-inner > .surface-header { position: sticky; top: 0; z-index: 2; background: var(--paper); }
   .delete-account-block { margin-top: 4px; padding: 28px 22px 0; }

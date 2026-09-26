@@ -161,8 +161,8 @@ function render() {
     if (editable) {
       const view = document.createElement("button"); view.type = "button"; view.className = "result-view";
       view.append(icon('forward', 17));
-      view.setAttribute("aria-label", "View");
-      view.dataset.tooltip = 'View';
+      view.setAttribute("aria-label", "View details");
+      view.dataset.tooltip = 'View details';
       view.addEventListener("click", event => { event.stopPropagation(); openPreview(editable); });
       wrapper.append(view);
     }

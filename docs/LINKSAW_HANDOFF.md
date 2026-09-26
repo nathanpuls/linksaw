@@ -93,7 +93,7 @@ Avoid renaming established concepts without a concrete user need. In particular,
 
 - Canonical signed-in location: `https://linksaw.com/home`.
 - The layout stays close to the Mac launcher: system typography, black-and-white neutral surfaces, search at the top, Lucide line icons, snippet rows, New and Settings beside Search, and restrained separators and selection states.
-- Copy is the browser's primary snippet action. It is represented by a Lucide copy icon, and the selected or hovered row also exposes the Lucide pencil icon for editing.
+- On web and mobile, clicking a row or pressing Enter performs the fast action: copy ordinary text or open a complete saved URL. The row's only visible secondary control is a quiet right chevron; clicking it or pressing Right Arrow opens the item in Linksaw for reading and management. Tooltips name the literal action, such as **Copy snippet**, **Open website**, or **View details**.
 - The first release supports search, keyboard selection, copy, create, edit, delete, preview, appearance, account display, and sign-out against the shared private database.
 - `/s/...` is reserved for a later sharing feature. Sharing is not part of this initial web release.
 
@@ -122,7 +122,7 @@ Avoid renaming established concepts without a concrete user need. In particular,
 - Command-N on macOS / Control-N on Windows opens a new snippet.
 - Up/Down changes the selected result.
 - Return uses the selected result: paste text, open a link, or enter a `$` search-template query.
-- Right Arrow or Command/Control-P previews the selected snippet.
+- Right Arrow, the row chevron, or Command/Control-P previews the selected snippet. Clicking the row body, pressing Return, or using Command/Control-1–9 performs the primary action: paste text on desktop or open a complete saved URL.
 - Left Arrow returns from preview or search-template mode.
 - Command/Control-E edits the selected snippet.
 - Command/Control-C copies the selected or previewed snippet.
@@ -199,4 +199,4 @@ Deferred features should follow evidence from real use rather than precede the r
 
 ## Chrome extension v1 (2026-09-23)
 
-The extension in `extension/` is a compact search/insert popup. It reads the existing `/snippets` API and shared D1 model using the existing website session cookie sent to the permitted API host. The extension does not store a separate token or access the cookie value. A row inserts ordinary text into the focused page field, opens a standalone URL, or copies when insertion is unavailable; every row also has quiet Copy and Open in Linksaw actions. New snippet and private viewing open the canonical `/home` web app, while the footer settings control opens the web workspace. `/s/{code}` remains the public sharing route. No snippet editor or separate backend schema was added. Chrome installation, live sign-in, and insertion still require hands-on testing.
+The extension in `extension/` is a compact search/insert popup. It reads the existing `/snippets` API and shared D1 model using the existing website session cookie sent to the permitted API host. The extension does not store a separate token or access the cookie value. Clicking a row or pressing Enter inserts ordinary text into the focused page field, opens a standalone URL, or copies when insertion is unavailable. Each row's only secondary control is a quiet right chevron; clicking it or pressing Right Arrow opens the item in the canonical `/home` web app. New snippet and Settings also open the web workspace. `/s/{code}` remains the public sharing route. No snippet editor or separate backend schema was added. Chrome installation, live sign-in, and insertion still require hands-on testing.

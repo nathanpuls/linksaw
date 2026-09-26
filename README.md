@@ -27,7 +27,7 @@ On macOS the launcher joins all Spaces, including other apps’ full-screen Spac
 - Snippets refresh on launcher reopen/focus and poll while the app is active so edits made by another client appear within a few seconds. Existing results remain available during loading and after connection errors; Retry fetches again. Command/Control–R forces a manual refresh. Version-checked saves prevent an older client from silently overwriting a newer edit.
 - Command–N on macOS or Control–N on Windows opens a new snippet from the launcher.
 - Right-click a result, or press Command/Control–K, for Preview, Edit, Copy, and Delete. Deletion still asks for confirmation.
-- Right Arrow or Command/Control–P opens a full-window, read-only Preview of the selected snippet. Return or Command/Control–1 uses it; Command/Control–C copies it; Left Arrow or Escape returns to Search. Existing paste, URL, template, and dynamic-placeholder behavior applies.
+- Right Arrow, the row chevron, or Command/Control–P opens a full-window, read-only Preview of the selected snippet. Return, clicking the row body, or Command/Control–1 uses it; Command/Control–C copies it; Left Arrow or Escape returns to Search. Existing paste, URL, template, and dynamic-placeholder behavior applies.
 - Command/Control–S saves the editor. Saving disables editing until the request finishes; a failed save leaves the draft intact.
 - Closing a changed editor offers Save, Discard, or Keep editing. The same warning protects application Quit and window close. Save before quitting exits only after a successful save; failed saves keep the draft open.
 
