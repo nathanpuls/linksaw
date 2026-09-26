@@ -69,8 +69,7 @@ test("web rows use on click and Enter while their chevron and Right Arrow view t
   assert.match(source, /event\.key === "ArrowRight" && selected[\s\S]*?openSnippet\(selected\)/);
   assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?useSnippet\(selected\)/);
   assert.match(css, /\.result-link-text \{ text-decoration: underline;/);
-  assert.match(css, /\.result-view \{[^}]*visibility: hidden;[^}]*pointer-events: none;/);
-  assert.match(css, /\.result-row:hover \.result-view,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-row\.selected \.result-view,[\s\S]*?\.results:not\(:has\(\.result-row:hover\)\) \.result-view:focus-visible \{ visibility: visible; pointer-events: auto; \}/);
+  assert.match(css, /\.result-view \{[^}]*visibility: visible;[^}]*pointer-events: auto;/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-view \{ width: 44px; height: 44px; visibility: visible; pointer-events: auto; \}/);
   assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });
@@ -159,7 +158,7 @@ test("icon-only controls use delayed custom tooltips with shortcut badges", () =
   assert.match(source, /matchMedia\("\(hover: none\), \(pointer: coarse\)"\)/);
   assert.match(source, /function showTooltip\(target\) \{[\s\S]*?!tooltipsEnabled\(\)/);
   assert.match(css, /@media \(hover: none\), \(pointer: coarse\) \{[\s\S]*?\.custom-tooltip \{ display: none !important; \}/);
-  assert.match(source, /async function shareSnippet[\s\S]*?finally \{ hideTooltip\(\); \$\("preview-share"\)\.blur\(\); \}/);
+  assert.match(source, /async function shareSnippet\(snippet, button = \$\("preview-share"\)\)[\s\S]*?finally \{ hideTooltip\(\); button\.blur\(\); \}/);
   assert.match(source, /\$\("search"\)\.value = "";[\s\S]*?dispatchEvent\(new Event\("input"[\s\S]*?\$\("search"\)\.focus\(\)/);
   assert.match(source, /event\.key === "Escape"[\s\S]*?else if \(\$\("search"\)\.value\) \{ event\.preventDefault\(\); clearSearch\(\); \}/);
 });
@@ -191,6 +190,24 @@ test("content editing keeps the same plain-text scale and vertical rhythm", () =
 test("mobile Back glyph aligns with the content gutter", () => {
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.viewer-back \{ margin-left: -9px; \}/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.viewer-back svg \{ transform: translateX\(-1px\); \}/);
+});
+
+test("mobile view and edit are distinct states on one stable visual surface", () => {
+  assert.match(html, /id="editor-copy"[^>]*class="icon-button mobile-editor-action"[^>]*aria-label="Copy snippet"/);
+  assert.match(html, /id="editor-share"[^>]*class="icon-button mobile-editor-action"[^>]*aria-label="Share"/);
+  assert.match(html, /id="mobile-snippet-view" class="content-input mobile-snippet-view" role="button" tabindex="0" aria-label="Edit snippet text" hidden/);
+  assert.match(source, /function openPreview\(snippet, pushHistory = true\) \{[\s\S]*?if \(narrowLayout\(\)\) \{ openEditor\(snippet, pushHistory, \{ focus: false \}\); return; \}/);
+  assert.match(source, /\$\("editor"\)\.classList\.toggle\("mobile-unified", mobileUnified\)/);
+  assert.match(source, /\$\("close-editor"\)\.innerHTML = icons\[mobileUnified \? "back" : "close"\]/);
+  assert.match(source, /function mobileCaretOffset\(event\)[\s\S]*?caretPositionFromPoint[\s\S]*?caretRangeFromPoint/);
+  assert.match(source, /function enterMobileEdit\(offset[\s\S]*?classList\.add\("is-editing"\)[\s\S]*?setSelectionRange\(offset, offset\)/);
+  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("pointerdown"[\s\S]*?mobileCaretOffset\(event\)[\s\S]*?enterMobileEdit\(offset\)/);
+  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("blur"[\s\S]*?\$\("snippet-body"\)\.hidden = true[\s\S]*?classList\.remove\("is-editing"\)/);
+  assert.match(source, /updateUrl\(\{ view: state\.editorContext === "mobile" \? null : "edit", snippet: savedSnippet\.id \}, false\)/);
+  assert.match(css, /\.mobile-snippet-view \{[^}]*white-space: pre-wrap;[^}]*cursor: text;/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; \}/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-editor-action \{ display: inline-grid; \}/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #editor-undo,[\s\S]*?#editor\.mobile-unified:not\(\.is-editing\) #editor-redo \{ display: none; \}/);
 });
 
 test("sidebar Linksaw mark links home before the account control", () => {

@@ -45,6 +45,9 @@ test("Mac refresh and autosave status never insert transient layout rows", () =>
   assert.match(css, /\.refresh-feedback \{ position: absolute;/);
   assert.doesNotMatch(html, /class="primary" data-tooltip="Save snippet"/);
   assert.match(css, /#editor-feedback \{ min-width: 72px;/);
+  assert.match(source, /function snippetFingerprint\(snippets\)/);
+  assert.match(source, /const changed = snippetFingerprint\(state\.snippets\) !== snippetFingerprint\(data\.snippets\)/);
+  assert.match(source, /if \(changed \|\| force\) render\(\)/);
 });
 
 test("Mac viewer actions are stable and icon semantics are literal", () => {

@@ -51,7 +51,7 @@ let localInputGroup = null;
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "back");
-icon("editor-reader-toggle", "panelLeft"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash");
+icon("editor-reader-toggle", "panelLeft"); icon("editor-copy", "copy"); icon("editor-share", "share"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
 $("preview-copy").dataset.shortcut = commandShortcut("C");
@@ -184,9 +184,8 @@ function showDeleteUndo(deleted, viewerWasOpen) {
     $("toast").hidden = true;
   }, 7000);
 }
-function showCopySuccess() {
+function showCopySuccess(button = $("preview-copy")) {
   clearTimeout(copyFeedbackTimer);
-  const button = $("preview-copy");
   button.innerHTML = icons.check;
   button.ariaLabel = "Copied";
   button.dataset.tooltip = "Copied";
@@ -213,17 +212,17 @@ async function copySnippet(snippet) {
   await navigator.clipboard.writeText(snippetText(snippet));
   showCopySuccess();
 }
-async function shareSnippet(snippet) {
+async function shareSnippet(snippet, button = $("preview-share")) {
   hideTooltip();
   const share = await api(`/snippets/${snippet.id}/share`, { method: "POST" });
   snippet.share_token = share.token;
   if (navigator.share) {
     try { await navigator.share({ title: label(snippet), url: share.url }); return; }
     catch (error) { if (error?.name === "AbortError") return; }
-    finally { hideTooltip(); $("preview-share").blur(); }
+    finally { hideTooltip(); button.blur(); }
   }
   await navigator.clipboard.writeText(share.url);
-  $("preview-share").blur();
+  button.blur();
   showToast("Link copied");
 }
 function setSelected(index, scroll = true) {
@@ -408,7 +407,9 @@ async function runSaveLoop(sessionId) {
       upsertSavedSnippet(savedSnippet);
       $("delete").hidden = false;
       $("unshare").hidden = !savedSnippet.share_token;
-      if (wasNew && state.editorContext !== "default") updateUrl({ view: "edit", snippet: savedSnippet.id }, false);
+      if (wasNew && state.editorContext !== "default") {
+        updateUrl({ view: state.editorContext === "mobile" ? null : "edit", snippet: savedSnippet.id }, false);
+      }
       if (editorSnapshot() === editorBaseline) setEditorStatus("Saved");
     } catch (error) {
       if (sessionId !== editorSessionId) return false;
@@ -498,10 +499,19 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   clearTimeout(autosaveTimer);
   editorSessionId++;
   const { defaultDraft = false, focus = true } = options;
+  const mobileUnified = narrowLayout();
   state.editing = snippet; $("snippet-body").value = snippet?.body || ""; editorCustomName = snippet?.title || "";
   editorCreateId = snippet ? "" : crypto.randomUUID();
   saveFailed = false; editorConflict = null; saveAgain = false; pendingNavigation = null; localUndo = []; localRedo = []; localInputGroup = null;
-  state.editorContext = defaultDraft ? "default" : "routed";
+  state.editorContext = defaultDraft ? "default" : mobileUnified ? "mobile" : "routed";
+  $("editor").classList.toggle("mobile-unified", mobileUnified);
+  $("editor").classList.toggle("is-editing", mobileUnified && focus);
+  $("mobile-snippet-view").textContent = $("snippet-body").value;
+  $("mobile-snippet-view").hidden = !mobileUnified || focus;
+  $("snippet-body").hidden = mobileUnified && !focus;
+  $("close-editor").innerHTML = icons[mobileUnified ? "back" : "close"];
+  $("close-editor").ariaLabel = mobileUnified ? "Back to snippets" : "Close editor";
+  $("close-editor").dataset.tooltip = mobileUnified ? "Back to snippets" : "Close editor";
   $("editor-heading").textContent = snippet ? "Edit snippet" : "New snippet";
   $("close-editor").hidden = defaultDraft;
   $("delete").hidden = !snippet; $("unshare").hidden = !snippet?.share_token; setEditorStatus("");
@@ -515,7 +525,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
     }
   } catch { clearEditorDraft(); }
   syncHistoryControls();
-  if (pushHistory) updateUrl({ view: snippet ? "edit" : "new", snippet: snippet?.id || null });
+  if (pushHistory) updateUrl({ view: snippet && mobileUnified ? null : snippet ? "edit" : "new", snippet: snippet?.id || null });
   if (focus) setTimeout(() => { $("snippet-body").focus(); if (!snippet) $("snippet-body").setSelectionRange(0, 0); }, 0);
 }
 function renderViewer(snippet) {
@@ -542,6 +552,7 @@ function syncReaderMode() {
 }
 function openPreview(snippet, pushHistory = true) {
   if (!snippet) return;
+  if (narrowLayout()) { openEditor(snippet, pushHistory, { focus: false }); return; }
   hideTooltip();
   renderViewer(snippet);
   if (pushHistory) updateUrl({ view: null, snippet: snippet.id });
@@ -747,6 +758,16 @@ $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 $("preview-delete").addEventListener("click", () => deleteSnippet(state.previewing));
+$("editor-copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("snippet-body").value);
+    showCopySuccess($("editor-copy"));
+  } catch (error) { showCopyError(error); }
+});
+$("editor-share").addEventListener("click", async () => {
+  if (!await flushEditorSave() || !state.editing) return;
+  shareSnippet(state.editing, $("editor-share")).catch(showError);
+});
 $("editor-name").addEventListener("click", beginInlineRename);
 $("editor-name-input").addEventListener("keydown", event => {
   if (event.key === "Enter") { event.preventDefault(); finishInlineRename(); $("snippet-body").focus(); }
@@ -769,8 +790,40 @@ for (const input of [$("snippet-body"), $("editor-name-input")]) {
   });
 }
 $("snippet-body").addEventListener("input", () => {
+  $("mobile-snippet-view").textContent = $("snippet-body").value;
   if (!editorCustomName.trim()) syncEditorName();
   scheduleAutosave();
+});
+function mobileCaretOffset(event) {
+  const view = $("mobile-snippet-view");
+  const point = document.caretPositionFromPoint?.(event.clientX, event.clientY);
+  if (point?.offsetNode === view.firstChild) return point.offset;
+  const range = document.caretRangeFromPoint?.(event.clientX, event.clientY);
+  if (range?.startContainer === view.firstChild) return range.startOffset;
+  return view.textContent.length;
+}
+function enterMobileEdit(offset = $("snippet-body").value.length) {
+  if (!$("editor").classList.contains("mobile-unified")) return;
+  $("mobile-snippet-view").hidden = true;
+  $("snippet-body").hidden = false;
+  $("editor").classList.add("is-editing");
+  $("snippet-body").focus({ preventScroll: true });
+  $("snippet-body").setSelectionRange(offset, offset);
+}
+$("mobile-snippet-view").addEventListener("pointerdown", event => {
+  const offset = mobileCaretOffset(event);
+  event.preventDefault();
+  enterMobileEdit(offset);
+});
+$("mobile-snippet-view").addEventListener("keydown", event => {
+  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); enterMobileEdit(); }
+});
+$("snippet-body").addEventListener("blur", () => {
+  if (!$("editor").classList.contains("mobile-unified")) return;
+  $("mobile-snippet-view").textContent = $("snippet-body").value;
+  $("snippet-body").hidden = true;
+  $("mobile-snippet-view").hidden = false;
+  $("editor").classList.remove("is-editing");
 });
 $("editor-name-input").addEventListener("input", scheduleAutosave);
 $("editor-form").addEventListener("submit", event => { event.preventDefault(); void saveEditorNow(); });

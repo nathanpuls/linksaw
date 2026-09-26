@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260924-11">
+  <link rel="stylesheet" href="/app/app.css?v=20260926-1">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -67,12 +67,15 @@
         <label class="sr-only" for="editor-name-input">Title</label>
         <input id="editor-name-input" class="editor-name-input" type="text" maxlength="160" autocomplete="off" hidden>
         <div class="editor-actions">
+          <button id="editor-copy" class="icon-button mobile-editor-action" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
+          <button id="editor-share" class="icon-button mobile-editor-action" type="button" aria-label="Share" data-tooltip="Share"></button>
           <button id="editor-undo" class="icon-button" type="button" aria-label="Undo" data-tooltip="Undo" disabled></button>
           <button id="editor-redo" class="icon-button" type="button" aria-label="Redo" data-tooltip="Redo" disabled></button>
         </div>
         <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
       </header>
       <label class="sr-only" for="snippet-body">Snippet text</label>
+      <div id="mobile-snippet-view" class="content-input mobile-snippet-view" role="button" tabindex="0" aria-label="Edit snippet text" hidden></div>
       <textarea id="snippet-body" class="content-input" autocomplete="off"></textarea>
       <footer class="surface-footer">
         <button id="delete" class="icon-button delete-action" type="button" tabindex="-1" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
@@ -187,6 +190,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260924-13"></script>
+  <script type="module" src="/app/app.js?v=20260926-1"></script>
 </body>
 </html>

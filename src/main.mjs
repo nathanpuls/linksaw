@@ -139,6 +139,7 @@ function render() {
   }
   items.forEach((item, index) => {
     const wrapper = document.createElement("div"); wrapper.className = "result-row";
+    wrapper.setAttribute("role", "listitem");
     wrapper.dataset.index = index;
     const row = document.createElement("button"); row.type = "button";
     row.className = `result${index === state.selected ? " selected" : ""}`;
@@ -227,6 +228,11 @@ async function act(item) {
 
 const STALE_AFTER_MS = 2_500;
 let refreshPromise = null, refreshAgain = false, refreshSlowTimer = null;
+function snippetFingerprint(snippets) {
+  return JSON.stringify(snippets.map(snippet => [
+    snippet.id, snippet.title, snippet.body, snippet.version, snippet.share_token,
+  ]));
+}
 function updateRefreshFeedback() {
   const feedback = document.getElementById('refresh-feedback');
   feedback.hidden = !state.user || (!state.refreshSlow && !state.refreshError);
@@ -261,6 +267,7 @@ function refresh({ force = true } = {}) {
           if (state.token !== token || state.user !== owner) continue;
           if (!Array.isArray(data.snippets)) throw new Error('The server returned an invalid snippet list.');
           const selected = visibleItems()[state.selected];
+          const changed = snippetFingerprint(state.snippets) !== snippetFingerprint(data.snippets);
           state.snippets = data.snippets;
           state.lastRefreshedAt = Date.now(); state.refreshError = '';
           status('');
@@ -268,7 +275,7 @@ function refresh({ force = true } = {}) {
             const index = visibleItems().findIndex(item => item.type === 'snippet' && item.id === selected.id);
             if (index >= 0) state.selected = index;
           }
-          render();
+          if (changed || force) render();
         } catch (error) {
           if (state.token !== token || state.user !== owner) continue;
           if (error.status === 401) {

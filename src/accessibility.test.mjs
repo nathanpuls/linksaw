@@ -8,7 +8,7 @@ const source = readFileSync(new URL("./main.mjs", import.meta.url), "utf8");
 test("Mac surfaces and fields expose stable accessible names", () => {
   assert.match(html, /<label class="visually-hidden" for="search">Search snippets<\/label>/);
   assert.match(html, /id="status" class="status" role="status" aria-live="polite"/);
-  assert.match(html, /id="results" class="results" aria-label="Snippets"/);
+  assert.match(html, /id="results" class="results" role="list" aria-label="Snippets"/);
   assert.match(html, /id="editor-dialog" aria-labelledby="editor-title"/);
   assert.match(html, /id="editor-undo"[^>]*aria-label="Undo"[^>]*data-tooltip="Undo"[^>]*disabled/);
   assert.match(html, /id="editor-redo"[^>]*aria-label="Redo"[^>]*data-tooltip="Redo"[^>]*disabled/);
@@ -25,4 +25,6 @@ test("Mac result actions announce their behavior and selection", () => {
   assert.match(source, /view\.dataset\.tooltip = 'View details'/);
   assert.match(source, /key\.className = "result-key"[\s\S]*?navigator\.platform\.includes\("Mac"\) \? "⌘" : "Ctrl"/);
   assert.match(source, /row\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
+  assert.match(source, /wrapper\.setAttribute\("role", "listitem"\)/);
+  assert.match(readFileSync(new URL("./styles.css", import.meta.url), "utf8"), /\.result-view \{[^}]*visibility: visible;[^}]*pointer-events: auto;/);
 });

@@ -101,9 +101,8 @@ dialog .setting-help { font-size: 12px; margin: 7px 0 12px; }
 button:disabled { opacity: .5; cursor: default; }
 .result-row { display: flex; align-items: center; gap: 4px; }
 .result-row .result { flex: 1; min-width: 0; }
-.result-view { flex: 0 0 auto; color: var(--muted); visibility: hidden; pointer-events: none; border: 0; background: transparent; }
+.result-view { flex: 0 0 auto; color: var(--muted); visibility: visible; pointer-events: auto; border: 0; background: transparent; }
 .result-view:hover { color: var(--ink); background: var(--hover); }
-.result-row.selected .result-view { visibility: visible; pointer-events: auto; }
 #search { font-size: 25px; }
 #delete-confirmation { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 #delete-confirmation[hidden] { display: none; }
