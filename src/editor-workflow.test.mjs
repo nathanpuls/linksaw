@@ -38,12 +38,12 @@ test('content editor preserves private names, protects drafts and previews liter
     key(editor,'s',{ctrlKey:true});await flush();assert.equal(editor.open,true);assert.match(d.getElementById('editor-feedback').textContent,/Couldn’t save/);
     failSave=false;key(editor,'s',{metaKey:true});await flush();assert.equal(editor.open,true);assert.equal(writes,3);
     d.getElementById('cancel-editor').click();await flush();assert.equal(editor.open,false);
-    d.querySelector('.result-view').click();
+    d.querySelector('.result').click();
     d.getElementById('preview-edit').click();
     d.getElementById('snippet-body').value='Another change';editor.dispatchEvent(new w.Event('cancel',{cancelable:true}));
     await flush();assert.equal(editor.open,false);assert.equal(writes,4);
 
-    d.querySelector('.result-view').click();
+    d.querySelector('.result').click();
     d.getElementById('preview-more').click();
     [...d.querySelectorAll('#snippet-action-list button')].find(button=>button.textContent==='Rename').click();
     d.getElementById('rename-input').value='Private name';

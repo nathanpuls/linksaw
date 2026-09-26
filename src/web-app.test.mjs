@@ -57,20 +57,22 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.doesNotMatch(source, /unchangedAutomaticName/);
 });
 
-test("web rows open on click and Enter while their chevron and Right Arrow use the item", () => {
-  assert.doesNotMatch(source, /row-open|icons\.externalLink/);
+test("web rows open cleanly while keyboard and mobile long press retain fast actions", () => {
+  assert.doesNotMatch(source, /row-open|icons\.externalLink|icons\.chevronRight|className = "result-view/);
   assert.match(source, /function openSnippet\(snippet\) \{[\s\S]*?openPreview\(snippet\);/);
   assert.match(source, /async function useSnippet\(snippet\)[\s\S]*?if \(url\) \{ openInNewTab\(url\); return; \}[\s\S]*?navigator\.clipboard\.writeText/);
   assert.match(source, /function runListActionAfterSave\(action\)[\s\S]*?navigateAfterSave[\s\S]*?closeSurface\("editor"\)[\s\S]*?action\(\)/);
   assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} in Linksaw`/);
   assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?openSnippet\(snippet\)/);
-  assert.match(source, /view\.ariaLabel = url \? "Open website" : "Copy snippet"; view\.dataset\.tooltip = url \? "Open website" : "Copy"; view\.innerHTML = icons\.chevronRight/);
-  assert.match(source, /view\.addEventListener\("click", event => \{ event\.stopPropagation\(\);[\s\S]*?useSnippet\(snippet\)/);
   assert.match(source, /event\.key === "ArrowRight" && selected[\s\S]*?useSnippet\(selected\)/);
   assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?openSnippet\(selected\)/);
+  assert.match(source, /function installLongPress\(main, snippet\)[\s\S]*?setTimeout\([\s\S]*?openSnippetActionMenu\(snippet\)[\s\S]*?550/);
+  assert.match(source, /contextmenu[\s\S]*?narrowLayout\(\)[\s\S]*?preventDefault/);
+  assert.match(html, /id="snippet-action-menu" class="snippet-action-menu"[\s\S]*?Copy[\s\S]*?Share[\s\S]*?Edit[\s\S]*?Delete/);
+  assert.match(css, /\.result-row \{ min-height: 44px; display: block;/);
+  assert.doesNotMatch(css, /\.result-view/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-main \{ -webkit-touch-callout: none; user-select: none; \}/);
   assert.match(css, /\.result-link-text \{ text-decoration: underline;/);
-  assert.match(css, /\.result-view \{[^}]*visibility: visible;[^}]*pointer-events: auto;/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-view \{ width: 44px; height: 44px; visibility: visible; pointer-events: auto; \}/);
   assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });
 

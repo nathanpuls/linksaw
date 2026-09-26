@@ -83,7 +83,7 @@ Avoid renaming established concepts without a concrete user need. In particular,
 
 - Compact, keyboard-first, frameless launcher with a search field and result list.
 - The current top row keeps New snippet (`+`) and Settings beside the search field. Do not reopen their placement based only on abstract hierarchy; the current arrangement was retained for visual balance.
-- Clicking a result and pressing Return perform the same primary action.
+- Clicking a result opens it in Linksaw. Return remains the keyboard-first Use action (paste text or open a saved URL), so the visible list stays simple without sacrificing launcher speed.
 - Results show the title or first content line, plus a compact secondary preview when appropriate.
 - Existing results remain usable while a background refresh is loading or has failed.
 - The interface uses native system typography, restrained neutral surfaces, subtle separators, Lucide line icons, and system/light/dark appearance options.
@@ -93,7 +93,7 @@ Avoid renaming established concepts without a concrete user need. In particular,
 
 - Canonical signed-in location: `https://linksaw.com/home`.
 - The layout stays close to the Mac launcher: system typography, black-and-white neutral surfaces, search at the top, Lucide line icons, snippet rows, New and Settings beside Search, and restrained separators and selection states.
-- On web and mobile, clicking a row or pressing Enter performs the fast action: copy ordinary text or open a complete saved URL. The row's only visible secondary control is a quiet right chevron; clicking it or pressing Right Arrow opens the item in Linksaw for reading and management. Tooltips name the literal action, such as **Copy snippet**, **Open website**, or **View details**.
+- On web and mobile, clicking or tapping a row opens the snippet in Linksaw for reading and management. Rows have no permanent trailing action control. Desktop keyboard shortcuts retain fast Copy/Use behavior. On mobile web, long-pressing a row opens a Linksaw-controlled action menu with Copy, Share, Edit, and Delete; ordinary taps still open the snippet, and Safari's generic row context menu is suppressed.
 - The first release supports search, keyboard selection, copy, create, edit, delete, preview, appearance, account display, and sign-out against the shared private database.
 - `/s/...` is reserved for a later sharing feature. Sharing is not part of this initial web release.
 
@@ -122,7 +122,7 @@ Avoid renaming established concepts without a concrete user need. In particular,
 - Command-N on macOS / Control-N on Windows opens a new snippet.
 - Up/Down changes the selected result.
 - Return uses the selected result: paste text, open a link, or enter a `$` search-template query.
-- Right Arrow, the row chevron, or Command/Control-P previews the selected snippet. Clicking the row body, pressing Return, or using Command/Control-1–9 performs the primary action: paste text on desktop or open a complete saved URL.
+- Clicking a row opens/previews the snippet. Right Arrow or Command/Control-P also opens the selected snippet. Command/Control-1–9 retains the direct Use action. There is no row chevron or other permanent per-row action icon.
 - Left Arrow returns from preview or search-template mode.
 - Command/Control-E edits the selected snippet.
 - Command/Control-C copies the selected or previewed snippet.
@@ -199,4 +199,4 @@ Deferred features should follow evidence from real use rather than precede the r
 
 ## Chrome extension v1 (2026-09-23)
 
-The extension in `extension/` is a compact search/insert popup. It reads the existing `/snippets` API and shared D1 model using the existing website session cookie sent to the permitted API host. The extension does not store a separate token or access the cookie value. The configurable in-page trigger (semicolon by default) opens a centered overlay that immediately lists recent snippets, filters as the user types, and uses custom Lucide search and clear controls rather than Chrome's native search cancel button. Clicking a row or pressing Enter inserts ordinary text into the focused page field, opens a standalone URL, or copies when insertion is unavailable. Each row's only secondary control is a quiet right chevron; clicking it or pressing Right Arrow opens the item in the canonical `/home` web app. New snippet opens `/home/?view=new`, and the footer Settings control opens `/home/?view=settings` directly. `/s/{code}` remains the public sharing route. No snippet editor or separate backend schema was added. Chrome installation, live sign-in, and insertion still require hands-on testing.
+The extension in `extension/` is a compact search/insert popup. It reads the existing `/snippets` API and shared D1 model using the existing website session cookie sent to the permitted API host. The extension does not store a separate token or access the cookie value. The configurable in-page trigger (semicolon by default) opens a centered overlay that immediately lists recent snippets, filters as the user types, and uses custom Lucide search and clear controls rather than Chrome's native search cancel button. Clicking a row opens the item in the canonical `/home` web app; rows have no trailing chevron or other permanent action icon. Pressing Enter retains the fast action: insert ordinary text into the focused page field, open a standalone URL, or copy when insertion is unavailable. Right Arrow also opens the item in the web app. New snippet opens `/home/?view=new`, and the footer Settings control opens `/home/?view=settings` directly. `/s/{code}` remains the public sharing route. No snippet editor or separate backend schema was added. Chrome installation, live sign-in, and insertion still require hands-on testing.

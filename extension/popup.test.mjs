@@ -124,19 +124,19 @@ test('website bridge opens links in an active tab and only accepts Linksaw reque
   assert.match(backgroundSource, /https:\/\/linksaw\.com\/home\/\?snippet=/);
 });
 
-test('extension uses on click and Enter while its chevron and Right Arrow view the item', () => {
+test('extension rows open on click while Enter retains the fast use action', () => {
   assert.doesNotMatch(popupHtml, /\stitle=/);
   assert.match(popupHtml, /data-tooltip="New snippet"/);
   assert.match(popupHtml, /aria-label="Settings" data-tooltip="Settings"/);
-  assert.match(source, /main\.ariaLabel = urlFor\(content\(snippet\)\) \? `Open \$\{label\(snippet\)\} website` : `Paste \$\{label\(snippet\)\}`/);
-  assert.match(source, /viewButton\.dataset\.tooltip = 'View details'; viewButton\.ariaLabel = 'View details'/);
-  assert.match(source, /icons\.open = svg\('<path d="m9 18 6-6-6-6"\/>/);
-  assert.match(source, /main\.addEventListener\('click',[\s\S]*use\(snippet\)/);
-  assert.match(source, /viewButton\.addEventListener\('click',[\s\S]*openInLinksaw\(snippet\)/);
+  assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} in Linksaw`/);
+  assert.match(source, /main\.addEventListener\('click',[\s\S]*openInLinksaw\(snippet\)/);
+  assert.doesNotMatch(source, /viewButton|icons\.open/);
   assert.match(source, /event\.key === 'Enter'[\s\S]*use\(found\[selected\]\)/);
   assert.match(source, /event\.key === 'ArrowRight'[\s\S]*openInLinksaw\(found\[selected\]\)/);
   assert.match(contentSource, /event\.key === 'Enter'[\s\S]*choose\(snippets\[selected\]\)/);
   assert.match(contentSource, /event\.key === 'ArrowRight'[\s\S]*openInLinksaw\(snippets\[selected\]\)/);
+  assert.match(contentSource, /button\.addEventListener\('click', \(\) => openInLinksaw\(snippet\)\)/);
+  assert.doesNotMatch(contentSource, /viewButton|class="view"/);
   assert.match(backgroundSource, /message\?\.type === 'LINKSAW_OPEN_URL'/);
   assert.match(source, /https:\/\/linksaw\.com\/home\/\?view=settings/);
   assert.match(source, /setTimeout\([\s\S]*450\)/);

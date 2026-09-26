@@ -145,7 +145,7 @@ function render() {
     row.className = `result${index === state.selected ? " selected" : ""}`;
     row.setAttribute("aria-current", index === state.selected ? "true" : "false");
     if (item.type === "search-query") row.setAttribute("aria-label", item.label);
-    else row.setAttribute("aria-label", standaloneUrl(item.body) ? `Open ${item.label} website` : `Paste ${item.label}`);
+    else row.setAttribute("aria-label", `Open ${item.label} in Linksaw`);
     const left = document.createElement("span");
     const title = document.createElement("div"); title.className = "result-title"; title.textContent = item.label;
     const meta = document.createElement("div"); meta.className = "result-meta";
@@ -156,17 +156,8 @@ function render() {
     if (item.type === 'search-query' || (item.type === 'snippet' && trim(item.title) && !repeatsTitle)) left.append(meta);
     const key = document.createElement("span"); key.className = "result-key"; key.textContent = index < 9 ? `${navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}${index + 1}` : "";
     row.append(left, key);
-    row.addEventListener("click", () => act(item));
+    row.addEventListener("click", () => item.type === "snippet" ? openPreview(item) : act(item));
     wrapper.prepend(row);
-    const editable = item.type === "snippet" ? item : null;
-    if (editable) {
-      const view = document.createElement("button"); view.type = "button"; view.className = "result-view";
-      view.append(icon('forward', 17));
-      view.setAttribute("aria-label", "View details");
-      view.dataset.tooltip = 'View details';
-      view.addEventListener("click", event => { event.stopPropagation(); openPreview(editable); });
-      wrapper.append(view);
-    }
     ui.results.append(wrapper);
   });
   updateSelection();

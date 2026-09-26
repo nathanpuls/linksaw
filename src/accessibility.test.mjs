@@ -17,14 +17,13 @@ test("Mac surfaces and fields expose stable accessible names", () => {
 test("Mac result actions announce their behavior and selection", () => {
   assert.match(source, /row\.setAttribute\("aria-current", index === state\.selected \? "true" : "false"\)/);
   assert.match(source, /item\.type === "search-query"[\s\S]*?row\.setAttribute\("aria-label", item\.label\)/);
-  assert.match(source, /standaloneUrl\(item\.body\) \? `Open \$\{item\.label\} website` : `Paste \$\{item\.label\}`/);
-  assert.match(source, /row\.addEventListener\("click", \(\) => act\(item\)\)/);
+  assert.match(source, /row\.setAttribute\("aria-label", `Open \$\{item\.label\} in Linksaw`\)/);
+  assert.match(source, /row\.addEventListener\("click", \(\) => item\.type === "snippet" \? openPreview\(item\) : act\(item\)\)/);
   assert.match(source, /event\.key === "Enter"[\s\S]*?await act\(items\[state\.selected\]\)/);
   assert.match(source, /event\.key === "ArrowRight"[\s\S]*?openPreview\(item\)/);
-  assert.match(source, /view\.setAttribute\("aria-label", "View details"\)/);
-  assert.match(source, /view\.dataset\.tooltip = 'View details'/);
+  assert.doesNotMatch(source, /className = "result-view"|View details/);
   assert.match(source, /key\.className = "result-key"[\s\S]*?navigator\.platform\.includes\("Mac"\) \? "⌘" : "Ctrl"/);
   assert.match(source, /row\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
   assert.match(source, /wrapper\.setAttribute\("role", "listitem"\)/);
-  assert.match(readFileSync(new URL("./styles.css", import.meta.url), "utf8"), /\.result-view \{[^}]*visibility: visible;[^}]*pointer-events: auto;/);
+  assert.doesNotMatch(readFileSync(new URL("./styles.css", import.meta.url), "utf8"), /\.result-view/);
 });

@@ -15,7 +15,6 @@ const icons = {
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
   undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>',
   redo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>',
-  chevronRight: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
 };
 
 const $ = id => document.getElementById(id);
@@ -47,6 +46,7 @@ let editorCreateId = "";
 let localUndo = [];
 let localRedo = [];
 let localInputGroup = null;
+let actionMenuSnippet = null;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
@@ -244,6 +244,44 @@ async function useSnippet(snippet) {
   await navigator.clipboard.writeText(snippetText(snippet));
   showToast("Copied");
 }
+function closeSnippetActionMenu() {
+  actionMenuSnippet = null;
+  if ($("snippet-action-menu").open) $("snippet-action-menu").close();
+}
+function openSnippetActionMenu(snippet) {
+  if (!snippet || !narrowLayout()) return;
+  actionMenuSnippet = snippet;
+  $("snippet-action-menu").showModal();
+  $("snippet-action-copy").focus({ preventScroll: true });
+}
+function installLongPress(main, snippet) {
+  let timer = 0;
+  let startX = 0;
+  let startY = 0;
+  let handled = false;
+  const cancel = () => { clearTimeout(timer); timer = 0; };
+  main.addEventListener("pointerdown", event => {
+    if (!narrowLayout() || event.pointerType === "mouse") return;
+    startX = event.clientX; startY = event.clientY; handled = false;
+    timer = setTimeout(() => {
+      handled = true;
+      navigator.vibrate?.(10);
+      openSnippetActionMenu(snippet);
+      setTimeout(() => { handled = false; }, 800);
+    }, 550);
+  });
+  main.addEventListener("pointermove", event => {
+    if (Math.hypot(event.clientX - startX, event.clientY - startY) > 10) cancel();
+  });
+  main.addEventListener("pointerup", cancel);
+  main.addEventListener("pointercancel", cancel);
+  main.addEventListener("contextmenu", event => { if (narrowLayout()) event.preventDefault(); });
+  return () => {
+    if (!handled) return false;
+    handled = false;
+    return true;
+  };
+}
 function runListActionAfterSave(action) {
   void navigateAfterSave(() => {
     if (!$("editor").hidden) closeSurface("editor");
@@ -279,13 +317,12 @@ function render() {
     main.ariaLabel = `Open ${label(snippet)} in Linksaw`;
     main.setAttribute("aria-description", "Open snippet viewer");
     main.addEventListener("focus", () => setSelected(index, false));
-    main.addEventListener("click", () => runListActionAfterSave(() => { setSelected(index, false); openSnippet(snippet); }));
+    const consumedLongPress = installLongPress(main, snippet);
+    main.addEventListener("click", event => {
+      if (consumedLongPress()) { event.preventDefault(); return; }
+      runListActionAfterSave(() => { setSelected(index, false); openSnippet(snippet); });
+    });
     row.append(main);
-    const view = document.createElement("button"); view.type = "button"; view.className = "result-view icon-button";
-    view.ariaLabel = url ? "Open website" : "Copy snippet"; view.dataset.tooltip = url ? "Open website" : "Copy"; view.innerHTML = icons.chevronRight;
-    view.addEventListener("focus", () => setSelected(index, false));
-    view.addEventListener("click", event => { event.stopPropagation(); runListActionAfterSave(() => { setSelected(index, false); void useSnippet(snippet).catch(showCopyError); }); });
-    row.append(view);
     results.append(row);
   });
   renderViewer(state.selected >= 0 ? state.filtered[state.selected] : null);
@@ -972,6 +1009,8 @@ function cancelDialogOnBackdrop(dialog) {
 }
 cancelDialogOnBackdrop($("action-confirm-dialog"));
 cancelDialogOnBackdrop($("delete-account-dialog"));
+cancelDialogOnBackdrop($("snippet-action-menu"));
+$("snippet-action-menu").addEventListener("close", () => { actionMenuSnippet = null; });
 async function deleteSnippet(snippet) {
   if (!snippet || deletingSnippetId === snippet.id) return;
   if (!$("editor").hidden && state.editing?.id === snippet.id && !await flushEditorSave()) return;
@@ -999,6 +1038,22 @@ async function deleteSnippet(snippet) {
 }
 $("delete").addEventListener("click", () => deleteSnippet(state.editing));
 $("mobile-delete").addEventListener("click", () => deleteSnippet(state.editing));
+$("snippet-action-copy").addEventListener("click", () => {
+  const snippet = actionMenuSnippet; closeSnippetActionMenu();
+  if (snippet) copySnippet(snippet).catch(showCopyError);
+});
+$("snippet-action-share").addEventListener("click", () => {
+  const snippet = actionMenuSnippet; const button = $("snippet-action-share"); closeSnippetActionMenu();
+  if (snippet) shareSnippet(snippet, button).catch(showError);
+});
+$("snippet-action-edit").addEventListener("click", () => {
+  const snippet = actionMenuSnippet; closeSnippetActionMenu();
+  if (snippet) runListActionAfterSave(() => openEditor(snippet));
+});
+$("snippet-action-delete").addEventListener("click", () => {
+  const snippet = actionMenuSnippet; closeSnippetActionMenu();
+  if (snippet) void deleteSnippet(snippet);
+});
 $("toast-action").addEventListener("click", async () => {
   if (!pendingUndo) return;
   const undo = pendingUndo;

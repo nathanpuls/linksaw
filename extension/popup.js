@@ -1,8 +1,7 @@
 const API = 'https://snippets-api.linksaw.com';
 const $ = id => document.getElementById(id);
 const svg = paths => `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
-const icons = { plus: svg('<path d="M5 12h14M12 5v14"/>'), copy: svg('<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'), open: svg('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>'), settings: svg('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/>') };
-icons.open = svg('<path d="m9 18 6-6-6-6"/>');
+const icons = { plus: svg('<path d="M5 12h14M12 5v14"/>'), copy: svg('<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>'), settings: svg('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/>') };
 $('new').innerHTML = icons.plus;
 $('website').innerHTML = icons.settings;
 let snippets = [], selected = 0, tabId, tooltipTimer, tooltipTarget, statusTimer, refreshInFlight = false, hasLoaded = false;
@@ -83,10 +82,9 @@ function render() {
     const main = document.createElement('button'); main.className = 'primary'; main.type = 'button';
     const title = document.createElement('span'); title.className = 'title'; title.textContent = label(snippet); main.append(title);
     if (snippet.title.trim() && snippet.body.trim() && snippet.title.trim() !== snippet.body.trim()) { const preview = document.createElement('span'); preview.className = 'preview'; preview.textContent = snippet.body.replace(/\s+/g, ' ').trim(); main.append(preview); }
-    main.ariaLabel = urlFor(content(snippet)) ? `Open ${label(snippet)} website` : `Paste ${label(snippet)}`;
-    main.addEventListener('click', () => use(snippet).catch(error => status(error.message)));
-    const viewButton = document.createElement('button'); viewButton.className = 'action'; viewButton.type = 'button'; viewButton.dataset.tooltip = 'View details'; viewButton.ariaLabel = 'View details'; viewButton.innerHTML = icons.open; viewButton.addEventListener('click', event => { event.stopPropagation(); openInLinksaw(snippet).catch(error => status(error.message)); });
-    row.append(main, viewButton); $('results').append(row);
+    main.ariaLabel = `Open ${label(snippet)} in Linksaw`;
+    main.addEventListener('click', () => openInLinksaw(snippet).catch(error => status(error.message)));
+    row.append(main); $('results').append(row);
   });
 }
 async function refresh({ quiet = false } = {}) {

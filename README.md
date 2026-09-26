@@ -8,7 +8,7 @@ For the product decisions, settled interaction model, repository transition, and
 
 ## What works in the prototype
 
-- Compact, fast launcher with global Command/Control–Shift–Space shortcut, arrow-key selection, Return **and click** with identical actions, and Escape to hide. The older Electron experiment must use a different shortcut while both apps are running.
+- Compact, fast launcher with global Command/Control–Shift–Space shortcut, arrow-key selection, Return for the fast Use action, click to open a snippet, and Escape to hide. The older Electron experiment must use a different shortcut while both apps are running.
 - Each snippet has an optional title and primary content. Without a title, the first content line becomes the result name. Search covers title and content. Results follow latest-edit order unless a stronger text match ranks higher.
 - Create, preview, edit, copy, paste, and delete snippets. The earlier nested Details feature has been removed; authenticated startup deletes any legacy detail records for that account.
 - Ordinary text pastes into the previous app; a complete web link opens in the browser. A URL containing `$` enters search mode and substitutes the encoded query. The prior clipboard is restored after a successful paste when unchanged.
@@ -27,7 +27,7 @@ On macOS the launcher joins all Spaces, including other apps’ full-screen Spac
 - Snippets refresh on launcher reopen/focus and poll while the app is active so edits made by another client appear within a few seconds. Existing results remain available during loading and after connection errors; Retry fetches again. Command/Control–R forces a manual refresh. Version-checked saves prevent an older client from silently overwriting a newer edit.
 - Command–N on macOS or Control–N on Windows opens a new snippet from the launcher.
 - Right-click a result, or press Command/Control–K, for Preview, Edit, Copy, and Delete. Deletion still asks for confirmation.
-- Right Arrow, the row chevron, or Command/Control–P opens a full-window, read-only Preview of the selected snippet. Return, clicking the row body, or Command/Control–1 uses it; Command/Control–C copies it; Left Arrow or Escape returns to Search. Existing paste, URL, template, and dynamic-placeholder behavior applies.
+- Clicking a row opens its full-window, read-only Preview. Right Arrow and Command/Control–P also open the selected snippet. Return or Command/Control–1–9 uses it without opening; Command/Control–C copies it; Left Arrow or Escape returns to Search. Existing paste, URL, template, and dynamic-placeholder behavior applies. Rows have no permanent trailing action icon.
 - Command/Control–S saves the editor. Saving disables editing until the request finishes; a failed save leaves the draft intact.
 - Closing a changed editor offers Save, Discard, or Keep editing. The same warning protects application Quit and window close. Save before quitting exits only after a successful save; failed saves keep the draft open.
 
