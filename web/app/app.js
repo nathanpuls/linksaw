@@ -762,6 +762,11 @@ $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 $("preview-delete").addEventListener("click", () => deleteSnippet(state.previewing));
+$("preview-title").addEventListener("click", () => {
+  if (!state.previewing) return;
+  openEditor(state.previewing);
+  requestAnimationFrame(beginInlineRename);
+});
 $("preview-body").addEventListener("click", event => {
   if (event.target.closest?.("a") || !state.previewing || narrowLayout()) return;
   const point = document.caretPositionFromPoint?.(event.clientX, event.clientY);
@@ -780,6 +785,16 @@ $("preview-body").addEventListener("click", event => {
   requestAnimationFrame(() => {
     $("snippet-body").focus({ preventScroll: true });
     $("snippet-body").setSelectionRange(offset, offset);
+  });
+});
+$("preview-body").addEventListener("keydown", event => {
+  if ((event.key !== "Enter" && event.key !== " ") || !state.previewing || narrowLayout()) return;
+  event.preventDefault();
+  const snippet = state.previewing;
+  openEditor(snippet, true, { focus: false });
+  requestAnimationFrame(() => {
+    $("snippet-body").focus({ preventScroll: true });
+    $("snippet-body").setSelectionRange(0, 0);
   });
 });
 $("editor-copy").addEventListener("click", async () => {

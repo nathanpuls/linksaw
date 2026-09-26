@@ -85,12 +85,13 @@ button { color: inherit; }
 .viewer-header { height: 68px; flex: 0 0 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px; }
 .viewer-back { display: none; }
 .reader-toggle { margin-right: 2px; }
-.preview-title { flex: 1; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-title { flex: 1; min-width: 0; margin: 0; overflow: hidden; border: 0; border-radius: 6px; padding: 4px 0; background: transparent; color: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
 .preview-title { font-size: 16px; font-weight: 550; letter-spacing: -.01em; }
+.preview-title:focus-visible, .preview-body:focus-visible { outline: 1px solid var(--focus); outline-offset: 2px; }
 .viewer-actions { margin-left: auto; display: flex; align-items: center; gap: 3px; }
 .viewer-delete { margin-left: 9px; }
 .viewer-scroll { min-height: 0; flex: 1; overflow: auto; }
-.preview-body { width: min(900px, 100%); margin: 0; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; }
+.preview-body { width: min(900px, 100%); min-height: 100%; margin: 0; overflow-wrap: anywhere; padding: 8px 36px 48px 74px; font: inherit; font-size: 16px; line-height: 1.65; cursor: text; }
 .preview-body a, .mobile-snippet-view a { color: inherit; text-decoration: underline; text-decoration-color: var(--control); text-decoration-thickness: 1.2px; text-underline-offset: 2px; text-decoration-skip-ink: none; -webkit-text-decoration-skip: none; cursor: pointer; word-break: break-word; }
 .preview-body a:hover, .preview-body a:focus-visible, .mobile-snippet-view a:hover, .mobile-snippet-view a:focus-visible { text-decoration-color: currentColor; }
 .markdown-body > :first-child { margin-top: 0; }

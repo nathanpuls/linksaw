@@ -172,6 +172,10 @@ test("interactive web controls expose Voice Control names without changing the p
   assert.match(source, /row\.querySelector\("\.result-main"\)\?\.setAttribute\("aria-current", selected \? "true" : "false"\)/);
   assert.match(html, /id="results" class="results" role="list" aria-label="Snippets"/);
   assert.match(source, /row\.setAttribute\("role", "listitem"\)/);
+  assert.match(html, /id="preview-title" class="preview-title" type="button" aria-label="Edit title"/);
+  assert.match(html, /id="preview-body" class="preview-body markdown-body" role="region" tabindex="0" aria-label="Edit snippet content"/);
+  assert.match(source, /\$\("preview-title"\)\.addEventListener\("click"[\s\S]*?openEditor\(state\.previewing\)[\s\S]*?beginInlineRename/);
+  assert.match(source, /\$\("preview-body"\)\.addEventListener\("keydown"[\s\S]*?event\.key !== "Enter"[\s\S]*?openEditor\(snippet/);
 });
 
 test("unchanged background sync preserves Voice Control targets", () => {

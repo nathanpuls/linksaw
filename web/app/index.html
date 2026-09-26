@@ -45,7 +45,7 @@
         <header class="viewer-header">
           <button id="close-preview" class="icon-button viewer-back" type="button" aria-label="Back to snippets" data-tooltip="Back to snippets" data-shortcut="Esc"></button>
           <button id="reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
-          <h1 id="preview-title" class="preview-title"></h1>
+          <button id="preview-title" class="preview-title" type="button" aria-label="Edit title"></button>
           <div class="viewer-actions">
             <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
             <button id="preview-share" class="icon-button" type="button" aria-label="Share" data-tooltip="Share"></button>
@@ -53,7 +53,7 @@
             <button id="preview-delete" class="icon-button viewer-delete" type="button" aria-label="Delete" data-tooltip="Delete"></button>
           </div>
         </header>
-        <div class="viewer-scroll"><div id="preview-body" class="preview-body markdown-body"></div></div>
+        <div class="viewer-scroll"><div id="preview-body" class="preview-body markdown-body" role="region" tabindex="0" aria-label="Edit snippet content"></div></div>
       </article>
     </section>
   </main>
@@ -190,6 +190,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260926-7"></script>
+  <script type="module" src="/app/app.js?v=20260926-8"></script>
 </body>
 </html>
