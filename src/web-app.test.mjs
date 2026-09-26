@@ -185,6 +185,8 @@ test("content editing keeps the same plain-text scale and vertical rhythm", () =
   assert.match(css, /\.preview-body \{ width: min\(900px, 100%\);[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
   assert.match(css, /\.content-input \{[^}]*width: min\(900px, 100%\);[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.preview-body, \.content-input \{ padding: 8px 22px 40px 16px; \}/);
+  assert.match(css, /\.markdown-body p \{ margin: 0 0 1em; white-space: pre-wrap; \}/);
+  assert.match(css, /\.markdown-body li \{ white-space: pre-wrap; \}/);
 });
 
 test("mobile Back glyph aligns with the content gutter", () => {

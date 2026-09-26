@@ -95,13 +95,14 @@ button { color: inherit; }
 .preview-body a:hover, .preview-body a:focus-visible { text-decoration-color: currentColor; }
 .markdown-body > :first-child { margin-top: 0; }
 .markdown-body > :last-child { margin-bottom: 0; }
-.markdown-body p { margin: 0 0 1em; }
+.markdown-body p { margin: 0 0 1em; white-space: pre-wrap; }
 .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { margin: 1.25em 0 .55em; line-height: 1.28; letter-spacing: -.015em; }
 .markdown-body h1 { font-size: 1.5em; }
 .markdown-body h2 { font-size: 1.3em; }
 .markdown-body h3 { font-size: 1.15em; }
 .markdown-body h4, .markdown-body h5, .markdown-body h6 { font-size: 1em; }
 .markdown-body ul, .markdown-body ol { margin: 0 0 1em; padding-left: 1.65em; }
+.markdown-body li { white-space: pre-wrap; }
 .markdown-body li + li { margin-top: .25em; }
 .markdown-body blockquote { margin: 0 0 1em; padding-left: 1em; border-left: 2px solid var(--control); color: var(--muted); }
 .markdown-body blockquote > :last-child { margin-bottom: 0; }
