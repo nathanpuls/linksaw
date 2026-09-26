@@ -127,8 +127,8 @@ button { color: inherit; }
 .mobile-editor-action { display: none; }
 .icon-button:disabled { color: var(--control); cursor: default; }
 .icon-button:disabled:hover { color: var(--control); }
-.content-input { flex: 1; min-height: 260px; width: min(900px, 100%); resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
-.mobile-snippet-view { display: none; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
+.content-input { flex: 1; min-width: 0; min-height: 260px; width: min(900px, 100%); max-width: 100%; resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.mobile-snippet-view { display: none; overflow: auto; cursor: text; }
 .editor-status { min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 0 4px; color: var(--muted); font-size: 13px; }
 .editor-retry { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .editor-retry:hover, .editor-retry:focus-visible { outline: 0; text-decoration-thickness: 2px; }
@@ -211,7 +211,9 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   #editor .surface-inner { height: 100%; min-height: 0; }
   #editor.mobile-unified .surface-inner { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
   #editor.mobile-unified .surface-header { grid-row: 1; }
-  #editor.mobile-unified .content-input { grid-row: 2; grid-column: 1; }
+  #editor.mobile-unified .content-input { grid-row: 2; grid-column: 1; align-self: stretch; justify-self: stretch; }
+  #editor.mobile-unified #snippet-body { z-index: 0; }
+  #editor.mobile-unified .mobile-snippet-view { z-index: 1; }
   #editor.mobile-unified .surface-footer { grid-row: 3; }
   #editor .surface-header, #editor .surface-footer { flex: 0 0 auto; }
   #editor .content-input { min-height: 0; }

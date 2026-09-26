@@ -208,8 +208,11 @@ test("mobile view and edit are distinct states on one stable visual surface", ()
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("blur"[\s\S]*?setMobileEditorState\(false\)/);
   assert.match(source, /visualViewport\?\.addEventListener\("resize"[\s\S]*?document\.activeElement !== input[\s\S]*?input\.blur\(\)/);
   assert.match(source, /updateUrl\(\{ view: state\.editorContext === "mobile" \? null : "edit", snippet: savedSnippet\.id \}, false\)/);
-  assert.match(css, /\.mobile-snippet-view \{[^}]*white-space: pre-wrap;[^}]*cursor: text;/);
+  assert.match(css, /\.mobile-snippet-view \{[^}]*overflow: auto;[^}]*cursor: text;/);
   assert.match(css, /#editor\.mobile-unified \.surface-inner \{ display: grid; grid-template-rows: auto minmax\(0, 1fr\) auto; \}/);
+  assert.match(css, /#editor\.mobile-unified #snippet-body \{ z-index: 0; \}/);
+  assert.match(css, /#editor\.mobile-unified \.mobile-snippet-view \{ z-index: 1; \}/);
+  assert.match(css, /\.content-input \{[^}]*min-width: 0;[^}]*max-width: 100%;[^}]*white-space: pre-wrap;[^}]*overflow-wrap: anywhere;[^}]*word-break: break-word;/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #snippet-body \{ color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; pointer-events: none; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view a \{ pointer-events: auto; \}/);
