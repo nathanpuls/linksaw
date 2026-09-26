@@ -239,7 +239,7 @@ test("mobile view preserves safe automatic links without sacrificing one-tap edi
 test("mobile rendered view follows the underlying editor scroll position", () => {
   assert.match(source, /function syncMobileScroll\(source, target\)[\s\S]*?source\.scrollHeight - source\.clientHeight[\s\S]*?target\.scrollTop = sourceRange && targetRange/);
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("scroll"[\s\S]*?syncMobileScroll\(\$\("snippet-body"\), \$\("mobile-snippet-view"\)\)/);
-  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("scroll"[\s\S]*?syncMobileScroll\(\$\("mobile-snippet-view"\), \$\("snippet-body"\)\)/);
+  assert.doesNotMatch(source, /\$\("mobile-snippet-view"\)\.addEventListener\("scroll"/);
   assert.match(source, /function enterMobileEdit[\s\S]*?syncMobileScroll\(\$\("mobile-snippet-view"\), input\)[\s\S]*?setMobileEditorState\(true\)/);
 });
 

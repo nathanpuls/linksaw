@@ -868,9 +868,6 @@ $("mobile-snippet-view").addEventListener("click", event => {
 $("mobile-snippet-view").addEventListener("keydown", event => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); enterMobileEdit(); }
 });
-$("mobile-snippet-view").addEventListener("scroll", () => {
-  if (!$("editor").classList.contains("is-editing")) syncMobileScroll($("mobile-snippet-view"), $("snippet-body"));
-});
 $("snippet-body").addEventListener("scroll", () => {
   if (!$("editor").classList.contains("is-editing")) syncMobileScroll($("snippet-body"), $("mobile-snippet-view"));
 });
