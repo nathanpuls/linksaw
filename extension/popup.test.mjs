@@ -72,10 +72,42 @@ test('manifest limits fetch permission to the API and installs the autocomplete 
   assert.deepEqual(manifest.host_permissions, ['https://snippets-api.linksaw.com/*']);
   assert.equal(manifest.permissions.includes('cookies'), false);
   assert.equal(manifest.permissions.includes('storage'), false);
+  assert.equal(manifest.permissions.includes('contextMenus'), true);
+  assert.equal(manifest.commands._execute_action.suggested_key.mac, 'Command+Shift+L');
+  assert.equal(manifest.commands._execute_action.suggested_key.default, 'Ctrl+Shift+L');
+  assert.equal(manifest.commands['open-autocomplete'].suggested_key, undefined);
   assert.deepEqual(manifest.content_scripts[0].matches, ['http://*/*', 'https://*/*']);
   assert.deepEqual(manifest.content_scripts[0].js, ['dynamic.js', 'content.js']);
   assert.equal(manifest.background.service_worker, 'background.js');
   assert.match(contentSource, /pointerenter[\s\S]*selected = index/);
+});
+
+test('background registers contextual save actions and posts captured snippets', () => {
+  assert.match(backgroundSource, /Save selection to Linksaw/);
+  assert.match(backgroundSource, /Save page to Linksaw/);
+  assert.match(backgroundSource, /Save link to Linksaw/);
+  assert.match(backgroundSource, /chrome\.contextMenus\.onClicked\.addListener/);
+  assert.match(backgroundSource, /api\('\/snippets', \{[\s\S]*method: 'POST'/);
+  assert.match(backgroundSource, /body: JSON\.stringify\(snippet\)/);
+  assert.match(backgroundSource, /showBadge\('✓', 'Saved to Linksaw'\)/);
+});
+
+test('context-menu captures preserve selection and save page titles separately from URLs', () => {
+  const httpUrlSource = backgroundSource.match(/function httpUrl\(value\) \{[\s\S]*?\n\}/)?.[0];
+  const contextSnippetSource = backgroundSource.match(/function contextSnippet\(info, tab\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(httpUrlSource && contextSnippetSource);
+  const contextSnippet = vm.runInNewContext(`(() => { ${httpUrlSource}\n${contextSnippetSource}\nreturn contextSnippet; })()`, { URL });
+  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save-selection', selectionText: ' First\nSecond ' }, {}) }, { title: '', body: ' First\nSecond ' });
+  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save-page', pageUrl: 'https://example.com/path' }, { title: 'Example page' }) }, { title: 'Example page', body: 'https://example.com/path' });
+  assert.deepEqual({ ...contextSnippet({ menuItemId: 'linksaw-save-link', linkUrl: 'https://example.com/file' }, {}) }, { title: '', body: 'https://example.com/file' });
+});
+
+test('configurable Chrome command opens autocomplete in the focused field', () => {
+  assert.match(backgroundSource, /command !== 'open-autocomplete'/);
+  assert.match(backgroundSource, /LINKSAW_OPEN_AUTOCOMPLETE/);
+  assert.match(contentSource, /message\?\.type !== 'LINKSAW_OPEN_AUTOCOMPLETE'/);
+  assert.match(contentSource, /const element = editable\(document\.activeElement\)/);
+  assert.match(contentSource, /Select a text field first/);
 });
 
 test('website bridge opens links in an active tab and only accepts Linksaw requests', () => {
@@ -133,6 +165,7 @@ test('autocomplete recent list filters and clears in the actual overlay', async 
   window.LinksawDynamic = { expandDynamic: text => ({ text, cursorLeft: 0 }) };
   window.chrome = {
     runtime: {
+      onMessage: { addListener() {} },
       sendMessage: async message => message.type === 'LINKSAW_DATA'
         ? {
             ok: true,

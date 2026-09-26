@@ -179,6 +179,22 @@
     });
   }
 
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== 'LINKSAW_OPEN_AUTOCOMPLETE') return;
+    if (host) {
+      search?.focus();
+      sendResponse({ ok: true });
+      return;
+    }
+    const element = editable(document.activeElement);
+    if (!element) {
+      sendResponse({ ok: false, error: 'Select a text field first' });
+      return;
+    }
+    open(element);
+    sendResponse({ ok: true });
+  });
+
   document.addEventListener('keydown', event => {
     if (host || event.defaultPrevented || event.repeat || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
     const element = editable(event.target);
