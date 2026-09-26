@@ -90,7 +90,7 @@ test('website bridge opens links in an active tab and only accepts Linksaw reque
 test('extension uses on click and Enter while its chevron and Right Arrow view the item', () => {
   assert.doesNotMatch(popupHtml, /\stitle=/);
   assert.match(popupHtml, /data-tooltip="New snippet"/);
-  assert.match(popupHtml, /aria-label="Linksaw website" data-tooltip="Linksaw website"/);
+  assert.match(popupHtml, /aria-label="Settings" data-tooltip="Settings"/);
   assert.match(source, /main\.ariaLabel = urlFor\(content\(snippet\)\) \? `Open \$\{label\(snippet\)\} website` : `Paste \$\{label\(snippet\)\}`/);
   assert.match(source, /viewButton\.dataset\.tooltip = 'View details'; viewButton\.ariaLabel = 'View details'/);
   assert.match(source, /icons\.open = svg\('<path d="m9 18 6-6-6-6"\/>/);
@@ -101,7 +101,7 @@ test('extension uses on click and Enter while its chevron and Right Arrow view t
   assert.match(contentSource, /event\.key === 'Enter'[\s\S]*choose\(snippets\[selected\]\)/);
   assert.match(contentSource, /event\.key === 'ArrowRight'[\s\S]*openInLinksaw\(snippets\[selected\]\)/);
   assert.match(backgroundSource, /message\?\.type === 'LINKSAW_OPEN_URL'/);
-  assert.match(source, /https:\/\/linksaw\.com\/\?website=1/);
+  assert.match(source, /https:\/\/linksaw\.com\/home\/\?view=settings/);
   assert.match(source, /setTimeout\([\s\S]*450\)/);
 });
 

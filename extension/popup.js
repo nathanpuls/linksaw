@@ -113,7 +113,7 @@ async function refresh({ quiet = false } = {}) {
   } finally { refreshInFlight = false; }
 }
 $('login').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/login' }));
-$('website').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/?website=1' }));
+$('website').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/home/?view=settings' }));
 $('new').addEventListener('click', () => chrome.tabs.create({ url: 'https://linksaw.com/home/?view=new' }));
 $('search').addEventListener('input', () => { selected = 0; render(); });
 $('search').addEventListener('keydown', event => {
