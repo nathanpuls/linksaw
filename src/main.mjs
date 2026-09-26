@@ -342,7 +342,7 @@ function openSettings() {
   void settingsWindow.enter();
 }
 
-let editorBaseline = '', editorSaving = false, editorAutosaveTimer, editorSaveAgain = false, editorConflict = null;
+let editorBaseline = '', editorSaving = false, editorAutosaveTimer, editorSlowSaveTimer, editorSaveAgain = false, editorConflict = null;
 let editorHistory = [], editorHistoryIndex = -1, editorHistoryTimer;
 function resizeEditorArea(textarea) {
   textarea.style.height = 'auto';
@@ -443,6 +443,18 @@ function recoverLocalEditorDraft() {
   const snippet = draft.snippetId ? state.snippets.find(item => item.id === draft.snippetId) || null : null;
   openEditor(snippet, { draft });
 }
+function beginEditorSaveFeedback() {
+  clearTimeout(editorSlowSaveTimer);
+  document.getElementById('editor-feedback').textContent = '';
+  editorSlowSaveTimer = setTimeout(() => {
+    if (editorSaving) document.getElementById('editor-feedback').textContent = 'Saving…';
+  }, 1600);
+}
+function clearEditorSaveFeedback() {
+  clearTimeout(editorSlowSaveTimer);
+  editorSlowSaveTimer = null;
+  document.getElementById('editor-feedback').textContent = '';
+}
 async function saveEditor(event, { closeAfter = false } = {}) {
   event?.preventDefault();
   clearTimeout(editorAutosaveTimer);
@@ -454,7 +466,7 @@ async function saveEditor(event, { closeAfter = false } = {}) {
   }
   if (closeAfter && editorConflict && state.editing) { state.editing = { ...state.editing, ...editorConflict }; editorConflict = null; }
   editorSaving = true;
-  document.getElementById('editor-feedback').textContent = 'Saving…';
+  beginEditorSaveFeedback();
   const snapshot = editorSnapshot();
   const body = { title: ui.snippettitle.value, body: ui.snippetbody.value, ...(state.editing ? { version: state.editing.version } : {}) };
   let saved = false;
@@ -465,7 +477,7 @@ async function saveEditor(event, { closeAfter = false } = {}) {
     if (result.snippet) state.editing = result.snippet;
     editorBaseline = snapshot;
     editorConflict = null;
-    document.getElementById('editor-feedback').textContent = 'Saved';
+    clearEditorSaveFeedback();
     if (editorSnapshot() === snapshot) clearLocalEditorDraft();
     else persistLocalEditorDraft();
     saved = true;
@@ -477,16 +489,22 @@ async function saveEditor(event, { closeAfter = false } = {}) {
         state.editing = conflict;
         editorBaseline = snapshot;
         editorConflict = null;
-        document.getElementById('editor-feedback').textContent = 'Saved';
+        clearEditorSaveFeedback();
         if (editorSnapshot() === snapshot) clearLocalEditorDraft();
         else persistLocalEditorDraft();
         saved = true;
         await refresh();
       } else {
+        clearTimeout(editorSlowSaveTimer);
+        editorSlowSaveTimer = null;
         editorConflict = conflict;
         document.getElementById('editor-feedback').textContent = 'Couldn’t save · Try again';
       }
-    } else document.getElementById('editor-feedback').textContent = 'Couldn’t save · Try again';
+    } else {
+      clearTimeout(editorSlowSaveTimer);
+      editorSlowSaveTimer = null;
+      document.getElementById('editor-feedback').textContent = 'Couldn’t save · Try again';
+    }
   } finally {
     editorSaving = false;
     if (editorSaveAgain && !editorConflict) {
@@ -501,14 +519,12 @@ function scheduleEditorAutosave() {
   clearTimeout(editorAutosaveTimer);
   persistLocalEditorDraft();
   if (editorConflict || editorSnapshot() === editorBaseline) return;
-  document.getElementById('editor-feedback').textContent = 'Saving…';
   editorAutosaveTimer = setTimeout(() => { void saveEditor(null, { closeAfter: false }); }, 700);
 }
 async function closeEditorAfterAutosave() {
   clearTimeout(editorAutosaveTimer);
   if (editorSaving) {
     editorSaveAgain = editorSnapshot() !== editorBaseline;
-    document.getElementById('editor-feedback').textContent = 'Saving…';
     while (editorSaving) await new Promise(resolve => setTimeout(resolve, 30));
   }
   if (editorSnapshot() === editorBaseline || (!state.editing && !ui.snippettitle.value.trim() && !ui.snippetbody.value.trim())) {

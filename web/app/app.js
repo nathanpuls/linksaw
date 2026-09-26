@@ -37,6 +37,7 @@ let inlineRenameBaseline = "";
 let editorBaseline = "";
 let autosaveTimer;
 let saveInFlight;
+let editorSlowSaveTimer;
 let saveAgain = false;
 let saveFailed = false;
 let editorConflict = null;
@@ -368,6 +369,16 @@ function setEditorStatus(status) {
   $("mobile-editor-status").hidden = !status;
   setEditorRetryVisible(status === "Couldn’t save ·");
 }
+function beginEditorSaveFeedback() {
+  clearTimeout(editorSlowSaveTimer);
+  setEditorStatus("");
+  editorSlowSaveTimer = setTimeout(() => setEditorStatus("Saving…"), 1600);
+}
+function clearEditorSaveFeedback() {
+  clearTimeout(editorSlowSaveTimer);
+  editorSlowSaveTimer = null;
+  setEditorStatus("");
+}
 function setEditorRetryVisible(visible) {
   $("editor-retry").hidden = !visible;
   $("mobile-editor-retry").hidden = !visible;
@@ -433,14 +444,14 @@ async function runSaveLoop(sessionId) {
     if (snapshot === editorBaseline) return true;
     if (!state.editing && !value.body.trim()) { setEditorStatus(""); return true; }
     if (!value.title.trim() && !value.body.trim()) { setEditorStatus("Couldn’t save ·"); saveFailed = true; return false; }
-    setEditorStatus("Saving…");
+    beginEditorSaveFeedback();
     try {
       const creating = !state.editing;
       const result = await api(creating ? "/snippets" : `/snippets/${state.editing.id}`, {
         method: creating ? "POST" : "PUT",
         body: JSON.stringify(creating ? { ...value, importId: editorCreateId } : { ...value, version: state.editing.version }),
       });
-      if (sessionId !== editorSessionId) return true;
+      if (sessionId !== editorSessionId) { clearEditorSaveFeedback(); return true; }
       const wasNew = creating;
       let savedSnippet = result.snippet;
       // A create may have reached the server even if its response was lost. The
@@ -461,9 +472,11 @@ async function runSaveLoop(sessionId) {
       if (wasNew && state.editorContext !== "default") {
         updateUrl({ view: state.editorContext === "mobile" ? null : "edit", snippet: savedSnippet.id }, false);
       }
-      if (editorSnapshot() === editorBaseline) setEditorStatus("Saved");
+      if (editorSnapshot() === editorBaseline) clearEditorSaveFeedback();
     } catch (error) {
-      if (sessionId !== editorSessionId) return false;
+      clearTimeout(editorSlowSaveTimer);
+      editorSlowSaveTimer = null;
+      if (sessionId !== editorSessionId) { setEditorStatus(""); return false; }
       const conflict = error.status === 409 ? error.data?.snippet || null : null;
       // A request can reach D1 even when its response is lost. If the server's
       // newer row is exactly this settled edit, treat the retry as confirmed.
@@ -473,7 +486,7 @@ async function runSaveLoop(sessionId) {
         editorConflict = null;
         clearEditorDraft();
         upsertSavedSnippet(conflict);
-        setEditorStatus("Saved");
+        clearEditorSaveFeedback();
         continue;
       }
       saveFailed = true;
@@ -576,7 +589,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
     const draft = JSON.parse(localStorage.getItem(editorDraftKey()) || "null");
     if (draft?.snapshot && (draft.version === null || draft.version === snippet?.version)) {
       applyEditorSnapshot(draft.snapshot);
-      setEditorStatus("Saving…");
+      setEditorStatus("");
     }
   } catch { clearEditorDraft(); }
   syncHistoryControls();
@@ -951,7 +964,7 @@ async function performEditorHistory(direction) {
   }
   if (!state.editing?.[direction === "undo" ? "can_undo" : "can_redo"]) return;
   if (!await flushEditorSave()) return;
-  setEditorStatus("Saving…");
+  beginEditorSaveFeedback();
   try {
     const { snippet } = await api(`/snippets/${state.editing.id}/revisions/${direction}`, { method: "POST" });
     state.editing = snippet;
@@ -962,9 +975,11 @@ async function performEditorHistory(direction) {
     syncEditorName();
     editorBaseline = editorSnapshot();
     upsertSavedSnippet(snippet);
-    setEditorStatus("Saved");
+    clearEditorSaveFeedback();
     $("snippet-body").focus();
   } catch {
+    clearTimeout(editorSlowSaveTimer);
+    editorSlowSaveTimer = null;
     saveFailed = true;
     setEditorStatus("Couldn’t save ·");
   }

@@ -12,7 +12,9 @@ test("autosave waits for settled meaningful text and has no permanent save butto
   assert.doesNotMatch(html, /id="save-snippet"/);
   assert.match(source, /autosaveTimer = setTimeout\(\(\) => \{ void saveEditorNow\(\); \}, 700\)/);
   assert.match(source, /if \(!state\.editing && !value\.body\.trim\(\)\) \{ setEditorStatus\(""\); return true; \}/);
-  assert.match(source, /setEditorStatus\("Saving…"\)[\s\S]*?await api[\s\S]*?setEditorStatus\("Saved"\)/);
+  assert.match(source, /function beginEditorSaveFeedback\(\)[\s\S]*?setTimeout\(\(\) => setEditorStatus\("Saving…"\), 1600\)/);
+  assert.match(source, /await api[\s\S]*?clearEditorSaveFeedback\(\)/);
+  assert.doesNotMatch(source, /setEditorStatus\("Saved"\)/);
   assert.match(html, /id="editor-status-text"[\s\S]*id="editor-retry"[^>]*hidden>Retry/);
 });
 
@@ -125,12 +127,12 @@ test("navigation flushes autosave and retry preserves the intended destination",
 
 test("autosave queues newer edits behind active requests", () => {
   assert.match(source, /if \(saveInFlight\) \{[\s\S]*?saveAgain = true;[\s\S]*?await saveInFlight[\s\S]*?editorSnapshot\(\) !== editorBaseline[\s\S]*?saveEditorNow\(\)/);
-  assert.match(source, /const snapshot = editorSnapshot\(\)[\s\S]*?editorBaseline = snapshot[\s\S]*?if \(editorSnapshot\(\) === editorBaseline\) setEditorStatus\("Saved"\)/);
+  assert.match(source, /const snapshot = editorSnapshot\(\)[\s\S]*?editorBaseline = snapshot[\s\S]*?if \(editorSnapshot\(\) === editorBaseline\) clearEditorSaveFeedback\(\)/);
 });
 
 test("a lost save response is recognized when the stored conflict matches the draft", () => {
   assert.match(source, /conflict && conflict\.title === value\.title && conflict\.body === value\.body/);
-  assert.match(source, /clearEditorDraft\(\);[\s\S]*?upsertSavedSnippet\(conflict\);[\s\S]*?setEditorStatus\("Saved"\)/);
+  assert.match(source, /clearEditorDraft\(\);[\s\S]*?upsertSavedSnippet\(conflict\);[\s\S]*?clearEditorSaveFeedback\(\)/);
 });
 
 test("new snippet creation is idempotent across a lost response", () => {
