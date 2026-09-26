@@ -24,8 +24,10 @@
   let loadedAt = 0;
   let host = null;
   let search = null;
+  let clearSearch = null;
   let results = null;
   let status = null;
+  let loading = false;
   let selected = 0;
   let target = null;
   let inputSelection = null;
@@ -33,6 +35,12 @@
 
   const label = snippet => snippet.title?.trim() || snippet.body?.trim().split(/\r?\n/, 1)[0].slice(0, 80) || 'Untitled';
   const content = snippet => snippet.body || '';
+  function urlFor(text) {
+    const value = text.trim();
+    if (/^https?:\/\/[^\s]+$/i.test(value)) return value;
+    if (/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(value)) return `https://${value}`;
+    return '';
+  }
 
   function editable(element) {
     if (!element || element.disabled || element.readOnly) return null;
@@ -74,9 +82,11 @@
   }
 
   function render() {
+    if (!search || !results) return;
+    clearSearch.hidden = !search.value;
     const snippets = found(); selected = Math.min(selected, Math.max(0, snippets.length - 1)); results.replaceChildren();
     if (!snippets.length) {
-      const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = data.snippets.length ? 'No matches' : 'No snippets yet'; results.append(empty); return;
+      const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = loading ? 'Loading…' : data.snippets.length ? 'No matches' : 'No snippets yet'; results.append(empty); return;
     }
     snippets.slice(0, 9).forEach((snippet, index) => {
       const row = document.createElement('div'); row.className = `row${index === selected ? ' selected' : ''}`;
@@ -128,7 +138,7 @@
     return false;
   }
 
-  function close() { host?.remove(); host = search = results = status = null; target?.focus(); }
+  function close() { host?.remove(); host = search = clearSearch = results = status = null; loading = false; target?.focus(); }
   function choose(snippet) {
     const expanded = LinksawDynamic.expandDynamic(content(snippet));
     const url = urlFor(expanded.text);
@@ -141,9 +151,11 @@
   function open(element) {
     captureTarget(element); selected = 0;
     host = document.createElement('div'); host.id = 'linksaw-autocomplete-root'; const root = host.attachShadow({ mode: 'closed' });
-    root.innerHTML = `<style>:host{all:initial}.backdrop{position:fixed;inset:0;z-index:2147483647;background:#0002;display:grid;place-items:start center;padding:14vh 20px 40px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717}.panel{width:min(680px,calc(100vw - 40px));max-height:min(620px,72vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid #d8d8dc;border-radius:14px;background:#fff;box-shadow:0 22px 70px #0004}.search{width:100%;border:0;border-bottom:1px solid #e5e5e7;outline:0;padding:20px 22px;background:transparent;color:#171717;font:inherit;font-size:28px;letter-spacing:-.035em}.results{overflow:auto;padding:7px}.row{width:100%;min-height:58px;display:flex;align-items:center;border-radius:10px;padding:4px 6px 4px 12px;background:transparent;color:inherit;font:inherit}.row:hover,.row.selected{background:#f1f1f2}.primary{min-width:0;flex:1;border:0;padding:5px 0;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}.view{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:#777;opacity:0;cursor:pointer}.row:hover .view,.row.selected .view,.view:focus-visible{opacity:1}.view svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.title,.preview{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.title{font-size:14px;font-weight:650}.preview{margin-top:4px;color:#777;font-size:12px}.empty{padding:44px 18px;text-align:center;color:#777;font-size:13px}.status{padding:0 22px 14px;color:#777;font-size:12px}.status:empty{display:none}@media(prefers-color-scheme:dark){.panel{border-color:#454549;background:#242426;color:#f5f5f5}.search{border-color:#414145;color:#f5f5f5}.row:hover,.row.selected{background:#39393c}.preview,.status,.empty,.view{color:#aaa}}</style><div class="backdrop"><section class="panel" role="dialog" aria-modal="true" aria-label="Linksaw autocomplete"><input class="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search snippets"><div class="results" role="listbox"></div><div class="status" role="status"></div></section></div>`;
-    search = root.querySelector('.search'); results = root.querySelector('.results'); status = root.querySelector('.status');
+    root.innerHTML = `<style>:host{all:initial}.backdrop{position:fixed;inset:0;z-index:2147483647;background:#0002;display:grid;place-items:start center;padding:14vh 20px 40px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717}.panel{width:min(680px,calc(100vw - 40px));max-height:min(620px,72vh);display:flex;flex-direction:column;overflow:hidden;border:1px solid #d8d8dc;border-radius:14px;background:#fff;box-shadow:0 22px 70px #0004}.search-wrap{min-height:70px;display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;border-bottom:1px solid #e5e5e7;padding:0 10px 0 12px}.search{min-width:0;width:100%;border:0;outline:0;padding:18px 0;background:transparent;color:#171717;font:inherit;font-size:28px;letter-spacing:-.035em}.search::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}.search-icon,.clear{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:#777}.search-icon{cursor:text}.clear{cursor:pointer}.clear:hover,.clear:focus-visible{background:#f1f1f2;color:#171717;outline:0}.clear[hidden]{display:none}.search-icon svg,.clear svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.results{overflow:auto;padding:7px}.row{width:100%;min-height:58px;display:flex;align-items:center;border-radius:10px;padding:4px 6px 4px 12px;background:transparent;color:inherit;font:inherit}.row:hover,.row.selected{background:#f1f1f2}.primary{min-width:0;flex:1;border:0;padding:5px 0;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}.view{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:#777;opacity:0;cursor:pointer}.row:hover .view,.row.selected .view,.view:focus-visible{opacity:1}.view svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.title,.preview{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.title{font-size:14px;font-weight:650}.preview{margin-top:4px;color:#777;font-size:12px}.empty{padding:44px 18px;text-align:center;color:#777;font-size:13px}.status{padding:0 22px 14px;color:#777;font-size:12px}.status:empty{display:none}@media(prefers-color-scheme:dark){.panel{border-color:#454549;background:#242426;color:#f5f5f5}.search-wrap{border-color:#414145}.search{color:#f5f5f5}.row:hover,.row.selected,.clear:hover,.clear:focus-visible{background:#39393c}.preview,.status,.empty,.view,.search-icon,.clear{color:#aaa}.clear:hover,.clear:focus-visible{color:#f5f5f5}}</style><div class="backdrop"><section class="panel" role="dialog" aria-modal="true" aria-label="Linksaw autocomplete"><div class="search-wrap"><button class="search-icon" type="button" tabindex="-1" aria-label="Focus search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button><input class="search" type="search" placeholder="Search" autocomplete="off" aria-label="Search snippets"><button class="clear" type="button" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div><div class="results" role="listbox" aria-label="Recent snippets"></div><div class="status" role="status" aria-live="polite"></div></section></div>`;
+    search = root.querySelector('.search'); clearSearch = root.querySelector('.clear'); results = root.querySelector('.results'); status = root.querySelector('.status');
     root.querySelector('.backdrop').addEventListener('pointerdown', event => { if (event.target.classList.contains('backdrop')) close(); });
+    root.querySelector('.search-icon').addEventListener('click', () => search.focus());
+    clearSearch.addEventListener('click', () => { search.value = ''; selected = 0; render(); search.focus(); });
     search.addEventListener('input', () => { selected = 0; render(); });
     search.addEventListener('keydown', event => {
       const snippets = found().slice(0, 9);
@@ -152,7 +164,19 @@
       else if (event.key === 'Enter' && snippets[selected]) { event.preventDefault(); choose(snippets[selected]); }
       else if (event.key === 'ArrowRight' && snippets[selected]) { event.preventDefault(); openInLinksaw(snippets[selected]); }
     });
-    document.documentElement.append(host); render(); search.focus();
+    document.documentElement.append(host);
+    const openingHost = host;
+    loading = !data.snippets.length;
+    render(); search.focus();
+    refresh(true).then(() => {
+      if (host !== openingHost) return;
+      loading = false; status.textContent = ''; render();
+    }).catch(error => {
+      if (host !== openingHost) return;
+      loading = false; results.replaceChildren();
+      const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = 'Couldn’t load snippets'; results.append(empty);
+      status.textContent = error.message;
+    });
   }
 
   document.addEventListener('keydown', event => {
@@ -160,7 +184,6 @@
     const element = editable(event.target);
     if (!element || event.key !== data.autocompleteTrigger || !atBoundary(element)) return;
     event.preventDefault(); event.stopImmediatePropagation(); open(element);
-    refresh().then(render).catch(error => { if (status) status.textContent = error.message; });
   }, true);
 
   refresh().catch(() => {});

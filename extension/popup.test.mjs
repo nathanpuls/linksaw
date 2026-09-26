@@ -105,6 +105,69 @@ test('extension uses on click and Enter while its chevron and Right Arrow view t
   assert.match(source, /setTimeout\([\s\S]*450\)/);
 });
 
+test('autocomplete opens with recent snippets and uses Linksaw search controls', () => {
+  assert.match(contentSource, /const rank = !query \? 0/);
+  assert.match(contentSource, /refresh\(true\)\.then/);
+  assert.match(contentSource, /aria-label="Recent snippets"/);
+  assert.match(contentSource, /class="search-icon"[^>]*aria-label="Focus search"/);
+  assert.match(contentSource, /class="clear"[^>]*aria-label="Clear search" hidden/);
+  assert.match(contentSource, /search::-webkit-search-cancel-button\{-webkit-appearance:none;appearance:none;display:none\}/);
+  assert.match(contentSource, /clearSearch\.hidden = !search\.value/);
+  assert.match(contentSource, /clearSearch\.addEventListener\('click',[\s\S]*search\.value = ''[\s\S]*search\.focus\(\)/);
+  assert.match(contentSource, /search\.addEventListener\('input',[\s\S]*render\(\)/);
+  assert.match(contentSource, /loading \? 'Loading…' : data\.snippets\.length \? 'No matches' : 'No snippets yet'/);
+});
+
+test('autocomplete recent list filters and clears in the actual overlay', async () => {
+  const dom = new JSDOM('<input id="target">', {
+    pretendToBeVisual: true,
+    runScripts: 'outside-only',
+    url: 'https://example.com',
+  });
+  const { window } = dom;
+  window.HTMLElement.prototype.scrollIntoView = () => {};
+  const attachShadow = window.Element.prototype.attachShadow;
+  window.Element.prototype.attachShadow = function attachOpenShadow(options) {
+    return attachShadow.call(this, { ...options, mode: 'open' });
+  };
+  window.LinksawDynamic = { expandDynamic: text => ({ text, cursorLeft: 0 }) };
+  window.chrome = {
+    runtime: {
+      sendMessage: async message => message.type === 'LINKSAW_DATA'
+        ? {
+            ok: true,
+            autocompleteTrigger: ';',
+            snippets: [
+              { id: '11111111-1111-1111-1111-111111111111', title: 'Alpha', body: 'First' },
+              { id: '22222222-2222-2222-2222-222222222222', title: 'Beta', body: 'Second' },
+            ],
+          }
+        : { ok: true },
+    },
+  };
+  window.eval(contentSource);
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  const target = window.document.querySelector('#target');
+  target.focus();
+  target.setSelectionRange(0, 0);
+  target.dispatchEvent(new window.KeyboardEvent('keydown', { key: ';', bubbles: true, cancelable: true }));
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  const root = window.document.querySelector('#linksaw-autocomplete-root').shadowRoot;
+  assert.deepEqual([...root.querySelectorAll('.title')].map(node => node.textContent), ['Alpha', 'Beta']);
+  const search = root.querySelector('.search');
+  const clear = root.querySelector('.clear');
+  search.value = 'bet';
+  search.dispatchEvent(new window.Event('input', { bubbles: true }));
+  assert.deepEqual([...root.querySelectorAll('.title')].map(node => node.textContent), ['Beta']);
+  assert.equal(clear.hidden, false);
+  clear.click();
+  assert.equal(search.value, '');
+  assert.equal(clear.hidden, true);
+  assert.deepEqual([...root.querySelectorAll('.title')].map(node => node.textContent), ['Alpha', 'Beta']);
+});
+
 test('popup refreshes quietly while open without rebuilding unchanged Voice Control targets', () => {
   assert.match(source, /function libraryFingerprint\(items\)/);
   assert.match(source, /if \(refreshInFlight\) return;/);
