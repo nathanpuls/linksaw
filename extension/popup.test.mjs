@@ -61,6 +61,12 @@ test('result row supplies the only pointer-hover background', () => {
   assert.match(css, /\.row \.primary:hover\{background:transparent\}/);
 });
 
+test('popup clips its content to rounded outer corners', () => {
+  const css = readFileSync(new URL('./popup.css', import.meta.url), 'utf8');
+  assert.match(css, /:root\{[^}]*border-radius:14px;overflow:hidden/);
+  assert.match(css, /body\{[^}]*border-radius:inherit;overflow:hidden;background:#fff/);
+});
+
 test('manifest limits fetch permission to the API and installs the autocomplete listener', () => {
   const manifest = JSON.parse(readFileSync(new URL('./manifest.json', import.meta.url)));
   assert.deepEqual(manifest.host_permissions, ['https://snippets-api.linksaw.com/*']);
