@@ -32,7 +32,7 @@ test("editor label and content share one exact text gutter", () => {
   assert.match(css, /\.editor-name-action \{[^}]*margin-left: -11px;[^}]*border-radius: 6px;[^}]*padding: 7px 11px;[^}]*background: transparent;/);
   assert.match(css, /\.editor-name-input \{[^}]*margin-left: -12px;[^}]*border: 1px solid var\(--control\);[^}]*border-radius: 6px;[^}]*padding: 7px 11px;[^}]*background: var\(--hover\);[^}]*font-size: 16px;[^}]*font-weight: 550;[^}]*box-shadow: none;/);
   assert.match(css, /\.editor-name-input:focus \{ border-color: var\(--focus\); outline: 0; box-shadow: none; \}/);
-  assert.match(css, /\.content-input \{[^}]*padding: 8px 36px 48px 74px;/);
+  assert.match(css, /\.content-input \{[^}]*width: min\(900px, 100%\);[^}]*padding: 8px 36px 48px 74px;/);
 });
 
 test("primary editor is content-only and supports quiet inline custom names", () => {
@@ -182,8 +182,8 @@ test("unchanged background sync preserves Voice Control targets", () => {
 
 test("content editing keeps the same plain-text scale and vertical rhythm", () => {
   assert.match(css, /\.preview-title \{ font-size: 16px; font-weight: 550;/);
-  assert.match(css, /\.preview-body \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
-  assert.match(css, /\.content-input \{[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
+  assert.match(css, /\.preview-body \{ width: min\(900px, 100%\);[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
+  assert.match(css, /\.content-input \{[^}]*width: min\(900px, 100%\);[^}]*padding: 8px 36px 48px 74px;[^}]*font-size: 16px; line-height: 1\.65;/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.preview-body, \.content-input \{ padding: 8px 22px 40px 16px; \}/);
 });
 
@@ -199,17 +199,17 @@ test("mobile view and edit are distinct states on one stable visual surface", ()
   assert.match(source, /function openPreview\(snippet, pushHistory = true\) \{[\s\S]*?if \(narrowLayout\(\)\) \{ openEditor\(snippet, pushHistory, \{ focus: false \}\); return; \}/);
   assert.match(source, /\$\("editor"\)\.classList\.toggle\("mobile-unified", mobileUnified\)/);
   assert.match(source, /\$\("close-editor"\)\.innerHTML = icons\[mobileUnified \? "back" : "close"\]/);
-  assert.match(source, /function mobileCaretOffset\(event\)[\s\S]*?caretPositionFromPoint[\s\S]*?caretRangeFromPoint/);
   assert.match(source, /function setMobileEditorState\(editing\)[\s\S]*?classList\.toggle\("is-editing", editing\)[\s\S]*?aria-hidden/);
   assert.match(source, /function enterMobileEdit\(offset[\s\S]*?setMobileEditorState\(true\)[\s\S]*?focus\(\{ preventScroll: true \}\)[\s\S]*?setSelectionRange\(offset, offset\)/);
-  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("pointerdown"[\s\S]*?mobileCaretOffset\(event\)[\s\S]*?enterMobileEdit\(offset\)/);
+  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("click", \(\) => enterMobileEdit\(\)\)/);
+  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("focus"[\s\S]*?setMobileEditorState\(true\)/);
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("blur"[\s\S]*?setMobileEditorState\(false\)/);
   assert.match(source, /visualViewport\?\.addEventListener\("resize"[\s\S]*?document\.activeElement !== input[\s\S]*?input\.blur\(\)/);
   assert.match(source, /updateUrl\(\{ view: state\.editorContext === "mobile" \? null : "edit", snippet: savedSnippet\.id \}, false\)/);
   assert.match(css, /\.mobile-snippet-view \{[^}]*white-space: pre-wrap;[^}]*cursor: text;/);
   assert.match(css, /#editor\.mobile-unified \.surface-inner \{ display: grid; grid-template-rows: auto minmax\(0, 1fr\) auto; \}/);
-  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #snippet-body \{ visibility: hidden; pointer-events: none; \}/);
-  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; \}/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #snippet-body \{ color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; \}/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; pointer-events: none; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-editor-action \{ display: inline-grid; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #editor-undo,[\s\S]*?#editor\.mobile-unified:not\(\.is-editing\) #editor-redo \{ display: none; \}/);
 });

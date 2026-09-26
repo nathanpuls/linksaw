@@ -818,14 +818,6 @@ $("snippet-body").addEventListener("input", () => {
   if (!editorCustomName.trim()) syncEditorName();
   scheduleAutosave();
 });
-function mobileCaretOffset(event) {
-  const view = $("mobile-snippet-view");
-  const point = document.caretPositionFromPoint?.(event.clientX, event.clientY);
-  if (point?.offsetNode === view.firstChild) return point.offset;
-  const range = document.caretRangeFromPoint?.(event.clientX, event.clientY);
-  if (range?.startContainer === view.firstChild) return range.startOffset;
-  return view.textContent.length;
-}
 function setMobileEditorState(editing) {
   const view = $("mobile-snippet-view");
   const input = $("snippet-body");
@@ -843,13 +835,12 @@ function enterMobileEdit(offset = $("snippet-body").value.length) {
   input.setSelectionRange(offset, offset);
   requestAnimationFrame(() => input.setSelectionRange(offset, offset));
 }
-$("mobile-snippet-view").addEventListener("pointerdown", event => {
-  const offset = mobileCaretOffset(event);
-  event.preventDefault();
-  enterMobileEdit(offset);
-});
+$("mobile-snippet-view").addEventListener("click", () => enterMobileEdit());
 $("mobile-snippet-view").addEventListener("keydown", event => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); enterMobileEdit(); }
+});
+$("snippet-body").addEventListener("focus", () => {
+  if ($("editor").classList.contains("mobile-unified")) setMobileEditorState(true);
 });
 $("snippet-body").addEventListener("blur", () => {
   if (!$("editor").classList.contains("mobile-unified")) return;

@@ -126,7 +126,7 @@ button { color: inherit; }
 .mobile-editor-action { display: none; }
 .icon-button:disabled { color: var(--control); cursor: default; }
 .icon-button:disabled:hover { color: var(--control); }
-.content-input { flex: 1; min-height: 260px; width: 100%; resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
+.content-input { flex: 1; min-height: 260px; width: min(900px, 100%); resize: none; border: 0; outline: 0; padding: 8px 36px 48px 74px; background: transparent; color: inherit; font-size: 16px; line-height: 1.65; }
 .mobile-snippet-view { display: none; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
 .editor-status { min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 0 4px; color: var(--muted); font-size: 13px; }
 .editor-retry { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
@@ -214,8 +214,8 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   #editor.mobile-unified .surface-footer { grid-row: 3; }
   #editor .surface-header, #editor .surface-footer { flex: 0 0 auto; }
   #editor .content-input { min-height: 0; }
-  #editor.mobile-unified:not(.is-editing) .mobile-snippet-view { display: block; }
-  #editor.mobile-unified:not(.is-editing) #snippet-body { visibility: hidden; pointer-events: none; }
+  #editor.mobile-unified:not(.is-editing) .mobile-snippet-view { display: block; pointer-events: none; }
+  #editor.mobile-unified:not(.is-editing) #snippet-body { color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; }
   #editor .surface-footer { min-height: 68px; padding: 10px 16px max(10px, env(safe-area-inset-bottom)); background: var(--paper); }
   .viewer-content { height: 100dvh; }
   .viewer-back { display: inline-grid; }
