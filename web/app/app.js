@@ -845,9 +845,18 @@ function setMobileEditorState(editing) {
   input.setAttribute("aria-hidden", editing ? "false" : "true");
   input.tabIndex = editing ? 0 : -1;
 }
+let mobileScrollSyncFrame = 0;
+function syncMobileScroll(source, target) {
+  if (mobileScrollSyncFrame || !$("editor").classList.contains("mobile-unified")) return;
+  const sourceRange = Math.max(0, source.scrollHeight - source.clientHeight);
+  const targetRange = Math.max(0, target.scrollHeight - target.clientHeight);
+  target.scrollTop = sourceRange && targetRange ? (source.scrollTop / sourceRange) * targetRange : 0;
+  mobileScrollSyncFrame = requestAnimationFrame(() => { mobileScrollSyncFrame = 0; });
+}
 function enterMobileEdit(offset = $("snippet-body").value.length) {
   if (!$("editor").classList.contains("mobile-unified")) return;
   const input = $("snippet-body");
+  syncMobileScroll($("mobile-snippet-view"), input);
   setMobileEditorState(true);
   input.focus({ preventScroll: true });
   input.setSelectionRange(offset, offset);
@@ -859,6 +868,12 @@ $("mobile-snippet-view").addEventListener("click", event => {
 $("mobile-snippet-view").addEventListener("keydown", event => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); enterMobileEdit(); }
 });
+$("mobile-snippet-view").addEventListener("scroll", () => {
+  if (!$("editor").classList.contains("is-editing")) syncMobileScroll($("mobile-snippet-view"), $("snippet-body"));
+});
+$("snippet-body").addEventListener("scroll", () => {
+  if (!$("editor").classList.contains("is-editing")) syncMobileScroll($("snippet-body"), $("mobile-snippet-view"));
+});
 $("snippet-body").addEventListener("focus", () => {
   if ($("editor").classList.contains("mobile-unified")) setMobileEditorState(true);
 });
@@ -866,6 +881,7 @@ $("snippet-body").addEventListener("blur", () => {
   if (!$("editor").classList.contains("mobile-unified")) return;
   renderMarkdown($("mobile-snippet-view"), $("snippet-body").value);
   setMobileEditorState(false);
+  requestAnimationFrame(() => syncMobileScroll($("snippet-body"), $("mobile-snippet-view")));
 });
 window.visualViewport?.addEventListener("resize", () => {
   const input = $("snippet-body");

@@ -236,6 +236,13 @@ test("mobile view preserves safe automatic links without sacrificing one-tap edi
   assert.match(css, /\.preview-body a, \.mobile-snippet-view a \{[^}]*text-decoration: underline;/);
 });
 
+test("mobile rendered view follows the underlying editor scroll position", () => {
+  assert.match(source, /function syncMobileScroll\(source, target\)[\s\S]*?source\.scrollHeight - source\.clientHeight[\s\S]*?target\.scrollTop = sourceRange && targetRange/);
+  assert.match(source, /\$\("snippet-body"\)\.addEventListener\("scroll"[\s\S]*?syncMobileScroll\(\$\("snippet-body"\), \$\("mobile-snippet-view"\)\)/);
+  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("scroll"[\s\S]*?syncMobileScroll\(\$\("mobile-snippet-view"\), \$\("snippet-body"\)\)/);
+  assert.match(source, /function enterMobileEdit[\s\S]*?syncMobileScroll\(\$\("mobile-snippet-view"\), input\)[\s\S]*?setMobileEditorState\(true\)/);
+});
+
 test("viewer text enters desktop editing at the clicked caret without hijacking links", () => {
   assert.match(source, /\$\("preview-body"\)\.addEventListener\("click"[\s\S]*?event\.target\.closest\?\.\("a"\)[\s\S]*?narrowLayout\(\)/);
   assert.match(source, /document\.caretPositionFromPoint[\s\S]*?document\.caretRangeFromPoint/);
