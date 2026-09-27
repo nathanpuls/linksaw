@@ -274,8 +274,8 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(source, /\$\("search"\)\.addEventListener\("focus"[\s\S]*?setTimeout\(syncMobileListViewport, 250\)/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.app \{ position: fixed; inset: 0 0 auto; height: var\(--mobile-viewport-height, 100dvh\); transform: translateY\(var\(--mobile-viewport-top, 0px\)\);/);
   assert.match(css, /\.list-pane \{ height: var\(--mobile-viewport-height, 100dvh\);[^}]*grid-template-rows: auto auto minmax\(0, 1fr\) auto;/);
-  assert.match(css, /\.sidebar-footer \{ z-index: 1; grid-row: 1; height: 50px; min-height: 50px;[^}]*justify-content: space-between;[^}]*border-bottom: 1px solid var\(--line\);[^}]*background: var\(--paper\); \}/);
-  assert.match(css, /\.sidebar-footer \.identity-button \{ width: 42px; min-width: 42px; flex: 0 0 42px;[^}]*justify-content: center;/);
+  assert.match(css, /\.sidebar-footer \{ z-index: 1; grid-row: 1; height: 40px; min-height: 40px;[^}]*justify-content: space-between;[^}]*border-bottom: 0;[^}]*background: var\(--paper\); \}/);
+  assert.match(css, /\.sidebar-footer \.identity-logo-link, \.sidebar-footer \.identity-button \{ width: 40px; height: 40px; min-width: 40px; flex: 0 0 40px;[^}]*justify-content: center;/);
   assert.match(css, /\.sidebar-footer \.identity-name \{ display: none; \}/);
   assert.match(css, /\.status \{ grid-row: 2; \}[\s\S]*?\.results \{ grid-row: 3; \}/);
   assert.match(html, /<button id="mobile-search-trigger" class="mobile-search-trigger" type="button" aria-label="Search snippets">[\s\S]*?<span>Search<\/span>/);
