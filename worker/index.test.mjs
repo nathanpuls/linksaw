@@ -108,7 +108,7 @@ test("privacy and terms are dedicated public pages linked from the homepage", as
   const privacy = readFileSync(new URL("../web/privacy/index.html", import.meta.url), "utf8");
   const terms = readFileSync(new URL("../web/terms/index.html", import.meta.url), "utf8");
   assert.match(homepage, /<h1 id="linksaw-title">Linksaw<\/h1>/);
-  assert.match(homepage, /Linksaw saves and syncs your snippets, notes, and links/);
+  assert.match(homepage, /<p class="description">Snippets, notes, and links\.<\/p>/);
   assert.match(homepage, /<a href="\/privacy">Privacy<\/a>/);
   assert.match(homepage, /<a href="\/terms">Terms<\/a>/);
   assert.doesNotMatch(homepage, /data-legal="privacy"/);
