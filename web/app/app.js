@@ -1393,6 +1393,9 @@ document.addEventListener("keydown", event => {
   );
   if (undoShortcut || redoShortcut) { event.preventDefault(); void performEditorHistory(undoShortcut ? "undo" : "redo"); return; }
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
+  if (!settings && !deleted && event.key === "Escape" && $("app").classList.contains("reader-mode")) {
+    event.preventDefault(); toggleReaderMode(); return;
+  }
   if (event.key === "Escape") {
     if (editing) { event.preventDefault(); void navigateAfterSave(leaveRoutedView); }
     else if (deleted) { event.preventDefault(); returnToSettings(); }

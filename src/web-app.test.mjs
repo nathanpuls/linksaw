@@ -212,6 +212,10 @@ test("closing the sidebar does not activate a title shifted under the pointer", 
   assert.match(css, /\.app\.suppress-shifted-title-hover \.preview-title:empty:hover:not\(:focus-visible\)::before[^}]*content: ""/);
 });
 
+test("Escape restores a hidden desktop sidebar before leaving the current view", () => {
+  assert.match(source, /if \(!settings && !deleted && event\.key === "Escape" && \$\("app"\)\.classList\.contains\("reader-mode"\)\) \{\s*event\.preventDefault\(\); toggleReaderMode\(\); return;\s*\}\s*if \(event\.key === "Escape"\)/);
+});
+
 test("unchanged background sync preserves Voice Control targets", () => {
   assert.match(source, /function libraryFingerprint\(snippets\)/);
   assert.match(source, /const libraryChanged = libraryFingerprint\(state\.snippets\) !== libraryFingerprint\(snippets\)/);
