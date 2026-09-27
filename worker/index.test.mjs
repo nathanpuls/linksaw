@@ -282,11 +282,15 @@ test('authenticated users can read and update their autocomplete trigger', async
   const getResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', { headers: auth }), env);
   assert.deepEqual(await getResponse.json(), { autocompleteTrigger: ';' });
   const putResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', {
-    method: 'PUT', headers: { ...auth, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: '/' }),
+    method: 'PUT', headers: { ...auth, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: ';;' }),
   }), env);
   assert.equal(putResponse.status, 200);
-  assert.deepEqual(await putResponse.json(), { autocompleteTrigger: '/' });
-  assert.equal(saved, '/');
+  assert.deepEqual(await putResponse.json(), { autocompleteTrigger: ';;' });
+  assert.equal(saved, ';;');
+  const tooLongResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', {
+    method: 'PUT', headers: { ...auth, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: 'four' }),
+  }), env);
+  assert.equal(tooLongResponse.status, 400);
 });
 
 test('signed-in identity includes the display name and avatar', async () => {

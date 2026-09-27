@@ -311,13 +311,28 @@ test("settings offers working CSV and JSON transfer controls", () => {
   assert.match(source, /downloadLibrary\(snippetsToJson\(state\.snippets\)/);
 });
 
-test("settings exposes 30-day Recently Deleted recovery with confirmed permanent deletion", () => {
-  assert.match(html, /id="recently-deleted"[\s\S]*?Deleted snippets remain available for 30 days\./);
-  assert.match(html, /id="deleted-snippet-list"[^>]*role="list"/);
+test("settings opens Recently Deleted as a separate, wrapping recovery surface", () => {
+  assert.match(html, /id="recently-deleted"[\s\S]*?id="open-recently-deleted"[\s\S]*?Deleted snippets remain available for 30 days\./);
+  assert.match(html, /id="deleted-panel" class="surface"[\s\S]*?id="deleted-snippet-list"[^>]*role="list"/);
+  assert.match(source, /function openDeletedSnippets[\s\S]*?showSurface\("deleted-panel"\)[\s\S]*?loadDeletedSnippets/);
+  assert.match(source, /view === "deleted"\) \{ openDeletedSnippets\(false\); revealInitialView\(\); return;/);
   assert.match(source, /api\("\/deleted-snippets"\)[\s\S]*?renderDeletedSnippets/);
   assert.match(source, /`\/deleted-snippets\/\$\{snippet\.id\}\/restore`[\s\S]*?method: "POST"/);
   assert.match(source, /requestConfirmation\(\{ title: "Delete permanently\?"[\s\S]*?api\(`\/deleted-snippets\/\$\{snippet\.id\}`[\s\S]*?method: "DELETE"/);
-  assert.match(css, /\.deleted-snippet-row \{[^}]*display: flex;/);
+  assert.match(css, /\.settings-inner \{[^}]*overflow-x: hidden;/);
+  assert.match(css, /\.deleted-snippet-row \{[^}]*display: flex;[^}]*flex-wrap: wrap;/);
+  assert.match(css, /\.deleted-snippet-name \{[^}]*overflow-wrap: anywhere;/);
+});
+
+test("editor history and close controls stay anchored when the name becomes editable", () => {
+  assert.match(css, /\.editor-actions \{[^}]*flex: 0 0 auto;[^}]*margin-left: auto;/);
+  assert.match(html, /class="editor-actions"[\s\S]*?id="editor-undo"[\s\S]*?id="editor-redo"[\s\S]*?id="close-editor"/);
+});
+
+test("autocomplete trigger accepts one to three visible characters", () => {
+  assert.match(html, /id="autocomplete-trigger"[^>]*maxlength="3"/);
+  assert.match(html, /one-, two-, or three-character shortcut/);
+  assert.match(source, /slice\(0, 3\)/);
 });
 
 test("deep links wait to reveal the resolved view", () => {

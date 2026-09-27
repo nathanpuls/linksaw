@@ -2,6 +2,16 @@
   if (window.top !== window || window.__linksawAutocomplete) return;
   window.__linksawAutocomplete = true;
 
+  function runtimeMessage(message) {
+    const runtime = globalThis.chrome?.runtime;
+    if (typeof runtime?.sendMessage !== 'function') return Promise.reject(Error('Reload this page to reconnect Linksaw.'));
+    try {
+      return runtime.sendMessage(message).catch(() => { throw Error('Reload this page to reconnect Linksaw.'); });
+    } catch {
+      return Promise.reject(Error('Reload this page to reconnect Linksaw.'));
+    }
+  }
+
   if (location.hostname === 'linksaw.com') {
     const markBridgeReady = () => {
       if (!document.documentElement) return false;
@@ -16,7 +26,7 @@
     }
     window.addEventListener('LINKSAW_OPEN_ACTIVE_TAB', event => {
       if (typeof event.detail !== 'string') return;
-      chrome.runtime.sendMessage({ type: 'LINKSAW_OPEN_ACTIVE_TAB', url: event.detail }).catch(() => {});
+      runtimeMessage({ type: 'LINKSAW_OPEN_ACTIVE_TAB', url: event.detail }).catch(() => {});
     });
   }
 
@@ -51,23 +61,46 @@
 
   function beforeCaret(element) {
     if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-      return element.value.slice(0, element.selectionStart ?? 0).slice(-1);
+      return element.value.slice(0, element.selectionStart ?? 0).slice(-4);
     }
     const selection = getSelection();
     if (!selection?.rangeCount || !element.contains(selection.anchorNode)) return '';
     const range = selection.getRangeAt(0).cloneRange();
     range.selectNodeContents(element); range.setEnd(selection.anchorNode, selection.anchorOffset);
-    return range.toString().slice(-1);
+    return range.toString().slice(-4);
   }
 
-  function atBoundary(element) {
-    const previous = beforeCaret(element);
-    return !previous || /\s/.test(previous);
+  function triggerMatches(element, key) {
+    const trigger = data.autocompleteTrigger || ';';
+    if ([...key].length !== 1) return false;
+    const combined = beforeCaret(element) + key;
+    if (!combined.endsWith(trigger)) return false;
+    const beforeTrigger = combined.slice(0, -trigger.length).slice(-1);
+    return !beforeTrigger || /\s/.test(beforeTrigger);
+  }
+
+  function removeTypedTriggerPrefix(element) {
+    const prefix = (data.autocompleteTrigger || ';').slice(0, -1);
+    if (!prefix) return;
+    if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+      const end = element.selectionStart ?? 0;
+      const start = Math.max(0, end - prefix.length);
+      if (element.value.slice(start, end) === prefix) element.setRangeText('', start, end, 'end');
+      return;
+    }
+    const selection = getSelection();
+    if (!selection?.rangeCount || !element.contains(selection.anchorNode) || selection.anchorNode.nodeType !== 3) return;
+    const end = selection.anchorOffset;
+    const start = Math.max(0, end - prefix.length);
+    if (selection.anchorNode.textContent.slice(start, end) !== prefix) return;
+    const range = document.createRange();
+    range.setStart(selection.anchorNode, start); range.setEnd(selection.anchorNode, end); range.deleteContents();
+    selection.removeAllRanges(); selection.addRange(range);
   }
 
   async function refresh(force = false) {
     if (!force && Date.now() - loadedAt < 30000 && data.snippets.length) return data;
-    const response = await chrome.runtime.sendMessage({ type: 'LINKSAW_DATA', force });
+    const response = await runtimeMessage({ type: 'LINKSAW_DATA', force });
     if (!response?.ok) throw Error(response?.error || 'Could not load Linksaw');
     data = response; loadedAt = Date.now(); return data;
   }
@@ -141,10 +174,10 @@
     const expanded = LinksawDynamic.expandDynamic(content(snippet));
     const url = urlFor(expanded.text);
     close();
-    if (url) { chrome.runtime.sendMessage({ type: 'LINKSAW_OPEN_URL', url }).catch(() => {}); return; }
+    if (url) { runtimeMessage({ type: 'LINKSAW_OPEN_URL', url }).catch(() => {}); return; }
     insert(expanded.text, expanded.cursorLeft);
   }
-  function openInLinksaw(snippet) { close(); chrome.runtime.sendMessage({ type: 'LINKSAW_OPEN_SNIPPET', id: snippet.id }).catch(() => {}); }
+  function openInLinksaw(snippet) { close(); runtimeMessage({ type: 'LINKSAW_OPEN_SNIPPET', id: snippet.id }).catch(() => {}); }
 
   function open(element) {
     captureTarget(element); selected = 0;
@@ -177,7 +210,7 @@
     });
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
     if (message?.type !== 'LINKSAW_OPEN_AUTOCOMPLETE') return;
     if (host) {
       search?.focus();
@@ -196,8 +229,8 @@
   document.addEventListener('keydown', event => {
     if (host || event.defaultPrevented || event.repeat || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
     const element = editable(event.target);
-    if (!element || event.key !== data.autocompleteTrigger || !atBoundary(element)) return;
-    event.preventDefault(); event.stopImmediatePropagation(); open(element);
+    if (!element || !triggerMatches(element, event.key)) return;
+    event.preventDefault(); event.stopImmediatePropagation(); removeTypedTriggerPrefix(element); open(element);
   }, true);
 
   refresh().catch(() => {});

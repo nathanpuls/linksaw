@@ -39,4 +39,4 @@ The content script runs on ordinary HTTP and HTTPS pages only to recognize the u
 7. Verify the toolbar popup, both shortcut commands, all three context-menu saves, sign-in, paste fallback, and the web Settings link in the uploaded draft.
 8. Submit the listing for review only after the uploaded draft passes those checks.
 
-The default toolbar shortcut is `Command+Shift+L` on macOS and `Ctrl+Shift+L` on Windows/Linux. Chrome users can change it and assign a combination to the autocomplete overlay at `chrome://extensions/shortcuts`. The account-level trigger continues to support a single printable key such as `;`.
+The default toolbar shortcut is `Command+Shift+L` on macOS and `Ctrl+Shift+L` on Windows/Linux. Chrome users can change it and assign a key combination to the autocomplete overlay at `chrome://extensions/shortcuts`. The account-level typed trigger supports one to three printable characters, such as `;`, `;;`, or `ls`.

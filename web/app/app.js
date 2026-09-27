@@ -51,7 +51,7 @@ let actionMenuSnippet = null;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
-icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "back");
+icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "back"); icon("close-deleted", "back");
 icon("editor-reader-toggle", "panelLeft"); icon("editor-copy", "copy"); icon("editor-share", "share"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash"); icon("mobile-delete", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
@@ -358,7 +358,7 @@ function showSurface(id) { $(id).hidden = false; document.body.style.overflow = 
 function closeSurface(id) {
   $(id).hidden = true;
   if (id === "editor") state.editorContext = null;
-  if (!["editor", "settings-panel"].some(name => !$(name).hidden)) document.body.style.overflow = "";
+  if (!["editor", "settings-panel", "deleted-panel"].some(name => !$(name).hidden)) document.body.style.overflow = "";
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
 function syncEditorName() {
@@ -649,12 +649,24 @@ function closePreview() {
 }
 function openSettings(pushHistory = true) {
   hideTooltip();
+  $("deleted-panel").hidden = true;
   showSurface("settings-panel");
-  void loadDeletedSnippets();
   if (pushHistory) updateUrl({ view: "settings", snippet: null });
   if (location.hash === "#import-export" && !matchMedia("(max-width: 700px)").matches) {
     requestAnimationFrame(() => $("import-export").scrollIntoView({ block: "start" }));
   }
+}
+function openDeletedSnippets(pushHistory = true) {
+  hideTooltip();
+  $("settings-panel").hidden = true;
+  showSurface("deleted-panel");
+  void loadDeletedSnippets();
+  if (pushHistory) updateUrl({ view: "deleted", snippet: null });
+}
+function returnToSettings() {
+  $("deleted-panel").hidden = true;
+  openSettings(false);
+  updateUrl({ view: "settings", snippet: null }, false);
 }
 
 function deletedSnippetLabel(snippet) {
@@ -722,7 +734,7 @@ function showDefaultWorkspace() {
 function revealInitialView() { document.documentElement.classList.remove("route-pending"); }
 function applyUrlState() {
   hideTooltip();
-  closeSurface("editor"); closeSurface("settings-panel"); $("app").classList.remove("viewer-open");
+  closeSurface("editor"); closeSurface("settings-panel"); closeSurface("deleted-panel"); $("app").classList.remove("viewer-open");
   const params = new URLSearchParams(location.search);
   syncReaderMode();
   const legacySnippet = location.pathname.match(/^\/home\/s\/([a-f0-9-]{36})\/?$/)?.[1];
@@ -732,6 +744,7 @@ function applyUrlState() {
     updateUrl({ view: view || null, snippet: snippetId || null }, false);
   }
   if (view === "settings") { openSettings(false); revealInitialView(); return; }
+  if (view === "deleted") { openDeletedSnippets(false); revealInitialView(); return; }
   if (view === "new") { openEditor(null, false); revealInitialView(); return; }
   if (view === "edit" && snippetId) {
     const snippet = state.snippets.find(item => item.id === snippetId);
@@ -842,6 +855,8 @@ $("settings").addEventListener("click", () => { void navigateAfterSave(() => ope
 $("close-editor").addEventListener("click", () => { void navigateAfterSave(leaveRoutedView); });
 $("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", leaveRoutedView);
+$("open-recently-deleted").addEventListener("click", () => openDeletedSnippets());
+$("close-deleted").addEventListener("click", returnToSettings);
 $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).catch(showCopyError));
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
@@ -1201,7 +1216,7 @@ matchMedia("(max-width: 900px)").addEventListener("change", () => {
 });
 $("appearance").addEventListener("change", event => { localStorage.setItem("linksaw-theme", event.target.value); applyTheme(event.target.value); });
 $("autocomplete-trigger").addEventListener("input", event => {
-  event.target.value = Array.from(event.target.value).slice(-1).join("");
+  event.target.value = Array.from(event.target.value).filter(character => !/\s|[\u0000-\u001f\u007f]/u.test(character)).slice(0, 3).join("");
   $("trigger-status").textContent = "";
 });
 $("save-trigger").addEventListener("click", async () => {
@@ -1240,7 +1255,9 @@ document.addEventListener("keydown", event => {
     return;
   }
   if ($("delete-account-dialog").open || $("action-confirm-dialog").open) return;
-  const editing = !$("editor").hidden, settings = !$("settings-panel").hidden, viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
+  const editing = !$("editor").hidden, settings = !$("settings-panel").hidden,
+    deleted = !$("deleted-panel").hidden,
+    viewerOpen = narrowLayout() && $("app").classList.contains("viewer-open");
   const undoShortcut = editing && !event.altKey && event.key.toLowerCase() === "z"
     && (isMacPlatform ? event.metaKey && !event.ctrlKey && !event.shiftKey : event.ctrlKey && !event.metaKey && !event.shiftKey);
   const redoShortcut = editing && !event.altKey && (
@@ -1251,12 +1268,13 @@ document.addEventListener("keydown", event => {
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
   if (event.key === "Escape") {
     if (editing) { event.preventDefault(); void navigateAfterSave(leaveRoutedView); }
+    else if (deleted) { event.preventDefault(); returnToSettings(); }
     else if (settings || viewerOpen) leaveRoutedView();
     else if ($("search").value) { event.preventDefault(); clearSearch(); }
     return;
   }
   const defaultDraftField = state.editorContext === "default" && document.activeElement === $("snippet-body");
-  if ((editing && (state.editorContext !== "default" || defaultDraftField)) || settings) return;
+  if ((editing && (state.editorContext !== "default" || defaultDraftField)) || settings || deleted) return;
   if (modifier && event.key.toLowerCase() === "n") { event.preventDefault(); void navigateAfterSave(() => openEditor()); return; }
   const selected = state.filtered[state.selected];
   if (modifier && event.key.toLowerCase() === "e" && selected) { event.preventDefault(); void navigateAfterSave(() => openEditor(selected)); return; }

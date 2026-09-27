@@ -336,8 +336,8 @@ export async function handle(request, env) {
   if (url.pathname === "/preferences" && request.method === "PUT") {
     const input = await bodyJson(request);
     const trigger = typeof input?.autocompleteTrigger === "string" ? input.autocompleteTrigger : "";
-    if (Array.from(trigger).length !== 1 || /\s|[\u0000-\u001f\u007f]/u.test(trigger)) {
-      return fail(request, "Choose one visible character");
+    if (Array.from(trigger).length < 1 || Array.from(trigger).length > 3 || /\s|[\u0000-\u001f\u007f]/u.test(trigger)) {
+      return fail(request, "Choose one to three visible characters");
     }
     await saveAutocompleteTrigger(env, user.id, trigger);
     return json(request, { autocompleteTrigger: trigger });

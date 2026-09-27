@@ -155,7 +155,15 @@ test('autocomplete opens with recent snippets and uses Linksaw search controls',
   assert.match(contentSource, /loading \? 'Loading…' : data\.snippets\.length \? 'No matches' : 'No snippets yet'/);
 });
 
-test('autocomplete recent list filters and clears in the actual overlay', async () => {
+test('autocomplete supports multi-character triggers and reports a stale extension connection clearly', () => {
+  assert.match(contentSource, /function runtimeMessage\(message\)/);
+  assert.match(contentSource, /Reload this page to reconnect Linksaw\./);
+  assert.match(contentSource, /function triggerMatches\(element, key\)[\s\S]*?combined\.endsWith\(trigger\)/);
+  assert.match(contentSource, /function removeTypedTriggerPrefix\(element\)/);
+  assert.match(contentSource, /removeTypedTriggerPrefix\(element\); open\(element\)/);
+});
+
+test('multi-character autocomplete opens, removes its trigger, filters, and clears in the actual overlay', async () => {
   const dom = new JSDOM('<input id="target">', {
     pretendToBeVisual: true,
     runScripts: 'outside-only',
@@ -174,7 +182,7 @@ test('autocomplete recent list filters and clears in the actual overlay', async 
       sendMessage: async message => message.type === 'LINKSAW_DATA'
         ? {
             ok: true,
-            autocompleteTrigger: ';',
+            autocompleteTrigger: ';;',
             snippets: [
               { id: '11111111-1111-1111-1111-111111111111', title: 'Alpha', body: 'First' },
               { id: '22222222-2222-2222-2222-222222222222', title: 'Beta', body: 'Second' },
@@ -188,11 +196,13 @@ test('autocomplete recent list filters and clears in the actual overlay', async 
 
   const target = window.document.querySelector('#target');
   target.focus();
-  target.setSelectionRange(0, 0);
+  target.value = ';';
+  target.setSelectionRange(1, 1);
   target.dispatchEvent(new window.KeyboardEvent('keydown', { key: ';', bubbles: true, cancelable: true }));
   await new Promise(resolve => setTimeout(resolve, 0));
 
   const root = window.document.querySelector('#linksaw-autocomplete-root').shadowRoot;
+  assert.equal(target.value, '');
   assert.deepEqual([...root.querySelectorAll('.title')].map(node => node.textContent), ['Alpha', 'Beta']);
   const search = root.querySelector('.search');
   const clear = root.querySelector('.clear');

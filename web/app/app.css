@@ -123,7 +123,7 @@ button { color: inherit; }
 .editor-name-action:hover, .editor-name-action:focus-visible { outline: 0; background: var(--hover); color: var(--ink); }
 .editor-name-input { min-width: 0; width: min(420px, 42vw); flex: 0 1 420px; margin-left: -12px; border: 1px solid var(--control); border-radius: 6px; padding: 7px 11px; background: var(--hover); color: var(--ink); font: inherit; font-size: 16px; font-weight: 550; box-shadow: none; }
 .editor-name-input:focus { border-color: var(--focus); outline: 0; box-shadow: none; }
-.editor-actions { display: flex; align-items: center; gap: 1px; }
+.editor-actions { flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; gap: 1px; }
 .mobile-editor-action { display: none; }
 .mobile-editor-status, .mobile-delete { display: none; }
 .icon-button:disabled { color: var(--control); cursor: default; }
@@ -139,21 +139,27 @@ button { color: inherit; }
 .danger { border-color: transparent; color: var(--muted); }
 .delete-action { color: var(--muted); }
 .delete-action:hover, .delete-action:focus-visible { color: #b42318; }
-.settings-inner { overflow: visible; padding-bottom: 40px; }
+.settings-inner { min-width: 0; max-width: 100%; overflow-x: hidden; overflow-y: visible; padding-bottom: 40px; }
 .settings-inner > .surface-header { border-bottom: 0; }
 .settings-sign-out { margin-left: auto; border: 0; border-radius: 9px; padding: 9px 12px; background: transparent; color: var(--muted); cursor: pointer; }
 .settings-sign-out:hover, .settings-sign-out:focus-visible { outline: 0; background: var(--selected); color: var(--ink); }
-.settings-grid { width: min(900px, 100%); display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,1fr); gap: 56px; padding: 32px 28px; }
+.settings-grid { width: min(900px, 100%); min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,1fr); gap: 56px; padding: 32px 28px; }
+.settings-grid > *, .shortcuts, .field-help, .account-block { min-width: 0; max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
 .settings-grid h2 { margin: 0 0 16px; font-size: 15px; font-weight: 600; }
 .field-label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 13px; }
 select { width: min(260px, 100%); border: 1px solid var(--control); border-radius: 9px; padding: 10px; background: var(--paper); color: var(--ink); }
 .extension-settings { margin-top: 42px; }
 .transfer-settings { margin-top: 42px; }
 .recently-deleted-settings { margin-top: 42px; }
+.settings-folder { width: min(430px, 100%); min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 12px 1px; background: transparent; color: var(--muted); text-align: left; font: inherit; font-size: 13px; line-height: 1.45; cursor: pointer; }
+.settings-folder span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.settings-folder span:last-child { flex: 0 0 auto; color: var(--muted); font-size: 20px; }
+.settings-folder:hover, .settings-folder:focus-visible { outline: 0; color: var(--ink); }
+.deleted-panel-content { width: min(680px, 100%); min-width: 0; padding: 32px 28px; overflow-wrap: anywhere; }
 .deleted-snippet-list { width: min(430px, 100%); margin-top: 12px; border-top: 1px solid var(--line); }
 .deleted-snippet-empty { padding: 12px 1px; color: var(--muted); font-size: 13px; }
-.deleted-snippet-row { min-height: 48px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
-.deleted-snippet-name { min-width: 0; flex: 1; overflow: hidden; color: var(--ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.deleted-snippet-row { min-width: 0; min-height: 48px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; border-bottom: 1px solid var(--line); padding-block: 7px; }
+.deleted-snippet-name { min-width: 160px; flex: 1 1 220px; overflow-wrap: anywhere; color: var(--ink); font-size: 13px; }
 .deleted-snippet-action { border: 0; padding: 7px 4px; background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
 .deleted-snippet-action:hover, .deleted-snippet-action:focus-visible { outline: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .transfer-actions { width: min(260px, 100%); border-top: 1px solid var(--line); }
@@ -190,6 +196,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .shortcuts dl div { display: grid; grid-template-columns: 100px 1fr; gap: 14px; margin: 13px 0; font-size: 13px; }
 .shortcuts dt { font-weight: 550; }
 .shortcuts dd { margin: 0; color: var(--muted); }
+.shortcuts dt, .shortcuts dd { min-width: 0; overflow-wrap: anywhere; }
 .toast { position: fixed; z-index: 50; top: max(16px, env(safe-area-inset-top)); left: 50%; max-width: calc(100vw - 24px); transform: translateX(-50%); display: flex; align-items: center; gap: 5px; border-radius: 9px; padding: 9px 15px; background: #171717; color: #fff; font-size: 13px; box-shadow: 0 5px 20px #0003; }
 .toast-action { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .toast-action:hover, .toast-action:focus-visible { outline: 0; text-decoration-thickness: 2px; }

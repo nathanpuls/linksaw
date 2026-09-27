@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260926-9">
+  <link rel="stylesheet" href="/app/app.css?v=20260926-10">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -103,10 +103,10 @@
             <h2>Chrome extension</h2>
             <label for="autocomplete-trigger" class="field-label">Autocomplete trigger</label>
             <div class="trigger-row">
-              <input id="autocomplete-trigger" class="trigger-input" maxlength="2" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="trigger-help">
+              <input id="autocomplete-trigger" class="trigger-input" maxlength="3" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="trigger-help">
               <button id="save-trigger" class="text-button" type="button">Save</button>
             </div>
-            <p id="trigger-help" class="field-help">Type this character in an editable field to open Linksaw.</p>
+            <p id="trigger-help" class="field-help">Type a one-, two-, or three-character shortcut in an editable field to open Linksaw.</p>
             <p id="trigger-status" class="field-help" role="status" aria-live="polite"></p>
           </div>
           <section id="import-export" class="transfer-settings" tabindex="-1">
@@ -123,9 +123,7 @@
           </section>
           <section id="recently-deleted" class="recently-deleted-settings" aria-labelledby="recently-deleted-title">
             <h2 id="recently-deleted-title">Recently deleted</h2>
-            <p class="field-help">Deleted snippets remain available for 30 days.</p>
-            <div id="deleted-snippet-list" class="deleted-snippet-list" role="list"></div>
-            <p id="deleted-snippet-status" class="field-help" role="status" aria-live="polite"></p>
+            <button id="open-recently-deleted" class="settings-folder" type="button"><span>Deleted snippets remain available for 30 days.</span><span aria-hidden="true">›</span></button>
           </section>
           <div class="account-block">
             <h2>Account</h2>
@@ -158,6 +156,20 @@
         <p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p>
         <button id="delete-account" class="text-button danger-button" type="button">Delete account</button>
       </section>
+    </div>
+  </section>
+
+  <section id="deleted-panel" class="surface" aria-labelledby="deleted-panel-title" hidden>
+    <div class="settings-inner deleted-panel-inner">
+      <header class="surface-header">
+        <button id="close-deleted" class="icon-button" type="button" aria-label="Back to Settings" data-tooltip="Back to Settings"></button>
+        <h1 id="deleted-panel-title">Recently deleted</h1>
+      </header>
+      <div class="deleted-panel-content">
+        <p class="field-help">Deleted snippets remain available for 30 days.</p>
+        <div id="deleted-snippet-list" class="deleted-snippet-list" role="list"></div>
+        <p id="deleted-snippet-status" class="field-help" role="status" aria-live="polite"></p>
+      </div>
     </div>
   </section>
 
@@ -201,6 +213,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260926-15"></script>
+  <script type="module" src="/app/app.js?v=20260926-16"></script>
 </body>
 </html>
