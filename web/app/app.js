@@ -293,6 +293,13 @@ function setSelected(index, scroll = true) {
 function beginKeyboardListNavigation() {
   $("results").classList.add("keyboard-navigation");
 }
+function hoveredListItem() {
+  const row = document.querySelector(".result-row:hover");
+  if (!row) return null;
+  const index = Number(row.dataset.index);
+  const snippet = state.filtered[index];
+  return snippet ? { index, snippet } : null;
+}
 function openSnippet(snippet) {
   openPreview(snippet);
 }
@@ -1473,7 +1480,15 @@ document.addEventListener("keydown", event => {
     if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
     setSelected(state.selected - 1);
   }
-  else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => { void useSnippet(selected).catch(showCopyError); }); }
+  else if (event.key === "ArrowRight") {
+    const hovered = hoveredListItem();
+    const target = hovered?.snippet || selected;
+    if (target) {
+      event.preventDefault();
+      if (hovered) setSelected(hovered.index, false);
+      runListActionAfterSave(() => { void useSnippet(target).catch(showCopyError); });
+    }
+  }
   else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => openSnippet(selected)); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
 });

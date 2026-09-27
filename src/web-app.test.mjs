@@ -67,7 +67,8 @@ test("web rows stay clean while desktop right click and mobile long press share 
   assert.match(source, /function runListActionAfterSave\(action\)[\s\S]*?navigateAfterSave[\s\S]*?closeSurface\("editor"\)[\s\S]*?action\(\)/);
   assert.match(source, /main\.ariaLabel = `Open \$\{label\(snippet\)\} in Linksaw`/);
   assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?openSnippet\(snippet\)/);
-  assert.match(source, /event\.key === "ArrowRight" && selected[\s\S]*?useSnippet\(selected\)/);
+  assert.match(source, /function hoveredListItem\(\)[\s\S]*?querySelector\("\.result-row:hover"\)[\s\S]*?state\.filtered\[index\]/);
+  assert.match(source, /event\.key === "ArrowRight"[\s\S]*?const hovered = hoveredListItem\(\)[\s\S]*?const target = hovered\?\.snippet \|\| selected[\s\S]*?if \(hovered\) setSelected\(hovered\.index, false\)[\s\S]*?useSnippet\(target\)/);
   assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?openSnippet\(selected\)/);
   assert.match(source, /function installLongPress\(main, snippet, index\)[\s\S]*?setTimeout\([\s\S]*?openSnippetActionMenu\(snippet\)[\s\S]*?550/);
   assert.match(source, /main\.addEventListener\("contextmenu"[\s\S]*?preventDefault\(\)[\s\S]*?!narrowLayout\(\)[\s\S]*?openSnippetActionMenu\(snippet, point\)/);
