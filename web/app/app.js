@@ -67,6 +67,22 @@ let localUndo = [];
 let localRedo = [];
 let localInputGroup = null;
 let actionMenuSnippet = null;
+let lastPointerPosition = null;
+
+function titleUnderPointer(position = lastPointerPosition) {
+  if (!position) return false;
+  return [$("preview-title"), $("editor-name")].some(title => {
+    if (title.hidden) return false;
+    const rect = title.getBoundingClientRect();
+    return position.x >= rect.left && position.x <= rect.right && position.y >= rect.top && position.y <= rect.bottom;
+  });
+}
+function trackPointer(event) {
+  lastPointerPosition = { x: event.clientX, y: event.clientY };
+  if ($("app").classList.contains("suppress-shifted-title-hover") && !titleUnderPointer()) {
+    $("app").classList.remove("suppress-shifted-title-hover");
+  }
+}
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("mobile-search-trigger-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
@@ -107,9 +123,12 @@ function showTooltip(target) {
   }, 450);
 }
 document.addEventListener("pointerover", event => {
+  trackPointer(event);
   const target = event.target.closest?.("[data-tooltip]");
   if (target && !target.contains(event.relatedTarget)) showTooltip(target);
 });
+document.addEventListener("pointermove", trackPointer, { passive: true });
+document.addEventListener("pointerdown", trackPointer, { passive: true });
 document.addEventListener("pointerout", event => {
   const target = event.target.closest?.("[data-tooltip]");
   if (!target || target.contains(event.relatedTarget)) return;
@@ -997,8 +1016,7 @@ function toggleReaderMode() {
   if (enabled) $("app").classList.add("suppress-shifted-title-hover");
   sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();
   if (enabled) requestAnimationFrame(() => {
-    const titleIsUnderPointer = [$("preview-title"), $("editor-name")].some(title => title.matches(":hover"));
-    if (!titleIsUnderPointer) $("app").classList.remove("suppress-shifted-title-hover");
+    if (lastPointerPosition && !titleUnderPointer()) $("app").classList.remove("suppress-shifted-title-hover");
   });
 }
 function isSidebarShortcut(event) {
