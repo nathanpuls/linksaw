@@ -265,10 +265,14 @@ test("viewer text enters desktop editing at the clicked caret without hijacking 
 test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(html, /<a class="identity-logo-link" href="https:\/\/linksaw\.com"[^>]*>[\s\S]*?<img class="identity-logo"[^>]*>[\s\S]*?<button id="settings"/);
   assert.match(css, /\.identity-logo \{ width: 28px; height: 28px;/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.list-pane \{ height: 100dvh;[^}]*border-right: 0; \}/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.list-pane \{[^}]*grid-template-rows: auto minmax\(0, 1fr\) auto auto;/);
-  assert.match(css, /\.sidebar-footer \{ z-index: 1; grid-row: 3; min-height: 58px;[^}]*background: var\(--paper\); \}/);
+  assert.match(source, /function syncMobileListViewport\(\)[\s\S]*?visualViewport\?\.height \|\| window\.innerHeight[\s\S]*?--mobile-viewport-height/);
+  assert.match(source, /visualViewport\?\.addEventListener\("resize", syncMobileListViewport\)/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.app \{ height: var\(--mobile-viewport-height, 100dvh\);/);
+  assert.match(css, /\.list-pane \{ height: var\(--mobile-viewport-height, 100dvh\);[^}]*grid-template-rows: auto auto minmax\(0, 1fr\) auto;/);
+  assert.match(css, /\.sidebar-footer \{ z-index: 1; grid-row: 1; min-height: 58px;[^}]*border-bottom: 1px solid var\(--line\);[^}]*background: var\(--paper\); \}/);
+  assert.match(css, /\.status \{ grid-row: 2; \}[\s\S]*?\.results \{ grid-row: 3; \}/);
   assert.match(css, /\.toolbar \{ grid-row: 4;[^}]*min-height: calc\(64px \+ env\(safe-area-inset-bottom\)\);[^}]*border-top: 1px solid var\(--line\); \}/);
+  assert.match(source, /\$\("search"\)\.addEventListener\("input"[\s\S]*?render\(\);[\s\S]*?\$\("results"\)\.scrollTop = 0;/);
   assert.match(css, /\.viewer-pane \{[^}]*z-index: 10; height: 100dvh;/);
   assert.match(css, /\.viewer-content \{ height: 100dvh; \}/);
 });

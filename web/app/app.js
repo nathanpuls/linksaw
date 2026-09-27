@@ -109,6 +109,15 @@ addEventListener("pagehide", hideTooltip);
 document.addEventListener("visibilitychange", () => { if (document.hidden) hideTooltip(); });
 tooltipMedia.addEventListener?.("change", hideTooltip);
 
+function syncMobileListViewport() {
+  const height = Math.round(window.visualViewport?.height || window.innerHeight);
+  document.documentElement.style.setProperty("--mobile-viewport-height", `${height}px`);
+}
+syncMobileListViewport();
+window.visualViewport?.addEventListener("resize", syncMobileListViewport);
+window.visualViewport?.addEventListener("scroll", syncMobileListViewport);
+window.addEventListener("orientationchange", syncMobileListViewport);
+
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, { credentials: "include", ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
   if (response.status === 401) { location.replace("/login"); throw new Error("Sign in required"); }
@@ -798,6 +807,7 @@ $("search").addEventListener("input", () => {
   const query = $("search").value.trim();
   $("clear-search").hidden = !$("search").value;
   state.selected = -1; render();
+  $("results").scrollTop = 0;
   if (query && state.filtered.length) setSelected(0, false);
   else if (!query && !hasExplicitRoute() && !narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
 });
