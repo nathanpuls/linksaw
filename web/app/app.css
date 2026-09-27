@@ -90,6 +90,8 @@ button { color: inherit; }
 .preview-title:empty::before, .editor-name-action:empty::before { content: ""; color: var(--muted); font-weight: 500; }
 .preview-title:empty:hover::before, .preview-title:empty:focus-visible::before, .editor-name-action:empty:hover::before, .editor-name-action:empty:focus-visible::before { content: "Title"; }
 .preview-title:hover, .preview-title:focus-visible { outline: 0; background: var(--hover); }
+.app.suppress-shifted-title-hover .preview-title:hover:not(:focus-visible), .app.suppress-shifted-title-hover .editor-name-action:hover:not(:focus-visible) { background: transparent; color: inherit; }
+.app.suppress-shifted-title-hover .preview-title:empty:hover:not(:focus-visible)::before, .app.suppress-shifted-title-hover .editor-name-action:empty:hover:not(:focus-visible)::before { content: ""; }
 .preview-body:focus-visible { outline: 0; }
 .viewer-actions { margin-left: auto; display: flex; align-items: center; gap: 3px; }
 .viewer-delete { margin-left: 9px; }

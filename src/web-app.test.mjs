@@ -200,6 +200,14 @@ test("desktop viewer is the active Voice Control scroll region and rename stays 
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?#editor \.editor-name-input \{ width: auto; flex: 1; \}/);
 });
 
+test("closing the sidebar does not activate a title shifted under the pointer", () => {
+  assert.match(source, /if \(enabled\) \$\("app"\)\.classList\.add\("suppress-shifted-title-hover"\)/);
+  assert.match(source, /requestAnimationFrame\(\(\) => \{[\s\S]*?title\.matches\(":hover"\)[\s\S]*?classList\.remove\("suppress-shifted-title-hover"\)/);
+  assert.match(source, /title\.addEventListener\("pointerleave", \(\) => \$\("app"\)\.classList\.remove\("suppress-shifted-title-hover"\)\)/);
+  assert.match(css, /\.app\.suppress-shifted-title-hover \.preview-title:hover:not\(:focus-visible\)[^}]*background: transparent/);
+  assert.match(css, /\.app\.suppress-shifted-title-hover \.preview-title:empty:hover:not\(:focus-visible\)::before[^}]*content: ""/);
+});
+
 test("unchanged background sync preserves Voice Control targets", () => {
   assert.match(source, /function libraryFingerprint\(snippets\)/);
   assert.match(source, /const libraryChanged = libraryFingerprint\(state\.snippets\) !== libraryFingerprint\(snippets\)/);

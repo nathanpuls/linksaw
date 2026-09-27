@@ -994,7 +994,12 @@ $("editor-name-input").addEventListener("keydown", event => {
 $("editor-name-input").addEventListener("blur", () => { if (!$("editor-name-input").hidden) finishInlineRename(); });
 function toggleReaderMode() {
   const enabled = !$("app").classList.contains("reader-mode");
+  if (enabled) $("app").classList.add("suppress-shifted-title-hover");
   sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();
+  if (enabled) requestAnimationFrame(() => {
+    const titleIsUnderPointer = [$("preview-title"), $("editor-name")].some(title => title.matches(":hover"));
+    if (!titleIsUnderPointer) $("app").classList.remove("suppress-shifted-title-hover");
+  });
 }
 function isSidebarShortcut(event) {
   if (event.key !== "\\" || event.altKey || event.shiftKey) return false;
@@ -1002,6 +1007,9 @@ function isSidebarShortcut(event) {
 }
 $("reader-toggle").addEventListener("click", toggleReaderMode);
 $("editor-reader-toggle").addEventListener("click", toggleReaderMode);
+for (const title of [$("preview-title"), $("editor-name")]) {
+  title.addEventListener("pointerleave", () => $("app").classList.remove("suppress-shifted-title-hover"));
+}
 for (const input of [$("snippet-body"), $("editor-name-input")]) {
   input.addEventListener("beforeinput", event => {
     if (!event.inputType.startsWith("history")) rememberLocalState(input.id);
