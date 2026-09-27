@@ -336,8 +336,13 @@ export async function handle(request, env) {
   if (url.pathname === "/preferences" && request.method === "PUT") {
     const input = await bodyJson(request);
     const trigger = typeof input?.autocompleteTrigger === "string" ? input.autocompleteTrigger : "";
-    if (Array.from(trigger).length < 1 || Array.from(trigger).length > 3 || /\s|[\u0000-\u001f\u007f]/u.test(trigger)) {
-      return fail(request, "Choose one to three visible characters");
+    const legacyTrigger = Array.from(trigger).length >= 1 && Array.from(trigger).length <= 3 && !/\s|[\u0000-\u001f\u007f]/u.test(trigger);
+    const shortcutParts = trigger.startsWith("keys:") ? trigger.slice(5).split("+") : [];
+    const shortcutTrigger = shortcutParts.length >= 1 && shortcutParts.length <= 3
+      && shortcutParts.slice(0, -1).every(part => ["Shift", "Meta", "Control", "Alt"].includes(part))
+      && shortcutParts.at(-1)?.length === 1 && !/\s/u.test(shortcutParts.at(-1));
+    if (!legacyTrigger && !shortcutTrigger) {
+      return fail(request, "Choose a one-, two-, or three-key shortcut");
     }
     await saveAutocompleteTrigger(env, user.id, trigger);
     return json(request, { autocompleteTrigger: trigger });

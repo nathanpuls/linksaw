@@ -53,7 +53,8 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.doesNotMatch(html, /id="rename-dialog"/);
   assert.match(source, /event\.key === "Enter"[\s\S]*?finishInlineRename\(\)/);
   assert.match(source, /event\.key === "Escape"[\s\S]*?finishInlineRename\(\{ cancel: true \}\)/);
-  assert.match(source, /\$\("editor-name"\)\.textContent = editorCustomName\.trim\(\) \|\| "Title"/);
+  assert.match(source, /\$\("editor-name"\)\.textContent = editorCustomName\.trim\(\)/);
+  assert.match(html, /id="editor-name-input"[^>]*placeholder="Title"/);
   assert.match(source, /\$\("editor-name-input"\)\.value = editorCustomName;/);
   assert.match(source, /editorCustomName = cancel \? inlineRenameBaseline : enteredName/);
   assert.doesNotMatch(source, /unchangedAutomaticName/);
@@ -121,7 +122,8 @@ test("destructive actions use branded cancellable dialogs", () => {
 test("navigation flushes autosave and retry preserves the intended destination", () => {
   assert.doesNotMatch(html, /id="unsaved-dialog"/);
   assert.match(source, /async function navigateAfterSave\(destination\)[\s\S]*?pendingNavigation = destination[\s\S]*?await flushEditorSave\(\)[\s\S]*?destination\(\)/);
-  assert.match(source, /\$\("close-editor"\)\.addEventListener\("click", \(\) => \{ void navigateAfterSave\(leaveRoutedView\); \}\)/);
+  assert.match(source, /function closeEditorFromControl\(\)[\s\S]*?emptyUnsavedSnippet[\s\S]*?navigateAfterSave\(leaveRoutedView\)[\s\S]*?setMobileEditorState\(false\)/);
+  assert.match(source, /\$\("close-editor"\)\.addEventListener\("click", closeEditorFromControl\)/);
   assert.match(source, /\$\("settings"\)\.addEventListener\("click", \(\) => \{ void navigateAfterSave\(\(\) => openSettings\(\)\); \}\)/);
   assert.match(source, /\$\("editor-retry"\)\.addEventListener[\s\S]*?saved && pendingNavigation[\s\S]*?destination\(\)/);
   assert.match(source, /addEventListener\("beforeunload"[\s\S]*?saveInFlight[\s\S]*?saveFailed/);
@@ -299,8 +301,11 @@ test("viewer shows only explicit custom names above exact content", () => {
   assert.match(viewer, /const heading = snippet\.title\.trim\(\);/);
   assert.doesNotMatch(viewer, /snippet\.title\.trim\(\) !== snippet\.body\.trim\(\)/);
   assert.doesNotMatch(viewer, /derivedLabel/);
+  assert.match(viewer, /\$\("preview-title"\)\.textContent = heading; \$\("preview-title"\)\.hidden = false/);
   assert.match(viewer, /\$\("preview-body"\)\.hidden = !snippet\.body;/);
   assert.match(viewer, /renderMarkdown\(\$\("preview-body"\), snippet\.body\);/);
+  assert.match(css, /\.preview-title:empty::before, \.editor-name-action:empty::before \{ content: "";/);
+  assert.match(css, /\.preview-title:empty:hover::before[\s\S]*?content: "Title";/);
 });
 
 test("viewer uses safe Markdown plus shared QK-style linkification and underlined styling", () => {
@@ -318,9 +323,11 @@ test("viewer uses safe Markdown plus shared QK-style linkification and underline
 test("settings offers working CSV and JSON transfer controls", () => {
   for (const label of ["Import CSV", "Import JSON", "Export CSV", "Export JSON"]) assert.match(html, new RegExp(`>${label}<`));
   assert.match(html, /<section id="import-export" class="settings-section transfer-settings" tabindex="-1">[\s\S]*?<h2>Import and export<\/h2>/);
-  assert.match(css, /\.transfer-actions \{[^}]*display: grid;[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
-  assert.match(css, /\.transfer-button \{[^}]*border: 1px solid var\(--control\);[^}]*border-radius: 9px;/);
-  assert.match(css, /@media \(max-width: 700px\) \{\s*\.transfer-settings, \.extension-settings \{ display: none; \}\s*\}/);
+  assert.match(css, /\.transfer-actions \{ display: flex; flex-wrap: wrap; gap: 8px; \}/);
+  assert.match(css, /\.transfer-button \{[^}]*min-height: 36px;[^}]*border: 1px solid var\(--control\);[^}]*border-radius: 8px;/);
+  assert.match(html, /id="import-format"[\s\S]*?<option value="csv">CSV<\/option>[\s\S]*?<option value="json">JSON<\/option>/);
+  assert.match(html, /id="export-format"[\s\S]*?<option value="csv">CSV<\/option>[\s\S]*?<option value="json">JSON<\/option>/);
+  assert.match(css, /@media \(max-width: 700px\) \{[\s\S]*?\.extension-settings \{ display: none; \}[\s\S]*?\.transfer-actions \{ display: none; \}[\s\S]*?\.transfer-mobile-actions \{ display: flex;/);
   assert.match(source, /location\.hash === "#import-export"[\s\S]*?scrollIntoView\(\{ block: "start" \}\)/);
   assert.match(source, /importLibrary\(event\.target, parseCsvSnippets\)/);
   assert.match(source, /importLibrary\(event\.target, parseJsonSnippets\)/);
@@ -336,9 +343,11 @@ test("settings opens Recently Deleted as a separate, wrapping recovery surface",
   assert.match(source, /api\("\/deleted-snippets"\)[\s\S]*?renderDeletedSnippets/);
   assert.match(source, /`\/deleted-snippets\/\$\{snippet\.id\}\/restore`[\s\S]*?method: "POST"/);
   assert.match(source, /requestConfirmation\(\{ title: "Delete permanently\?"[\s\S]*?api\(`\/deleted-snippets\/\$\{snippet\.id\}`[\s\S]*?method: "DELETE"/);
-  assert.match(css, /\.settings-inner \{[^}]*overflow-x: hidden;/);
+  assert.match(css, /\.surface \{[^}]*overflow-x: hidden; overflow-y: auto;/);
+  assert.match(css, /\.settings-inner \{[^}]*overflow: visible;/);
   assert.match(css, /\.deleted-snippet-row \{[^}]*display: flex;[^}]*flex-wrap: wrap;/);
   assert.match(css, /\.deleted-snippet-name \{[^}]*overflow-wrap: anywhere;/);
+  assert.match(css, /\.settings-folder \{[^}]*display: inline-flex;[^}]*gap: 5px;[^}]*border: 0;[^}]*font-size: 15px; font-weight: 600;/);
 });
 
 test("settings uses a sticky title, distinct sign-out and close actions, and ordered sections", () => {
@@ -353,7 +362,7 @@ test("settings uses a sticky title, distinct sign-out and close actions, and ord
   const deleted = html.indexOf('id="recently-deleted"');
   const danger = html.indexOf('class="settings-section delete-account-block"');
   assert.ok(appearance < shortcuts && shortcuts < extension && extension < account && account < deleted && deleted < danger);
-  assert.match(css, /\.trigger-input \{ width: 88px;/);
+  assert.match(css, /\.trigger-input \{ width: min\(260px, calc\(100vw - 150px\)\);/);
 });
 
 test("editor history and close controls stay anchored when the name becomes editable", () => {
@@ -361,10 +370,13 @@ test("editor history and close controls stay anchored when the name becomes edit
   assert.match(html, /class="editor-actions"[\s\S]*?id="editor-undo"[\s\S]*?id="editor-redo"[\s\S]*?id="close-editor"/);
 });
 
-test("autocomplete trigger accepts one to three visible characters", () => {
-  assert.match(html, /id="autocomplete-trigger"[^>]*maxlength="3"/);
-  assert.match(html, /one-, two-, or three-character shortcut/);
-  assert.match(source, /slice\(0, 3\)/);
+test("autocomplete trigger records and labels one- to three-key shortcuts", () => {
+  assert.match(html, /id="autocomplete-trigger"[^>]*readonly/);
+  assert.match(html, /one-, two-, or three-key shortcut/);
+  assert.match(source, /triggerModifierLabels = \{ Shift: "Shift", Meta: isMacPlatform \? "Command" : "Meta"/);
+  assert.match(source, /function triggerShortcutFromEvent\(event\)[\s\S]*?parts\.length <= 3 \? `keys:\$\{parts\.join\("\+"\)\}`/);
+  assert.match(source, /showToast\("Saved"\)/);
+  assert.doesNotMatch(source, /Saved\. New pages will use this trigger\./);
 });
 
 test("deep links wait to reveal the resolved view", () => {

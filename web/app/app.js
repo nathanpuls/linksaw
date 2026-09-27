@@ -23,6 +23,25 @@ let deletedSnippets = [];
 const isMacPlatform = /Mac|iPhone|iPad|iPod/i.test(navigator.userAgentData?.platform || navigator.platform || "");
 const sidebarShortcutLabel = isMacPlatform ? "⌘\\" : "Ctrl+\\";
 const commandShortcut = key => isMacPlatform ? `⌘${key}` : `Ctrl+${key}`;
+const triggerModifierLabels = { Shift: "Shift", Meta: isMacPlatform ? "Command" : "Meta", Control: "Control", Alt: isMacPlatform ? "Option" : "Alt" };
+function triggerShortcutLabel(value) {
+  if (!value?.startsWith("keys:")) return value || "";
+  return value.slice(5).split("+").map(key => triggerModifierLabels[key] || key).join(" + ");
+}
+function setTriggerShortcut(value) {
+  $("autocomplete-trigger").dataset.shortcut = value || "";
+  $("autocomplete-trigger").value = triggerShortcutLabel(value);
+}
+function triggerShortcutFromEvent(event) {
+  if (["Shift", "Meta", "Control", "Alt"].includes(event.key) || event.key.length !== 1 || /\s/u.test(event.key)) return "";
+  const parts = [];
+  if (event.shiftKey) parts.push("Shift");
+  if (event.metaKey) parts.push("Meta");
+  if (event.ctrlKey) parts.push("Control");
+  if (event.altKey) parts.push("Alt");
+  parts.push(event.key.toUpperCase());
+  return parts.length <= 3 ? `keys:${parts.join("+")}` : "";
+}
 const tooltipMedia = matchMedia("(hover: none), (pointer: coarse)");
 const tooltipsEnabled = () => !tooltipMedia.matches;
 let toastTimer;
@@ -362,7 +381,7 @@ function closeSurface(id) {
   if ($("app").classList.contains("viewer-open")) $("close-preview").focus(); else $("search").focus();
 }
 function syncEditorName() {
-  $("editor-name").textContent = editorCustomName.trim() || "Title";
+  $("editor-name").textContent = editorCustomName.trim();
 }
 function editorSnapshot() {
   const title = $("editor-name-input").hidden ? editorCustomName : $("editor-name-input").value.trim();
@@ -613,7 +632,7 @@ function renderViewer(snippet) {
   $("viewer-empty").hidden = Boolean(snippet); $("viewer-content").hidden = !snippet;
   if (!snippet) return;
   const heading = snippet.title.trim();
-  $("preview-title").textContent = heading; $("preview-title").hidden = !heading;
+  $("preview-title").textContent = heading; $("preview-title").hidden = false;
   $("preview-body").hidden = !snippet.body;
   renderMarkdown($("preview-body"), snippet.body);
 }
@@ -766,7 +785,7 @@ async function load() {
   try {
     const [{ user }, { snippets }, preferences] = await Promise.all([api("/me"), api("/snippets"), api("/preferences")]);
     state.user = user; state.snippets = snippets; $("account").textContent = user.email; renderIdentity(user); $("app").ariaBusy = "false"; render();
-    $("autocomplete-trigger").value = preferences.autocompleteTrigger || ";";
+    setTriggerShortcut(preferences.autocompleteTrigger || ";");
     applyUrlState();
   } catch (error) { revealInitialView(); showError(error); }
 }
@@ -866,7 +885,18 @@ function activateMobileSearch() {
 $("mobile-search-trigger").addEventListener("click", activateMobileSearch);
 $("add").addEventListener("click", () => { void navigateAfterSave(() => openEditor()); });
 $("settings").addEventListener("click", () => { void navigateAfterSave(() => openSettings()); });
-$("close-editor").addEventListener("click", () => { void navigateAfterSave(leaveRoutedView); });
+function closeEditorFromControl() {
+  const mobileEditing = narrowLayout() && $("editor").classList.contains("is-editing");
+  if (!mobileEditing) { void navigateAfterSave(leaveRoutedView); return; }
+  const emptyUnsavedSnippet = !state.editing && !$('snippet-body').value.trim();
+  if (emptyUnsavedSnippet) { void navigateAfterSave(leaveRoutedView); return; }
+  void navigateAfterSave(() => {
+    $("snippet-body").blur();
+    setMobileEditorState(false);
+    if (state.editing) updateUrl({ view: null, snippet: state.editing.id }, false);
+  });
+}
+$("close-editor").addEventListener("click", closeEditorFromControl);
 $("close-preview").addEventListener("click", () => closePreview());
 $("close-settings").addEventListener("click", leaveRoutedView);
 $("open-recently-deleted").addEventListener("click", () => openDeletedSnippets());
@@ -1228,6 +1258,17 @@ $("import-csv-file").addEventListener("change", event => importLibrary(event.tar
 $("import-json-file").addEventListener("change", event => importLibrary(event.target, parseJsonSnippets));
 $("export-csv").addEventListener("click", () => downloadLibrary(snippetsToCsv(state.snippets), "text/csv;charset=utf-8", "csv"));
 $("export-json").addEventListener("click", () => downloadLibrary(snippetsToJson(state.snippets), "application/json;charset=utf-8", "json"));
+$("import-format").addEventListener("change", event => {
+  const format = event.target.value;
+  event.target.value = "";
+  if (format) chooseImport(`import-${format}-file`);
+});
+$("export-format").addEventListener("change", event => {
+  const format = event.target.value;
+  event.target.value = "";
+  if (format === "csv") downloadLibrary(snippetsToCsv(state.snippets), "text/csv;charset=utf-8", "csv");
+  if (format === "json") downloadLibrary(snippetsToJson(state.snippets), "application/json;charset=utf-8", "json");
+});
 
 $("sign-out").addEventListener("click", async () => { try { await api("/auth/logout", { method: "POST" }); } finally { location.replace("/"); } });
 $("delete-account").addEventListener("click", () => {
@@ -1266,15 +1307,23 @@ matchMedia("(max-width: 900px)").addEventListener("change", () => {
   $("search").focus();
 });
 $("appearance").addEventListener("change", event => { localStorage.setItem("linksaw-theme", event.target.value); applyTheme(event.target.value); });
-$("autocomplete-trigger").addEventListener("input", event => {
-  event.target.value = Array.from(event.target.value).filter(character => !/\s|[\u0000-\u001f\u007f]/u.test(character)).slice(0, 3).join("");
+$("autocomplete-trigger").addEventListener("keydown", event => {
+  if (event.key === "Tab") return;
+  event.preventDefault();
+  const shortcut = triggerShortcutFromEvent(event);
+  if (!shortcut) {
+    if (!["Shift", "Meta", "Control", "Alt"].includes(event.key)) $("trigger-status").textContent = "Use one to three keys.";
+    return;
+  }
+  setTriggerShortcut(shortcut);
   $("trigger-status").textContent = "";
 });
 $("save-trigger").addEventListener("click", async () => {
-  const button = $("save-trigger"); button.disabled = true; $("trigger-status").textContent = "Saving…";
+  const button = $("save-trigger"); button.disabled = true; $("trigger-status").textContent = "";
   try {
-    const saved = await api("/preferences", { method: "PUT", body: JSON.stringify({ autocompleteTrigger: $("autocomplete-trigger").value }) });
-    $("autocomplete-trigger").value = saved.autocompleteTrigger; $("trigger-status").textContent = "Saved. New pages will use this trigger.";
+    const saved = await api("/preferences", { method: "PUT", body: JSON.stringify({ autocompleteTrigger: $("autocomplete-trigger").dataset.shortcut }) });
+    setTriggerShortcut(saved.autocompleteTrigger);
+    showToast("Saved");
   } catch (error) { $("trigger-status").textContent = error.message; }
   finally { button.disabled = false; }
 });

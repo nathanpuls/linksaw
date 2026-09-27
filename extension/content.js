@@ -70,17 +70,29 @@
     return range.toString().slice(-4);
   }
 
-  function triggerMatches(element, key) {
+  function triggerMatches(element, event) {
     const trigger = data.autocompleteTrigger || ';';
-    if ([...key].length !== 1) return false;
-    const combined = beforeCaret(element) + key;
+    if (trigger.startsWith('keys:')) {
+      const keys = trigger.slice(5).split('+');
+      const base = keys.at(-1);
+      return event.key.length === 1
+        && event.key.toUpperCase() === base
+        && event.shiftKey === keys.includes('Shift')
+        && event.metaKey === keys.includes('Meta')
+        && event.ctrlKey === keys.includes('Control')
+        && event.altKey === keys.includes('Alt');
+    }
+    if (event.metaKey || event.ctrlKey || event.altKey || [...event.key].length !== 1) return false;
+    const combined = beforeCaret(element) + event.key;
     if (!combined.endsWith(trigger)) return false;
     const beforeTrigger = combined.slice(0, -trigger.length).slice(-1);
     return !beforeTrigger || /\s/.test(beforeTrigger);
   }
 
   function removeTypedTriggerPrefix(element) {
-    const prefix = (data.autocompleteTrigger || ';').slice(0, -1);
+    const configured = data.autocompleteTrigger || ';';
+    if (configured.startsWith('keys:')) return;
+    const prefix = configured.slice(0, -1);
     if (!prefix) return;
     if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
       const end = element.selectionStart ?? 0;
@@ -227,9 +239,9 @@
   });
 
   document.addEventListener('keydown', event => {
-    if (host || event.defaultPrevented || event.repeat || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (host || event.defaultPrevented || event.repeat || event.isComposing) return;
     const element = editable(event.target);
-    if (!element || !triggerMatches(element, event.key)) return;
+    if (!element || !triggerMatches(element, event)) return;
     event.preventDefault(); event.stopImmediatePropagation(); removeTypedTriggerPrefix(element); open(element);
   }, true);
 

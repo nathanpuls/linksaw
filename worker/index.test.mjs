@@ -287,6 +287,12 @@ test('authenticated users can read and update their autocomplete trigger', async
   assert.equal(putResponse.status, 200);
   assert.deepEqual(await putResponse.json(), { autocompleteTrigger: ';;' });
   assert.equal(saved, ';;');
+  const shortcutResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', {
+    method: 'PUT', headers: { ...auth, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: 'keys:Shift+Meta+V' }),
+  }), env);
+  assert.equal(shortcutResponse.status, 200);
+  assert.deepEqual(await shortcutResponse.json(), { autocompleteTrigger: 'keys:Shift+Meta+V' });
+  assert.equal(saved, 'keys:Shift+Meta+V');
   const tooLongResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', {
     method: 'PUT', headers: { ...auth, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: 'four' }),
   }), env);

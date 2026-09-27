@@ -158,8 +158,9 @@ test('autocomplete opens with recent snippets and uses Linksaw search controls',
 test('autocomplete supports multi-character triggers and reports a stale extension connection clearly', () => {
   assert.match(contentSource, /function runtimeMessage\(message\)/);
   assert.match(contentSource, /Reload this page to reconnect Linksaw\./);
-  assert.match(contentSource, /function triggerMatches\(element, key\)[\s\S]*?combined\.endsWith\(trigger\)/);
+  assert.match(contentSource, /function triggerMatches\(element, event\)[\s\S]*?trigger\.startsWith\('keys:'\)[\s\S]*?event\.metaKey === keys\.includes\('Meta'\)[\s\S]*?combined\.endsWith\(trigger\)/);
   assert.match(contentSource, /function removeTypedTriggerPrefix\(element\)/);
+  assert.match(contentSource, /if \(configured\.startsWith\('keys:'\)\) return/);
   assert.match(contentSource, /removeTypedTriggerPrefix\(element\); open\(element\)/);
 });
 
