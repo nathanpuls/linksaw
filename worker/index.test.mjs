@@ -82,6 +82,8 @@ test("homepage uses Google's official sign-in artwork without changing the login
   assert.doesNotMatch(homepage, /class="google-g"|Continue with Google/);
   assert.ok(button.length > 7000);
   assert.equal(button.subarray(1, 4).toString(), "PNG");
+  const configuration = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
+  assert.match(configuration, /pattern = "linksaw\.com\/google-sign-in-light-pill@2x\.png"/);
 });
 
 test("privacy and terms are dedicated public pages linked from the homepage", async () => {

@@ -48,6 +48,10 @@ pattern = "linksaw.com/apple-touch-icon.png"
 zone_name = "linksaw.com"
 
 [[routes]]
+pattern = "linksaw.com/google-sign-in-light-pill@2x.png"
+zone_name = "linksaw.com"
+
+[[routes]]
 pattern = "linksaw.com/robots.txt"
 zone_name = "linksaw.com"
 
