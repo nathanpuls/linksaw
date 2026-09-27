@@ -279,7 +279,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 }
 
 @media (max-width: 700px) {
-  .extension-settings { display: none; }
+  .shortcuts, .extension-settings { display: none; }
   .transfer-actions { display: none; }
   .transfer-mobile-actions { display: flex; gap: 9px; }
   .transfer-select { width: auto; min-width: 108px; padding: 8px 30px 8px 10px; font-size: 13px; }

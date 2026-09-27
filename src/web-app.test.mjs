@@ -362,6 +362,7 @@ test("settings uses a sticky title, distinct sign-out and close actions, and ord
   const deleted = html.indexOf('id="recently-deleted"');
   const danger = html.indexOf('class="settings-section delete-account-block"');
   assert.ok(appearance < shortcuts && shortcuts < extension && extension < account && account < deleted && deleted < danger);
+  assert.match(css, /@media \(max-width: 700px\) \{[\s\S]*?\.shortcuts, \.extension-settings \{ display: none; \}/);
   assert.match(css, /\.trigger-input \{ width: min\(260px, calc\(100vw - 150px\)\);/);
 });
 
