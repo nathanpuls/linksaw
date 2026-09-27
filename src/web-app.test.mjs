@@ -298,6 +298,11 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(css, /\.viewer-content \{ height: 100dvh; \}/);
 });
 
+test("tablet desktop layout stays inside Safari's visible viewport", () => {
+  assert.match(css, /\.app \{ height: 100vh; height: 100dvh;/);
+  assert.match(css, /\.viewer-pane \{ min-width: 0; height: 100vh; height: 100dvh;/);
+});
+
 test("viewer shows only explicit custom names above exact content", () => {
   const viewer = source.match(/function renderViewer\(snippet\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(viewer, "viewer renderer is present");

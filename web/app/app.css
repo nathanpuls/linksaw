@@ -24,7 +24,7 @@ button { color: inherit; }
 [hidden] { display: none !important; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
-.app { height: 100vh; display: grid; grid-template-columns: 340px minmax(0, 1fr); background: var(--paper); }
+.app { height: 100vh; height: 100dvh; display: grid; grid-template-columns: 340px minmax(0, 1fr); background: var(--paper); }
 .list-pane { min-width: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; overflow: hidden; border-right: 1px solid var(--line); background: var(--paper); }
 .toolbar { height: 68px; display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 18px; background: var(--paper); }
 .mobile-search-trigger { display: none; }
@@ -79,7 +79,7 @@ button { color: inherit; }
 .identity-button:hover .identity-avatar-fallback, .identity-button:focus-visible .identity-avatar-fallback { background: var(--control); color: var(--ink); }
 .identity-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
 
-.viewer-pane { min-width: 0; height: 100vh; overflow: hidden; background: var(--paper); }
+.viewer-pane { min-width: 0; height: 100vh; height: 100dvh; overflow: hidden; background: var(--paper); }
 .viewer-empty { height: 100%; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
 .viewer-content { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .viewer-header { height: 68px; flex: 0 0 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px; }
