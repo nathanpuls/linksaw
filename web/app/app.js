@@ -321,7 +321,7 @@ function openSnippetActionMenu(snippet, point = null) {
     menu.style.left = `${Math.max(8, Math.min(point.x, innerWidth - rect.width - 8))}px`;
     menu.style.top = `${Math.max(8, Math.min(point.y, innerHeight - rect.height - 8))}px`;
   }
-  (url ? open : $("snippet-action-copy")).focus({ preventScroll: true });
+  menu.focus({ preventScroll: true });
 }
 function installLongPress(main, snippet, index) {
   let timer = 0;

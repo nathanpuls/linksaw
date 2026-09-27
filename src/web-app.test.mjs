@@ -72,11 +72,15 @@ test("web rows stay clean while desktop right click and mobile long press share 
   assert.match(source, /function installLongPress\(main, snippet, index\)[\s\S]*?setTimeout\([\s\S]*?openSnippetActionMenu\(snippet\)[\s\S]*?550/);
   assert.match(source, /main\.addEventListener\("contextmenu"[\s\S]*?preventDefault\(\)[\s\S]*?!narrowLayout\(\)[\s\S]*?openSnippetActionMenu\(snippet, point\)/);
   assert.match(html, /id="snippet-action-menu" class="snippet-action-menu"[\s\S]*?snippet-action-open[\s\S]*?>Open<[\s\S]*?>Copy<[\s\S]*?>Share<[\s\S]*?>Edit<[\s\S]*?>Delete</);
+  assert.match(html, /id="snippet-action-menu" class="snippet-action-menu" aria-label="Snippet actions" tabindex="-1"/);
   assert.match(source, /const url = standaloneUrl\(snippet\);\s*open\.hidden = !url;/);
+  assert.match(source, /menu\.showModal\(\);[\s\S]*?menu\.focus\(\{ preventScroll: true \}\)/);
+  assert.doesNotMatch(source, /\(url \? open : \$\("snippet-action-copy"\)\)\.focus/);
   assert.match(source, /\$\("snippet-action-open"\)\.addEventListener\("click"[\s\S]*?openInNewTab\(url\)/);
   assert.match(source, /\$\("snippet-action-copy"\)\.addEventListener\("click"[\s\S]*?navigator\.clipboard\.writeText\(snippetText\(snippet\)\)[\s\S]*?showToast\("Copied"\)/);
   assert.match(css, /\.snippet-action-menu\.desktop-context \{ position: fixed; inset: auto; width: min\(220px,/);
   assert.match(css, /\.snippet-action-menu\.desktop-context::backdrop \{ background: transparent; \}/);
+  assert.match(css, /\.snippet-action-menu:focus \{ outline: 0; \}/);
   assert.match(css, /\.snippet-action-icon \{ width: 17px; height: 17px;/);
   assert.match(css, /\.result-row \{ min-height: 44px; display: block;/);
   assert.doesNotMatch(css, /\.result-view/);
