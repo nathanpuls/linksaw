@@ -281,6 +281,9 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(html, /<button id="mobile-search-trigger" class="mobile-search-trigger" type="button" aria-label="Search snippets">[\s\S]*?<span>Search<\/span>/);
   assert.match(css, /\.toolbar \{ position: relative; grid-row: 4;[^}]*min-height: calc\(54px \+ env\(safe-area-inset-bottom\)\);[^}]*justify-content: space-between;[^}]*border-top: 0; \}/);
   assert.match(css, /\.toolbar > \.search-wrap \{ display: none; \}/);
+  assert.match(css, /\.toolbar > #add \{ position: relative; margin-left: auto; \}/);
+  assert.match(css, /\.toolbar > #add::before \{ position: absolute; inset: -3px; content: ""; \}/);
+  assert.match(css, /\.toolbar > #add svg \{ stroke-width: 2\.5; \}/);
   assert.match(css, /\.mobile-search-trigger \{ display: inline-flex;[^}]*justify-content: center;[^}]*color: var\(--muted\);/);
   assert.match(css, /\.list-pane\.search-active \.toolbar \{ grid-row: 2;[^}]*min-height: 50px;[^}]*border-bottom: 1px solid var\(--line\); \}/);
   assert.match(css, /\.list-pane\.search-active \.mobile-search-trigger \{ display: none; \}/);

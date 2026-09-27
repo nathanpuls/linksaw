@@ -226,7 +226,9 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .results { grid-row: 3; }
   .toolbar { position: relative; grid-row: 4; height: auto; min-height: calc(54px + env(safe-area-inset-bottom)); justify-content: space-between; padding: 5px 8px max(5px, env(safe-area-inset-bottom)); border-top: 0; }
   .toolbar > .search-wrap { display: none; }
-  .toolbar > #add { margin-left: auto; }
+  .toolbar > #add { position: relative; margin-left: auto; }
+  .toolbar > #add::before { position: absolute; inset: -3px; content: ""; }
+  .toolbar > #add svg { stroke-width: 2.5; }
   .mobile-search-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 108px; min-height: 44px; border: 0; border-radius: 9px; padding: 0 12px; background: transparent; color: var(--muted); font-weight: 500; cursor: pointer; }
   .mobile-search-trigger:active, .mobile-search-trigger:focus-visible { outline: 0; background: var(--selected); color: var(--ink); }
   .mobile-search-trigger svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
