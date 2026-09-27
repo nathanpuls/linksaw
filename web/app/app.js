@@ -855,7 +855,15 @@ function clearSearch() {
 }
 $("clear-search").addEventListener("click", clearSearch);
 $("search-icon").addEventListener("click", () => $("search").focus());
-$("mobile-search-trigger").addEventListener("click", () => $("search").focus());
+function activateMobileSearch() {
+  const input = $("search");
+  document.querySelector(".list-pane")?.classList.add("search-active");
+  // The resting mobile layout does not render the text field. Reveal it before
+  // focusing so mobile browsers can open the keyboard within this user gesture.
+  void input.offsetWidth;
+  input.focus({ preventScroll: true });
+}
+$("mobile-search-trigger").addEventListener("click", activateMobileSearch);
 $("add").addEventListener("click", () => { void navigateAfterSave(() => openEditor()); });
 $("settings").addEventListener("click", () => { void navigateAfterSave(() => openSettings()); });
 $("close-editor").addEventListener("click", () => { void navigateAfterSave(leaveRoutedView); });

@@ -284,7 +284,8 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(css, /\.list-pane\.search-active \.mobile-search-trigger \{ display: none; \}/);
   assert.match(css, /\.list-pane\.search-active \.toolbar > \.search-wrap \{ display: flex; \}/);
   assert.match(css, /\.list-pane\.search-active \.results \{ grid-row: 4; \}/);
-  assert.match(source, /\$\("mobile-search-trigger"\)\.addEventListener\("click", \(\) => \$\("search"\)\.focus\(\)\)/);
+  assert.match(source, /function activateMobileSearch\(\) \{[\s\S]*?classList\.add\("search-active"\)[\s\S]*?void input\.offsetWidth;[\s\S]*?input\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(source, /\$\("mobile-search-trigger"\)\.addEventListener\("click", activateMobileSearch\)/);
   assert.match(source, /\$\("search"\)\.addEventListener\("focus"[\s\S]*?classList\.add\("search-active"\)/);
   assert.match(source, /\$\("search"\)\.addEventListener\("blur"[\s\S]*?classList\.remove\("search-active"\)/);
   assert.match(source, /\$\("search"\)\.addEventListener\("input"[\s\S]*?render\(\);[\s\S]*?\$\("results"\)\.scrollTop = 0;/);
