@@ -201,10 +201,10 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /href="https:\/\/example\.com\/docs"/);
   assert.doesNotMatch(html, /href="https:\/\/README\.md"/);
   assert.doesNotMatch(html, /href="https:\/\/example\.com\/docs`"/);
-  assert.match(html, /href="tel:3125551212">\(312\) 555-1212<\/a>/);
-  assert.match(html, /href="tel:\+442079460958">\+44 20 7946 0958<\/a>/);
-  assert.match(html, /href="mailto:hi@example\.com">hi@example\.com<\/a>/);
-  assert.match(html, /href="https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=123%20Main%20St%2C%20Suite%20110%20Kingwood%2C%20TX%2077339" target="_blank" rel="noopener noreferrer">123 Main St, Suite 110,<br>Kingwood, TX 77339<\/a>/);
+  assert.match(html, /href="tel:3125551212"[^>]*>\(312\) 555-1212<\/a>/);
+  assert.match(html, /href="tel:\+442079460958"[^>]*>\+44 20 7946 0958<\/a>/);
+  assert.match(html, /href="mailto:hi@example\.com"[^>]*>hi@example\.com<\/a>/);
+  assert.match(html, /href="https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=123%20Main%20St%2C%20Suite%20110%20Kingwood%2C%20TX%2077339" target="_blank" rel="noopener noreferrer"[^>]*>123 Main St, Suite 110,<br>Kingwood, TX 77339<\/a>/);
   assert.match(html, /<textarea id="snippet-source" hidden>&lt;script&gt;alert/);
   assert.match(html, /document\.getElementById\("snippet-source"\)\.value/);
   assert.match(html, /text-decoration-thickness:1\.2px[\s\S]*text-decoration-skip-ink:none[\s\S]*word-break:break-word/);

@@ -80,3 +80,16 @@ test("rendered Markdown keeps source positions for editing without exposing link
   const after = [...viewer.querySelectorAll("span")].find(node => node.textContent.startsWith(" after"));
   assert.equal(sourceOffsetFromRenderedPoint(viewer, source, after.firstChild, 2), 39);
 });
+
+test("clicking to the right of rendered text places the caret at the line end", () => {
+  const source = "Call 323-395-8384";
+  const dom = new JSDOM(`<main id="viewer"></main>`);
+  const viewer = dom.window.document.getElementById("viewer");
+  renderMarkdown(viewer, source);
+  const mapped = [...viewer.querySelectorAll("[data-source-start]")];
+  mapped.forEach((element, index) => {
+    element.getBoundingClientRect = () => ({ left: 10 + index * 70, right: 70 + index * 70, top: 10, bottom: 30, width: 60, height: 20 });
+  });
+
+  assert.equal(sourceOffsetFromRenderedPoint(viewer, source, viewer, 0, 300, 20), source.length);
+});

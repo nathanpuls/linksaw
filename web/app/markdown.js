@@ -51,7 +51,7 @@ function linkedPlainText(value, baseOffset = 0) {
     if (!href) return mappedPlainText(part.text, start);
     const label = escapedText(part.text);
     const external = part.external ? ' target="_blank" rel="noopener noreferrer"' : "";
-    return `<a href="${escapeHtml(href)}"${external}>${label}</a>`;
+    return `<a href="${escapeHtml(href)}"${external}${sourceAttributes(start, end, true)}>${label}</a>`;
   }).join("");
 }
 
@@ -176,6 +176,7 @@ export function renderMarkdown(element, value) {
 
 export function sourceOffsetFromRenderedPoint(root, source, node, nodeOffset = 0, clientX = 0, clientY = 0) {
   const length = String(source ?? "").replace(/\r\n?/g, "\n").length;
+  const mappedElements = [...root.querySelectorAll("[data-source-start]")];
   const element = node?.nodeType === 1 ? node : node?.parentElement;
   if (element && root.contains(element)) {
     const atomic = element.closest?.("[data-source-atomic]");
@@ -193,9 +194,19 @@ export function sourceOffsetFromRenderedPoint(root, source, node, nodeOffset = 0
     }
   }
 
+  const sameLine = mappedElements
+    .map(candidate => ({ candidate, rect: candidate.getBoundingClientRect() }))
+    .filter(({ rect }) => rect.height > 0 && clientY >= rect.top && clientY <= rect.bottom);
+  if (sameLine.length) {
+    const leftmost = sameLine.reduce((best, item) => item.rect.left < best.rect.left ? item : best);
+    const rightmost = sameLine.reduce((best, item) => item.rect.right > best.rect.right ? item : best);
+    if (clientX < leftmost.rect.left) return Number(leftmost.candidate.dataset.sourceStart);
+    if (clientX > rightmost.rect.right) return Number(rightmost.candidate.dataset.sourceEnd);
+  }
+
   let nearest = null;
   let nearestDistance = Infinity;
-  root.querySelectorAll("[data-source-start]").forEach(candidate => {
+  mappedElements.forEach(candidate => {
     const rect = candidate.getBoundingClientRect();
     const dx = clientX < rect.left ? rect.left - clientX : clientX > rect.right ? clientX - rect.right : 0;
     const dy = clientY < rect.top ? rect.top - clientY : clientY > rect.bottom ? clientY - rect.bottom : 0;

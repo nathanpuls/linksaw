@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260927-3">
+  <link rel="stylesheet" href="/app/app.css?v=20260927-4">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -93,49 +93,20 @@
 
   <section id="settings-panel" class="surface" aria-labelledby="settings-title" hidden>
     <div class="settings-inner">
-      <header class="surface-header">
-        <button id="close-settings" class="icon-button" type="button" aria-label="Back to search" data-tooltip="Back to search" data-shortcut="Esc"></button>
+      <header class="surface-header settings-header">
         <h1 id="settings-title">Settings</h1>
-        <button id="sign-out" class="settings-sign-out" type="button">Sign out</button>
+        <div class="settings-header-actions">
+          <button id="sign-out" class="settings-sign-out" type="button">Sign out</button>
+          <button id="close-settings" class="icon-button" type="button" aria-label="Close Settings" data-tooltip="Close Settings" data-shortcut="Esc"></button>
+        </div>
       </header>
-      <div class="settings-grid">
-        <div>
+      <div class="settings-content">
+        <section class="settings-section appearance-settings">
           <h2>Appearance</h2>
           <label for="appearance" class="field-label">Theme</label>
           <select id="appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
-          <div class="extension-settings">
-            <h2>Chrome extension</h2>
-            <label for="autocomplete-trigger" class="field-label">Autocomplete trigger</label>
-            <div class="trigger-row">
-              <input id="autocomplete-trigger" class="trigger-input" maxlength="3" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="trigger-help">
-              <button id="save-trigger" class="text-button" type="button">Save</button>
-            </div>
-            <p id="trigger-help" class="field-help">Type a one-, two-, or three-character shortcut in an editable field to open Linksaw.</p>
-            <p id="trigger-status" class="field-help" role="status" aria-live="polite"></p>
-          </div>
-          <section id="import-export" class="transfer-settings" tabindex="-1">
-            <h2>Import and export</h2>
-            <div class="transfer-actions">
-              <button id="import-csv" class="transfer-button" type="button">Import CSV</button>
-              <button id="import-json" class="transfer-button" type="button">Import JSON</button>
-              <button id="export-csv" class="transfer-button" type="button">Export CSV</button>
-              <button id="export-json" class="transfer-button" type="button">Export JSON</button>
-            </div>
-            <input id="import-csv-file" type="file" accept=".csv,text/csv" hidden>
-            <input id="import-json-file" type="file" accept=".json,application/json" hidden>
-            <p id="transfer-status" class="field-help" role="status" aria-live="polite"></p>
-          </section>
-          <section id="recently-deleted" class="recently-deleted-settings" aria-labelledby="recently-deleted-title">
-            <h2 id="recently-deleted-title">Recently deleted</h2>
-            <button id="open-recently-deleted" class="settings-folder" type="button"><span>Deleted snippets remain available for 30 days.</span><span aria-hidden="true">›</span></button>
-          </section>
-          <div class="account-block">
-            <h2>Account</h2>
-            <p id="account"></p>
-            <a class="settings-website-link" href="/?website=1">Linksaw website</a>
-          </div>
-        </div>
-        <div class="shortcuts">
+        </section>
+        <section class="settings-section shortcuts">
           <h2>Shortcuts</h2>
           <dl>
             <div><dt>⌘/Ctrl N</dt><dd>New snippet</dd></div>
@@ -153,13 +124,43 @@
             <div><dt>Esc</dt><dd>Go back</dd></div>
             <div><dt>/</dt><dd>Focus search</dd></div>
           </dl>
-        </div>
+        </section>
+        <section class="settings-section extension-settings">
+          <h2>Chrome extension</h2>
+          <label for="autocomplete-trigger" class="field-label">Autocomplete trigger</label>
+          <div class="trigger-row">
+            <input id="autocomplete-trigger" class="trigger-input" maxlength="3" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="trigger-help">
+            <button id="save-trigger" class="text-button" type="button">Save</button>
+          </div>
+          <p id="trigger-help" class="field-help">Type a one-, two-, or three-character shortcut in an editable field to open Linksaw.</p>
+          <p id="trigger-status" class="field-help" role="status" aria-live="polite"></p>
+        </section>
+        <section id="import-export" class="settings-section transfer-settings" tabindex="-1">
+          <h2>Import and export</h2>
+          <div class="transfer-actions">
+            <button id="import-csv" class="transfer-button" type="button">Import CSV</button>
+            <button id="import-json" class="transfer-button" type="button">Import JSON</button>
+            <button id="export-csv" class="transfer-button" type="button">Export CSV</button>
+            <button id="export-json" class="transfer-button" type="button">Export JSON</button>
+          </div>
+          <input id="import-csv-file" type="file" accept=".csv,text/csv" hidden>
+          <input id="import-json-file" type="file" accept=".json,application/json" hidden>
+          <p id="transfer-status" class="field-help" role="status" aria-live="polite"></p>
+        </section>
+        <section class="settings-section account-block">
+          <h2>Account</h2>
+          <p id="account"></p>
+          <a class="settings-website-link" href="/?website=1">Linksaw website</a>
+        </section>
+        <section id="recently-deleted" class="settings-section recently-deleted-settings">
+          <button id="open-recently-deleted" class="settings-folder" type="button"><span>Recently deleted</span><span aria-hidden="true">›</span></button>
+        </section>
+        <section class="settings-section delete-account-block" aria-labelledby="danger-zone-title">
+          <h2 id="danger-zone-title">Danger zone</h2>
+          <p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p>
+          <button id="delete-account" class="text-button danger-button" type="button">Delete account</button>
+        </section>
       </div>
-      <section class="delete-account-block" aria-labelledby="danger-zone-title">
-        <h2 id="danger-zone-title">Danger zone</h2>
-        <p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p>
-        <button id="delete-account" class="text-button danger-button" type="button">Delete account</button>
-      </section>
     </div>
   </section>
 
@@ -217,6 +218,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260927-2"></script>
+  <script type="module" src="/app/app.js?v=20260927-3"></script>
 </body>
 </html>

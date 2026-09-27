@@ -277,7 +277,7 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(css, /\.sidebar-footer \.identity-name \{ display: none; \}/);
   assert.match(css, /\.status \{ grid-row: 2; \}[\s\S]*?\.results \{ grid-row: 3; \}/);
   assert.match(html, /<button id="mobile-search-trigger" class="mobile-search-trigger" type="button" aria-label="Search snippets">[\s\S]*?<span>Search<\/span>/);
-  assert.match(css, /\.toolbar \{ position: relative; grid-row: 4;[^}]*min-height: calc\(54px \+ env\(safe-area-inset-bottom\)\);[^}]*justify-content: center;[^}]*border-top: 1px solid var\(--line\); \}/);
+  assert.match(css, /\.toolbar \{ position: relative; grid-row: 4;[^}]*min-height: calc\(54px \+ env\(safe-area-inset-bottom\)\);[^}]*justify-content: space-between;[^}]*border-top: 0; \}/);
   assert.match(css, /\.toolbar > \.search-wrap \{ display: none; \}/);
   assert.match(css, /\.mobile-search-trigger \{ display: inline-flex;[^}]*justify-content: center;[^}]*color: var\(--muted\);/);
   assert.match(css, /\.list-pane\.search-active \.toolbar \{ grid-row: 2;[^}]*min-height: 50px;[^}]*border-bottom: 1px solid var\(--line\); \}/);
@@ -304,7 +304,7 @@ test("viewer shows only explicit custom names above exact content", () => {
 });
 
 test("viewer uses safe Markdown plus shared QK-style linkification and underlined styling", () => {
-  assert.match(source, /import \{ renderMarkdown, sourceOffsetFromRenderedPoint \} from "\.\/markdown\.js\?v=20260927-1"/);
+  assert.match(source, /import \{ renderMarkdown, sourceOffsetFromRenderedPoint \} from "\.\/markdown\.js\?v=20260927-2"/);
   assert.match(markdown, /import \{ linkifyText \} from "\.\/linkify\.js"/);
   assert.match(markdown, /export function markdownToSafeHtml/);
   assert.match(markdown, /element\.innerHTML = markdownToSafeHtml\(value\)/);
@@ -317,8 +317,10 @@ test("viewer uses safe Markdown plus shared QK-style linkification and underline
 
 test("settings offers working CSV and JSON transfer controls", () => {
   for (const label of ["Import CSV", "Import JSON", "Export CSV", "Export JSON"]) assert.match(html, new RegExp(`>${label}<`));
-  assert.match(html, /<section id="import-export" class="transfer-settings" tabindex="-1">[\s\S]*?<h2>Import and export<\/h2>/);
-  assert.match(css, /@media \(max-width: 700px\) \{\s*\.transfer-settings \{ display: none; \}\s*\}/);
+  assert.match(html, /<section id="import-export" class="settings-section transfer-settings" tabindex="-1">[\s\S]*?<h2>Import and export<\/h2>/);
+  assert.match(css, /\.transfer-actions \{[^}]*display: grid;[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(css, /\.transfer-button \{[^}]*border: 1px solid var\(--control\);[^}]*border-radius: 9px;/);
+  assert.match(css, /@media \(max-width: 700px\) \{\s*\.transfer-settings, \.extension-settings \{ display: none; \}\s*\}/);
   assert.match(source, /location\.hash === "#import-export"[\s\S]*?scrollIntoView\(\{ block: "start" \}\)/);
   assert.match(source, /importLibrary\(event\.target, parseCsvSnippets\)/);
   assert.match(source, /importLibrary\(event\.target, parseJsonSnippets\)/);
@@ -327,8 +329,8 @@ test("settings offers working CSV and JSON transfer controls", () => {
 });
 
 test("settings opens Recently Deleted as a separate, wrapping recovery surface", () => {
-  assert.match(html, /id="recently-deleted"[\s\S]*?id="open-recently-deleted"[\s\S]*?Deleted snippets remain available for 30 days\./);
-  assert.match(html, /id="deleted-panel" class="surface"[\s\S]*?id="deleted-snippet-list"[^>]*role="list"/);
+  assert.match(html, /id="recently-deleted"[\s\S]*?id="open-recently-deleted"[\s\S]*?<span>Recently deleted<\/span>[\s\S]*?<span aria-hidden="true">›<\/span>/);
+  assert.match(html, /id="deleted-panel" class="surface"[\s\S]*?Deleted snippets remain available for 30 days\.[\s\S]*?id="deleted-snippet-list"[^>]*role="list"/);
   assert.match(source, /function openDeletedSnippets[\s\S]*?showSurface\("deleted-panel"\)[\s\S]*?loadDeletedSnippets/);
   assert.match(source, /view === "deleted"\) \{ openDeletedSnippets\(false\); revealInitialView\(\); return;/);
   assert.match(source, /api\("\/deleted-snippets"\)[\s\S]*?renderDeletedSnippets/);
@@ -337,6 +339,21 @@ test("settings opens Recently Deleted as a separate, wrapping recovery surface",
   assert.match(css, /\.settings-inner \{[^}]*overflow-x: hidden;/);
   assert.match(css, /\.deleted-snippet-row \{[^}]*display: flex;[^}]*flex-wrap: wrap;/);
   assert.match(css, /\.deleted-snippet-name \{[^}]*overflow-wrap: anywhere;/);
+});
+
+test("settings uses a sticky title, distinct sign-out and close actions, and ordered sections", () => {
+  assert.match(html, /class="surface-header settings-header">\s*<h1 id="settings-title">Settings<\/h1>[\s\S]*?id="sign-out"[\s\S]*?id="close-settings"[^>]*aria-label="Close Settings"/);
+  assert.match(css, /\.settings-inner > \.surface-header \{ position: sticky; top: 0; z-index: 2;[^}]*border-bottom: 1px solid var\(--line\);/);
+  assert.match(css, /\.settings-header-actions \{[^}]*margin-left: auto;[^}]*gap: 12px;/);
+  assert.match(source, /icon\("close-settings", "close"\)/);
+  const appearance = html.indexOf("appearance-settings");
+  const shortcuts = html.indexOf('class="settings-section shortcuts"');
+  const extension = html.indexOf('class="settings-section extension-settings"');
+  const account = html.indexOf('class="settings-section account-block"');
+  const deleted = html.indexOf('id="recently-deleted"');
+  const danger = html.indexOf('class="settings-section delete-account-block"');
+  assert.ok(appearance < shortcuts && shortcuts < extension && extension < account && account < deleted && deleted < danger);
+  assert.match(css, /\.trigger-input \{ width: 88px;/);
 });
 
 test("editor history and close controls stay anchored when the name becomes editable", () => {

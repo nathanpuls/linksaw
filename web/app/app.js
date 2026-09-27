@@ -1,5 +1,5 @@
 import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-2";
-import { renderMarkdown, sourceOffsetFromRenderedPoint } from "./markdown.js?v=20260927-1";
+import { renderMarkdown, sourceOffsetFromRenderedPoint } from "./markdown.js?v=20260927-2";
 
 const API = "https://snippets-api.linksaw.com";
 const icons = {
@@ -51,7 +51,7 @@ let actionMenuSnippet = null;
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("mobile-search-trigger-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
-icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "back"); icon("close-deleted", "back");
+icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "close"); icon("close-deleted", "back");
 icon("editor-reader-toggle", "panelLeft"); icon("editor-copy", "copy"); icon("editor-share", "share"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash"); icon("mobile-delete", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
