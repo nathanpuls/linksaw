@@ -288,6 +288,9 @@ function setSelected(index, scroll = true) {
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
   renderViewer(state.filtered[state.selected] || null);
 }
+function beginKeyboardListNavigation() {
+  $("results").classList.add("keyboard-navigation");
+}
 function openSnippet(snippet) {
   openPreview(snippet);
 }
@@ -1453,17 +1456,23 @@ document.addEventListener("keydown", event => {
   }
   if (event.key === "ArrowDown") {
     event.preventDefault();
+    beginKeyboardListNavigation();
     if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
     setSelected(state.selected + 1);
   }
   else if (event.key === "ArrowUp") {
     event.preventDefault();
+    beginKeyboardListNavigation();
     if (!$("app").classList.contains("reader-mode")) $("search").focus({ preventScroll: true });
     setSelected(state.selected - 1);
   }
   else if (event.key === "ArrowRight" && selected) { event.preventDefault(); runListActionAfterSave(() => { void useSnippet(selected).catch(showCopyError); }); }
   else if (event.key === "Enter" && selected && document.activeElement === $("search")) { event.preventDefault(); runListActionAfterSave(() => openSnippet(selected)); }
   else if (event.key === "/" && document.activeElement !== $("search")) { event.preventDefault(); $("search").focus(); }
+});
+
+$("results").addEventListener("pointermove", event => {
+  if (event.pointerType === "mouse") $("results").classList.remove("keyboard-navigation");
 });
 
 load();

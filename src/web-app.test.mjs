@@ -210,6 +210,15 @@ test("interactive web controls expose Voice Control names without changing the p
   assert.match(source, /\$\("preview-body"\)\.addEventListener\("keydown"[\s\S]*?event\.key !== "Enter"[\s\S]*?openEditor\(snippet/);
 });
 
+test("desktop arrow navigation keeps the highlighted row aligned with the viewer", () => {
+  assert.match(source, /function beginKeyboardListNavigation\(\) \{[\s\S]*?classList\.add\("keyboard-navigation"\)/);
+  assert.match(source, /event\.key === "ArrowDown"[\s\S]*?beginKeyboardListNavigation\(\)[\s\S]*?setSelected\(state\.selected \+ 1\)/);
+  assert.match(source, /event\.key === "ArrowUp"[\s\S]*?beginKeyboardListNavigation\(\)[\s\S]*?setSelected\(state\.selected - 1\)/);
+  assert.match(source, /\$\("results"\)\.addEventListener\("pointermove"[\s\S]*?classList\.remove\("keyboard-navigation"\)/);
+  assert.match(css, /\.results\.keyboard-navigation \.result-row:hover:not\(\.selected\) \{ background: transparent; \}/);
+  assert.match(css, /\.results:not\(\.keyboard-navigation\):has\(\.result-row:hover\) \.result-row\.selected:not\(:hover\)/);
+});
+
 test("desktop viewer is the active Voice Control scroll region and rename stays compact", () => {
   assert.match(source, /if \(!narrowLayout\(\)\) \{[\s\S]*?requestAnimationFrame\(\(\) => \$\("preview-body"\)\.focus\(\{ preventScroll: true \}\)\)[\s\S]*?return;/);
   assert.match(css, /\.editor-name-input \{[^}]*width: min\(420px, 42vw\);[^}]*flex: 0 1 420px;/);
