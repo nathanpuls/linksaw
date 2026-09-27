@@ -11,12 +11,16 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260927-2">
+  <link rel="stylesheet" href="/app/app.css?v=20260927-3">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
     <section class="list-pane" aria-label="Snippet library">
       <header class="toolbar">
+        <button id="mobile-search-trigger" class="mobile-search-trigger" type="button" aria-label="Search snippets">
+          <span id="mobile-search-trigger-icon" aria-hidden="true"></span>
+          <span>Search</span>
+        </button>
         <div class="search-wrap">
           <label class="sr-only" for="search">Search snippets</label>
           <button id="search-icon" class="search-icon" type="button" tabindex="-1" aria-label="Focus search" data-tooltip="Focus search"></button>

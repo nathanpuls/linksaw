@@ -276,9 +276,15 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(css, /\.sidebar-footer \.identity-button \{ width: 42px; min-width: 42px; flex: 0 0 42px;[^}]*justify-content: center;/);
   assert.match(css, /\.sidebar-footer \.identity-name \{ display: none; \}/);
   assert.match(css, /\.status \{ grid-row: 2; \}[\s\S]*?\.results \{ grid-row: 3; \}/);
-  assert.match(css, /\.toolbar \{ grid-row: 4;[^}]*min-height: calc\(54px \+ env\(safe-area-inset-bottom\)\);[^}]*border-top: 1px solid var\(--line\); \}/);
+  assert.match(html, /<button id="mobile-search-trigger" class="mobile-search-trigger" type="button" aria-label="Search snippets">[\s\S]*?<span>Search<\/span>/);
+  assert.match(css, /\.toolbar \{ position: relative; grid-row: 4;[^}]*min-height: calc\(54px \+ env\(safe-area-inset-bottom\)\);[^}]*justify-content: center;[^}]*border-top: 1px solid var\(--line\); \}/);
+  assert.match(css, /\.toolbar > \.search-wrap \{ display: none; \}/);
+  assert.match(css, /\.mobile-search-trigger \{ display: inline-flex;[^}]*justify-content: center;[^}]*color: var\(--muted\);/);
   assert.match(css, /\.list-pane\.search-active \.toolbar \{ grid-row: 2;[^}]*min-height: 50px;[^}]*border-bottom: 1px solid var\(--line\); \}/);
+  assert.match(css, /\.list-pane\.search-active \.mobile-search-trigger \{ display: none; \}/);
+  assert.match(css, /\.list-pane\.search-active \.toolbar > \.search-wrap \{ display: flex; \}/);
   assert.match(css, /\.list-pane\.search-active \.results \{ grid-row: 4; \}/);
+  assert.match(source, /\$\("mobile-search-trigger"\)\.addEventListener\("click", \(\) => \$\("search"\)\.focus\(\)\)/);
   assert.match(source, /\$\("search"\)\.addEventListener\("focus"[\s\S]*?classList\.add\("search-active"\)/);
   assert.match(source, /\$\("search"\)\.addEventListener\("blur"[\s\S]*?classList\.remove\("search-active"\)/);
   assert.match(source, /\$\("search"\)\.addEventListener\("input"[\s\S]*?render\(\);[\s\S]*?\$\("results"\)\.scrollTop = 0;/);
