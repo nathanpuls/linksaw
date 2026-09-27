@@ -216,7 +216,7 @@ export async function handle(request, env) {
   if (isWebHost && ["GET", "HEAD"].includes(request.method) && url.pathname === "/terms") {
     return env.ASSETS.fetch(new Request("https://linksaw.com/terms/", request));
   }
-  if (isWebHost && request.method === "GET" && ["/favicon.ico", "/icon.png", "/apple-touch-icon.png", "/google-sign-in-light-pill@2x.png", "/robots.txt", "/sitemap.xml"].includes(url.pathname)) {
+  if (isWebHost && request.method === "GET" && ["/favicon.ico", "/icon.png", "/apple-touch-icon.png", "/google-sign-in-light-pill-2x.png", "/robots.txt", "/sitemap.xml"].includes(url.pathname)) {
     return env.ASSETS.fetch(request);
   }
   if (isWebHost && request.method === "GET" && appAssetPaths.has(url.pathname)) return env.ASSETS.fetch(request);
