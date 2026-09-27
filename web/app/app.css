@@ -210,9 +210,13 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .custom-tooltip kbd { border: 0; border-radius: 4px; padding: 2px 5px; background: var(--tooltip-kbd); color: inherit; font: inherit; font-size: 11px; line-height: 1.1; }
 .snippet-action-menu, .snippet-action-menu * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .snippet-action-menu { width: min(360px, calc(100vw - 24px)); max-width: none; margin: auto auto max(12px, env(safe-area-inset-bottom)); border: 1px solid var(--line); border-radius: 14px; padding: 6px; background: var(--paper); color: var(--ink); box-shadow: 0 18px 48px #0003; }
+.snippet-action-menu.desktop-context { position: fixed; inset: auto; width: min(220px, calc(100vw - 16px)); margin: 0; }
 .snippet-action-menu::backdrop { background: #0003; }
+.snippet-action-menu.desktop-context::backdrop { background: transparent; }
 .snippet-action-list { display: grid; }
-.snippet-action-list button { min-height: 48px; border: 0; border-radius: 9px; padding: 0 14px; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.snippet-action-list button { min-height: 48px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 9px; padding: 0 14px; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.snippet-action-icon { width: 17px; height: 17px; flex: 0 0 17px; display: inline-grid; place-items: center; color: var(--muted); }
+.snippet-action-icon svg { width: 17px; height: 17px; }
 .snippet-action-list button:hover, .snippet-action-list button:focus-visible { outline: 0; background: var(--selected); }
 
 @media (hover: none), (pointer: coarse) {

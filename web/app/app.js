@@ -10,6 +10,7 @@ const icons = {
   share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v13"/><path d="m16 6-4-4-4 4"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
   panelLeft: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>',
+  externalLink: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6"/><path d="m10 14 11-11"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>',
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
   back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
@@ -88,6 +89,7 @@ function icon(id, name) { $(id).innerHTML = icons[name]; }
 icon("add", "plus"); icon("search-icon", "search"); icon("mobile-search-trigger-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "close"); icon("close-deleted", "back");
 icon("editor-reader-toggle", "panelLeft"); icon("editor-copy", "copy"); icon("editor-share", "share"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash"); icon("mobile-delete", "trash");
+icon("snippet-action-open-icon", "externalLink"); icon("snippet-action-copy-icon", "copy"); icon("snippet-action-share-icon", "share"); icon("snippet-action-edit-icon", "edit"); icon("snippet-action-delete-icon", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
 $("preview-copy").dataset.shortcut = commandShortcut("C");
@@ -302,14 +304,26 @@ function closeSnippetActionMenu() {
 function clearInteractiveSelection() {
   window.getSelection?.()?.removeAllRanges();
 }
-function openSnippetActionMenu(snippet) {
-  if (!snippet || !narrowLayout()) return;
+function openSnippetActionMenu(snippet, point = null) {
+  if (!snippet) return;
   clearInteractiveSelection();
   actionMenuSnippet = snippet;
-  $("snippet-action-menu").showModal();
-  $("snippet-action-copy").focus({ preventScroll: true });
+  const menu = $("snippet-action-menu");
+  const open = $("snippet-action-open");
+  const url = standaloneUrl(snippet);
+  open.hidden = !url;
+  const desktopContext = Boolean(point && !narrowLayout());
+  menu.classList.toggle("desktop-context", desktopContext);
+  menu.style.removeProperty("left"); menu.style.removeProperty("top");
+  menu.showModal();
+  if (desktopContext) {
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(8, Math.min(point.x, innerWidth - rect.width - 8))}px`;
+    menu.style.top = `${Math.max(8, Math.min(point.y, innerHeight - rect.height - 8))}px`;
+  }
+  (url ? open : $("snippet-action-copy")).focus({ preventScroll: true });
 }
-function installLongPress(main, snippet) {
+function installLongPress(main, snippet, index) {
   let timer = 0;
   let startX = 0;
   let startY = 0;
@@ -332,7 +346,13 @@ function installLongPress(main, snippet) {
   main.addEventListener("pointercancel", cancel);
   main.addEventListener("touchstart", clearInteractiveSelection, { passive: true });
   main.addEventListener("selectstart", event => { if (narrowLayout()) event.preventDefault(); });
-  main.addEventListener("contextmenu", event => { if (narrowLayout()) event.preventDefault(); });
+  main.addEventListener("contextmenu", event => {
+    event.preventDefault();
+    if (!narrowLayout()) {
+      const point = { x: event.clientX, y: event.clientY };
+      runListActionAfterSave(() => { setSelected(index, false); openSnippetActionMenu(snippet, point); });
+    }
+  });
   return () => {
     if (!handled) return false;
     handled = false;
@@ -374,7 +394,7 @@ function render() {
     main.ariaLabel = `Open ${label(snippet)} in Linksaw`;
     main.setAttribute("aria-description", "Open snippet viewer");
     main.addEventListener("focus", () => setSelected(index, false));
-    const consumedLongPress = installLongPress(main, snippet);
+    const consumedLongPress = installLongPress(main, snippet, index);
     main.addEventListener("click", event => {
       if (consumedLongPress()) { event.preventDefault(); return; }
       runListActionAfterSave(() => { setSelected(index, false); openSnippet(snippet); });
@@ -1202,9 +1222,13 @@ async function deleteSnippet(snippet) {
 }
 $("delete").addEventListener("click", () => deleteSnippet(state.editing));
 $("mobile-delete").addEventListener("click", () => deleteSnippet(state.editing));
+$("snippet-action-open").addEventListener("click", () => {
+  const snippet = actionMenuSnippet; const url = snippet && standaloneUrl(snippet); closeSnippetActionMenu();
+  if (url) openInNewTab(url);
+});
 $("snippet-action-copy").addEventListener("click", () => {
   const snippet = actionMenuSnippet; closeSnippetActionMenu();
-  if (snippet) copySnippet(snippet).catch(showCopyError);
+  if (snippet) navigator.clipboard.writeText(snippetText(snippet)).then(() => showToast("Copied")).catch(showCopyError);
 });
 $("snippet-action-share").addEventListener("click", () => {
   const snippet = actionMenuSnippet; const button = $("snippet-action-share"); closeSnippetActionMenu();

@@ -60,7 +60,7 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.doesNotMatch(source, /unchangedAutomaticName/);
 });
 
-test("web rows open cleanly while keyboard and mobile long press retain fast actions", () => {
+test("web rows stay clean while desktop right click and mobile long press share item actions", () => {
   assert.doesNotMatch(source, /row-open|icons\.externalLink|icons\.chevronRight|className = "result-view/);
   assert.match(source, /function openSnippet\(snippet\) \{[\s\S]*?openPreview\(snippet\);/);
   assert.match(source, /async function useSnippet\(snippet\)[\s\S]*?if \(url\) \{ openInNewTab\(url\); return; \}[\s\S]*?navigator\.clipboard\.writeText/);
@@ -69,9 +69,15 @@ test("web rows open cleanly while keyboard and mobile long press retain fast act
   assert.match(source, /main\.addEventListener\("click"[\s\S]*?runListActionAfterSave[\s\S]*?openSnippet\(snippet\)/);
   assert.match(source, /event\.key === "ArrowRight" && selected[\s\S]*?useSnippet\(selected\)/);
   assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?openSnippet\(selected\)/);
-  assert.match(source, /function installLongPress\(main, snippet\)[\s\S]*?setTimeout\([\s\S]*?openSnippetActionMenu\(snippet\)[\s\S]*?550/);
-  assert.match(source, /contextmenu[\s\S]*?narrowLayout\(\)[\s\S]*?preventDefault/);
-  assert.match(html, /id="snippet-action-menu" class="snippet-action-menu"[\s\S]*?Copy[\s\S]*?Share[\s\S]*?Edit[\s\S]*?Delete/);
+  assert.match(source, /function installLongPress\(main, snippet, index\)[\s\S]*?setTimeout\([\s\S]*?openSnippetActionMenu\(snippet\)[\s\S]*?550/);
+  assert.match(source, /main\.addEventListener\("contextmenu"[\s\S]*?preventDefault\(\)[\s\S]*?!narrowLayout\(\)[\s\S]*?openSnippetActionMenu\(snippet, point\)/);
+  assert.match(html, /id="snippet-action-menu" class="snippet-action-menu"[\s\S]*?snippet-action-open[\s\S]*?>Open<[\s\S]*?>Copy<[\s\S]*?>Share<[\s\S]*?>Edit<[\s\S]*?>Delete</);
+  assert.match(source, /const url = standaloneUrl\(snippet\);\s*open\.hidden = !url;/);
+  assert.match(source, /\$\("snippet-action-open"\)\.addEventListener\("click"[\s\S]*?openInNewTab\(url\)/);
+  assert.match(source, /\$\("snippet-action-copy"\)\.addEventListener\("click"[\s\S]*?navigator\.clipboard\.writeText\(snippetText\(snippet\)\)[\s\S]*?showToast\("Copied"\)/);
+  assert.match(css, /\.snippet-action-menu\.desktop-context \{ position: fixed; inset: auto; width: min\(220px,/);
+  assert.match(css, /\.snippet-action-menu\.desktop-context::backdrop \{ background: transparent; \}/);
+  assert.match(css, /\.snippet-action-icon \{ width: 17px; height: 17px;/);
   assert.match(css, /\.result-row \{ min-height: 44px; display: block;/);
   assert.doesNotMatch(css, /\.result-view/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-main \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; \}/);
