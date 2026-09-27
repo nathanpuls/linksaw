@@ -110,8 +110,11 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) hideT
 tooltipMedia.addEventListener?.("change", hideTooltip);
 
 function syncMobileListViewport() {
-  const height = Math.round(window.visualViewport?.height || window.innerHeight);
+  const viewport = window.visualViewport;
+  const height = Math.round(viewport?.height || window.innerHeight);
+  const top = Math.round(viewport?.offsetTop || 0);
   document.documentElement.style.setProperty("--mobile-viewport-height", `${height}px`);
+  document.documentElement.style.setProperty("--mobile-viewport-top", `${top}px`);
 }
 syncMobileListViewport();
 window.visualViewport?.addEventListener("resize", syncMobileListViewport);
@@ -810,6 +813,10 @@ $("search").addEventListener("input", () => {
   $("results").scrollTop = 0;
   if (query && state.filtered.length) setSelected(0, false);
   else if (!query && !hasExplicitRoute() && !narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
+});
+$("search").addEventListener("focus", () => {
+  syncMobileListViewport();
+  setTimeout(syncMobileListViewport, 250);
 });
 function defaultEditorOpen() { return state.editorContext === "default" && !$("editor").hidden; }
 $("search").addEventListener("keydown", event => {

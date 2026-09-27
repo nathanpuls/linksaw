@@ -207,7 +207,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 }
 
 @media (max-width: 900px) {
-  .app { height: var(--mobile-viewport-height, 100dvh); display: block; }
+  .app { position: fixed; inset: 0 0 auto; height: var(--mobile-viewport-height, 100dvh); transform: translateY(var(--mobile-viewport-top, 0px)); display: block; }
   .list-pane { height: var(--mobile-viewport-height, 100dvh); grid-template-rows: auto auto minmax(0, 1fr) auto; border-right: 0; }
   .sidebar-footer { z-index: 1; grid-row: 1; min-height: 58px; padding-bottom: 5px; border-bottom: 1px solid var(--line); background: var(--paper); }
   .status { grid-row: 2; }
