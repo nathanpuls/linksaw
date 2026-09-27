@@ -74,7 +74,13 @@ test("web rows open cleanly while keyboard and mobile long press retain fast act
   assert.match(html, /id="snippet-action-menu" class="snippet-action-menu"[\s\S]*?Copy[\s\S]*?Share[\s\S]*?Edit[\s\S]*?Delete/);
   assert.match(css, /\.result-row \{ min-height: 44px; display: block;/);
   assert.doesNotMatch(css, /\.result-view/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-main \{ -webkit-touch-callout: none; user-select: none; \}/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-main \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; \}/);
+  assert.match(css, /\.snippet-action-menu, \.snippet-action-menu \* \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; \}/);
+  assert.match(source, /function clearInteractiveSelection\(\)[\s\S]*?getSelection[\s\S]*?removeAllRanges/);
+  assert.match(source, /main\.addEventListener\("touchstart", clearInteractiveSelection, \{ passive: true \}\)/);
+  assert.match(source, /main\.addEventListener\("selectstart", event => \{ if \(narrowLayout\(\)\) event\.preventDefault\(\); \}\)/);
+  assert.match(source, /\$\("snippet-action-menu"\)\.addEventListener\("selectstart", event => event\.preventDefault\(\)\)/);
+  assert.match(source, /\$\("snippet-action-menu"\)\.addEventListener\("contextmenu", event => event\.preventDefault\(\)\)/);
   assert.match(css, /\.result-link-text \{ text-decoration: underline;/);
   assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });

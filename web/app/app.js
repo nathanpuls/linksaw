@@ -299,8 +299,12 @@ function closeSnippetActionMenu() {
   actionMenuSnippet = null;
   if ($("snippet-action-menu").open) $("snippet-action-menu").close();
 }
+function clearInteractiveSelection() {
+  window.getSelection?.()?.removeAllRanges();
+}
 function openSnippetActionMenu(snippet) {
   if (!snippet || !narrowLayout()) return;
+  clearInteractiveSelection();
   actionMenuSnippet = snippet;
   $("snippet-action-menu").showModal();
   $("snippet-action-copy").focus({ preventScroll: true });
@@ -326,6 +330,8 @@ function installLongPress(main, snippet) {
   });
   main.addEventListener("pointerup", cancel);
   main.addEventListener("pointercancel", cancel);
+  main.addEventListener("touchstart", clearInteractiveSelection, { passive: true });
+  main.addEventListener("selectstart", event => { if (narrowLayout()) event.preventDefault(); });
   main.addEventListener("contextmenu", event => { if (narrowLayout()) event.preventDefault(); });
   return () => {
     if (!handled) return false;
@@ -1165,6 +1171,9 @@ function cancelDialogOnBackdrop(dialog) {
 cancelDialogOnBackdrop($("action-confirm-dialog"));
 cancelDialogOnBackdrop($("delete-account-dialog"));
 cancelDialogOnBackdrop($("snippet-action-menu"));
+$("snippet-action-menu").addEventListener("touchstart", clearInteractiveSelection, { passive: true });
+$("snippet-action-menu").addEventListener("selectstart", event => event.preventDefault());
+$("snippet-action-menu").addEventListener("contextmenu", event => event.preventDefault());
 $("snippet-action-menu").addEventListener("close", () => { actionMenuSnippet = null; });
 async function deleteSnippet(snippet) {
   if (!snippet || deletingSnippetId === snippet.id) return;
