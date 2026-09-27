@@ -1012,6 +1012,7 @@ $("editor-name-input").addEventListener("keydown", event => {
 });
 $("editor-name-input").addEventListener("blur", () => { if (!$("editor-name-input").hidden) finishInlineRename(); });
 function toggleReaderMode() {
+  hideTooltip();
   const enabled = !$("app").classList.contains("reader-mode");
   if (enabled) $("app").classList.add("suppress-shifted-title-hover");
   sessionStorage.setItem("linksaw-reader-mode", String(enabled)); updateUrl({ list: enabled ? "off" : "on" }, false); syncReaderMode();

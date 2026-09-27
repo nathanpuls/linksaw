@@ -201,6 +201,7 @@ test("desktop viewer is the active Voice Control scroll region and rename stays 
 });
 
 test("closing the sidebar does not activate a title shifted under the pointer", () => {
+  assert.match(source, /function toggleReaderMode\(\) \{\s*hideTooltip\(\);/);
   assert.match(source, /if \(enabled\) \$\("app"\)\.classList\.add\("suppress-shifted-title-hover"\)/);
   assert.match(source, /let lastPointerPosition = null;[\s\S]*?function titleUnderPointer\(position = lastPointerPosition\)[\s\S]*?getBoundingClientRect\(\)/);
   assert.match(source, /function trackPointer\(event\)[\s\S]*?lastPointerPosition = \{ x: event\.clientX, y: event\.clientY \}[\s\S]*?!titleUnderPointer\(\)[\s\S]*?classList\.remove\("suppress-shifted-title-hover"\)/);
