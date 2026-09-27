@@ -43,7 +43,7 @@ test("signed-in root visits enter the app unless the website override is present
   const user = { id: "user", email: "user@example.com" };
   const env = {
     DB: { prepare() { return { bind() { return { first: async () => user }; } }; } },
-    ASSETS: { async fetch() { return new Response('<a id="primary-cta" class="login" href="/login"><svg class="google-g"></svg><span>Continue with Google</span></a>', { headers: { "Content-Type": "text/html" } }); } },
+    ASSETS: { async fetch() { return new Response('<a id="primary-cta" class="login" href="/login"><img class="google-sign-in-button" src="/google-sign-in-light-pill@2x.png" width="180" height="40" alt="Sign in with Google"></a>', { headers: { "Content-Type": "text/html" } }); } },
   };
   const headers = { Cookie: `linksaw_session=${"a".repeat(64)}` };
   const redirect = await handle(new Request("https://linksaw.com/", { headers }), env);
@@ -53,7 +53,7 @@ test("signed-in root visits enter the app unless the website override is present
   assert.equal(website.status, 200);
   assert.match(html, /href="\/home\/"/);
   assert.match(html, />Open Linksaw</);
-  assert.doesNotMatch(html, /Continue with Google/);
+  assert.doesNotMatch(html, /Sign in with Google/);
 });
 
 test("signed-out homepage is served directly as a static asset", async () => {
@@ -72,6 +72,16 @@ test("signed-out homepage is served directly as a static asset", async () => {
 
   assert.equal(response.status, 200);
   assert.equal(assetUrl, "https://linksaw.com/");
+});
+
+test("homepage uses Google's official sign-in artwork without changing the login route", async () => {
+  const homepage = readFileSync(new URL("../web/index.html", import.meta.url), "utf8");
+  const button = readFileSync(new URL("../web/google-sign-in-light-pill@2x.png", import.meta.url));
+  assert.match(homepage, /id="primary-cta" class="login" href="\/login"/);
+  assert.match(homepage, /<img class="google-sign-in-button" src="\/google-sign-in-light-pill@2x\.png" width="180" height="40" alt="Sign in with Google">/);
+  assert.doesNotMatch(homepage, /class="google-g"|Continue with Google/);
+  assert.ok(button.length > 7000);
+  assert.equal(button.subarray(1, 4).toString(), "PNG");
 });
 
 test("privacy and terms are dedicated public pages linked from the homepage", async () => {
