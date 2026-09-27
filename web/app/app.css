@@ -216,7 +216,9 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 @media (max-width: 900px) {
   .app { position: fixed; inset: 0 0 auto; height: var(--mobile-viewport-height, 100dvh); transform: translateY(var(--mobile-viewport-top, 0px)); display: block; }
   .list-pane { height: var(--mobile-viewport-height, 100dvh); grid-template-rows: auto auto minmax(0, 1fr) auto; border-right: 0; }
-  .sidebar-footer { z-index: 1; grid-row: 1; min-height: 58px; padding-bottom: 5px; border-bottom: 1px solid var(--line); background: var(--paper); }
+  .sidebar-footer { z-index: 1; grid-row: 1; height: 50px; min-height: 50px; justify-content: space-between; padding: 4px 7px; border-bottom: 1px solid var(--line); background: var(--paper); }
+  .sidebar-footer .identity-button { width: 42px; min-width: 42px; flex: 0 0 42px; justify-content: center; gap: 0; padding: 7px; }
+  .sidebar-footer .identity-name { display: none; }
   .status { grid-row: 2; }
   .results { grid-row: 3; }
   .toolbar { grid-row: 4; height: auto; min-height: calc(54px + env(safe-area-inset-bottom)); padding: 5px 12px max(5px, env(safe-area-inset-bottom)) 16px; border-top: 1px solid var(--line); }

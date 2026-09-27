@@ -272,7 +272,9 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(source, /\$\("search"\)\.addEventListener\("focus"[\s\S]*?setTimeout\(syncMobileListViewport, 250\)/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.app \{ position: fixed; inset: 0 0 auto; height: var\(--mobile-viewport-height, 100dvh\); transform: translateY\(var\(--mobile-viewport-top, 0px\)\);/);
   assert.match(css, /\.list-pane \{ height: var\(--mobile-viewport-height, 100dvh\);[^}]*grid-template-rows: auto auto minmax\(0, 1fr\) auto;/);
-  assert.match(css, /\.sidebar-footer \{ z-index: 1; grid-row: 1; min-height: 58px;[^}]*border-bottom: 1px solid var\(--line\);[^}]*background: var\(--paper\); \}/);
+  assert.match(css, /\.sidebar-footer \{ z-index: 1; grid-row: 1; height: 50px; min-height: 50px;[^}]*justify-content: space-between;[^}]*border-bottom: 1px solid var\(--line\);[^}]*background: var\(--paper\); \}/);
+  assert.match(css, /\.sidebar-footer \.identity-button \{ width: 42px; min-width: 42px; flex: 0 0 42px;[^}]*justify-content: center;/);
+  assert.match(css, /\.sidebar-footer \.identity-name \{ display: none; \}/);
   assert.match(css, /\.status \{ grid-row: 2; \}[\s\S]*?\.results \{ grid-row: 3; \}/);
   assert.match(css, /\.toolbar \{ grid-row: 4;[^}]*min-height: calc\(54px \+ env\(safe-area-inset-bottom\)\);[^}]*border-top: 1px solid var\(--line\); \}/);
   assert.match(css, /\.list-pane\.search-active \.toolbar \{ grid-row: 2;[^}]*min-height: 50px;[^}]*border-bottom: 1px solid var\(--line\); \}/);
