@@ -190,7 +190,12 @@ function publicSnippetPage(snippet) {
 export async function handle(request, env) {
   const url = new URL(request.url);
   const isWebHost = url.hostname === "linksaw.com";
-  const appAssetPaths = new Set(["/app/app.css", "/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js", "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png"]);
+  const appAssetPaths = new Set([
+    "/app/app.css", "/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js", "/app/lucide-menu-icons.js",
+    "/app/vendor/lucide/copy.js", "/app/vendor/lucide/create-element.js", "/app/vendor/lucide/default-attributes.js",
+    "/app/vendor/lucide/external-link.js", "/app/vendor/lucide/pencil.js", "/app/vendor/lucide/share.js", "/app/vendor/lucide/trash.js",
+    "/app/site.webmanifest", "/app/favicon.png", "/app/icon-192.png", "/app/icon-512.png",
+  ]);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(request) });
   if (!env.DB) return fail(request, "D1 database is not configured", 503);
 

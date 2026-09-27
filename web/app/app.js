@@ -1,5 +1,6 @@
 import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-2";
 import { renderMarkdown, sourceOffsetFromRenderedPoint } from "./markdown.js?v=20260927-2";
+import { createLucideMenuIcon } from "./lucide-menu-icons.js?v=20260927-1";
 
 const API = "https://snippets-api.linksaw.com";
 const icons = {
@@ -86,10 +87,11 @@ function trackPointer(event) {
 }
 
 function icon(id, name) { $(id).innerHTML = icons[name]; }
+function menuIcon(id, name) { $(id).replaceChildren(createLucideMenuIcon(name)); }
 icon("add", "plus"); icon("search-icon", "search"); icon("mobile-search-trigger-icon", "search"); icon("clear-search", "close"); icon("close-editor", "close");
 icon("close-preview", "back"); icon("preview-edit", "edit"); icon("preview-copy", "copy"); icon("preview-share", "share"); icon("preview-delete", "trash"); icon("close-settings", "close"); icon("close-deleted", "back");
 icon("editor-reader-toggle", "panelLeft"); icon("editor-copy", "copy"); icon("editor-share", "share"); icon("editor-undo", "undo"); icon("editor-redo", "redo"); icon("delete", "trash"); icon("mobile-delete", "trash");
-icon("snippet-action-open-icon", "externalLink"); icon("snippet-action-copy-icon", "copy"); icon("snippet-action-share-icon", "share"); icon("snippet-action-edit-icon", "edit"); icon("snippet-action-delete-icon", "trash");
+menuIcon("snippet-action-open-icon", "externalLink"); menuIcon("snippet-action-copy-icon", "copy"); menuIcon("snippet-action-share-icon", "share"); menuIcon("snippet-action-edit-icon", "pencil"); menuIcon("snippet-action-delete-icon", "trash");
 $("toggle-sidebar-shortcut").textContent = sidebarShortcutLabel;
 $("add").dataset.shortcut = commandShortcut("N");
 $("preview-copy").dataset.shortcut = commandShortcut("C");
@@ -1245,7 +1247,7 @@ $("snippet-action-delete").addEventListener("click", () => {
   const snippet = actionMenuSnippet; closeSnippetActionMenu();
   if (snippet) void deleteSnippet(snippet);
 });
-$("toast-action").addEventListener("click", async () => {
+async function undoRecentDeletion() {
   if (!pendingUndo) return;
   const undo = pendingUndo;
   pendingUndo = null;
@@ -1265,7 +1267,8 @@ $("toast-action").addEventListener("click", async () => {
     $("toast").hidden = true;
     showError(error);
   }
-});
+}
+$("toast-action").addEventListener("click", () => { void undoRecentDeletion(); });
 $("unshare").addEventListener("click", async () => {
   if (!state.editing?.share_token || !await requestConfirmation({ title: "Stop sharing?", message: "Anyone using the current link will no longer be able to view this snippet.", action: "Stop sharing" })) return;
   try {
@@ -1428,6 +1431,10 @@ document.addEventListener("keydown", event => {
     || (!isMacPlatform && event.ctrlKey && !event.metaKey && (event.key.toLowerCase() === "y" || (event.shiftKey && event.key.toLowerCase() === "z")))
   );
   if (undoShortcut || redoShortcut) { event.preventDefault(); void performEditorHistory(undoShortcut ? "undo" : "redo"); return; }
+  const deletionUndoShortcut = pendingUndo && !editing && !event.altKey && !event.shiftKey
+    && event.key.toLowerCase() === "z"
+    && (isMacPlatform ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey);
+  if (deletionUndoShortcut) { event.preventDefault(); void undoRecentDeletion(); return; }
   if (!settings && isSidebarShortcut(event)) { event.preventDefault(); toggleReaderMode(); return; }
   if (!settings && !deleted && event.key === "Escape" && $("app").classList.contains("reader-mode")) {
     event.preventDefault(); toggleReaderMode(); return;

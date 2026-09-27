@@ -165,12 +165,17 @@ test("every browser module is served as a static asset", async () => {
     ASSETS: { async fetch(request) { requested.push(new URL(request.url).pathname); return new Response("module", { status: 200 }); } },
   };
 
-  for (const path of ["/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js"]) {
+  const browserModules = [
+    "/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js", "/app/lucide-menu-icons.js",
+    "/app/vendor/lucide/copy.js", "/app/vendor/lucide/create-element.js", "/app/vendor/lucide/default-attributes.js",
+    "/app/vendor/lucide/external-link.js", "/app/vendor/lucide/pencil.js", "/app/vendor/lucide/share.js", "/app/vendor/lucide/trash.js",
+  ];
+  for (const path of browserModules) {
     const response = await handle(new Request(`https://linksaw.com${path}`), env);
     assert.equal(response.status, 200);
   }
 
-  assert.deepEqual(requested, ["/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js"]);
+  assert.deepEqual(requested, browserModules);
 });
 
 test("public share pages render without sign-in and escape snippet content", async () => {

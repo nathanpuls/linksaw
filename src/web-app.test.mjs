@@ -78,6 +78,8 @@ test("web rows stay clean while desktop right click and mobile long press share 
   assert.doesNotMatch(source, /\(url \? open : \$\("snippet-action-copy"\)\)\.focus/);
   assert.match(source, /\$\("snippet-action-open"\)\.addEventListener\("click"[\s\S]*?openInNewTab\(url\)/);
   assert.match(source, /\$\("snippet-action-copy"\)\.addEventListener\("click"[\s\S]*?navigator\.clipboard\.writeText\(snippetText\(snippet\)\)[\s\S]*?showToast\("Copied"\)/);
+  assert.match(source, /import \{ createLucideMenuIcon \} from "\.\/lucide-menu-icons\.js\?v=/);
+  assert.match(source, /menuIcon\("snippet-action-open-icon", "externalLink"\)[\s\S]*?menuIcon\("snippet-action-copy-icon", "copy"\)[\s\S]*?menuIcon\("snippet-action-share-icon", "share"\)[\s\S]*?menuIcon\("snippet-action-edit-icon", "pencil"\)[\s\S]*?menuIcon\("snippet-action-delete-icon", "trash"\)/);
   assert.match(css, /\.snippet-action-menu\.desktop-context \{ position: fixed; inset: auto; width: min\(220px,/);
   assert.match(css, /\.snippet-action-menu\.desktop-context::backdrop \{ background: transparent; \}/);
   assert.match(css, /\.snippet-action-menu:focus \{ outline: 0; \}/);
@@ -103,6 +105,8 @@ test("viewer delete is last, reversible, and restores stored metadata", () => {
   assert.match(source, /async function deleteSnippet\(snippet\)[\s\S]*?method: "DELETE"[\s\S]*?state\.snippets = state\.snippets\.filter[\s\S]*?showDeleteUndo\(deleted, viewerWasOpen\)/);
   assert.match(source, /"Snippet deleted ·"[\s\S]*?"Undo"[\s\S]*?}, 7000\)/);
   assert.match(source, /\/snippets\/\$\{undo\.deleted\.id\}\/restore[\s\S]*?method: "POST"[\s\S]*?JSON\.stringify\(undo\.deleted\)/);
+  assert.match(source, /async function undoRecentDeletion\(\)[\s\S]*?const undo = pendingUndo/);
+  assert.match(source, /deletionUndoShortcut = pendingUndo && !editing[\s\S]*?event\.key\.toLowerCase\(\) === "z"[\s\S]*?event\.preventDefault\(\); void undoRecentDeletion\(\)/);
   assert.match(html, /id="toast-message"[\s\S]*id="toast-action" class="toast-action"/);
   assert.doesNotMatch(css, /\.viewer-delete[^}]*red|\.toast-action[^}]*red/);
   assert.match(css, /\.toast \{[^}]*top: max\(16px, env\(safe-area-inset-top\)\);[^}]*max-width: calc\(100vw - 24px\);/);
