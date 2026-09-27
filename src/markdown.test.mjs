@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
-import { markdownToSafeHtml, renderMarkdown } from "../web/app/markdown.js";
+import { markdownToSafeHtml, renderMarkdown, sourceOffsetFromRenderedPoint } from "../web/app/markdown.js";
 
 test("Markdown renders common structures as accessible semantic HTML", () => {
   const source = `# Heading
@@ -61,4 +61,22 @@ test("plain text keeps its line breaks and automatic links", () => {
   assert.equal(main.querySelector('a[href="tel:3125551212"]')?.textContent, "(312) 555-1212");
   assert.equal(main.querySelector('a[href="http://linksaw.com"]')?.textContent, "linksaw.com");
   assert.equal(main.textContent, source.replaceAll("\n", ""));
+});
+
+test("rendered Markdown keeps source positions for editing without exposing link syntax", () => {
+  const source = "Before [Linksaw](https://linksaw.com) after **bold**";
+  const dom = new JSDOM(`<main id="viewer"></main>`);
+  const viewer = dom.window.document.getElementById("viewer");
+  renderMarkdown(viewer, source);
+
+  const before = viewer.querySelector("span");
+  assert.equal(sourceOffsetFromRenderedPoint(viewer, source, before.firstChild, 3), 3);
+
+  const link = viewer.querySelector("a");
+  link.getBoundingClientRect = () => ({ left: 10, right: 110, top: 0, bottom: 20, width: 100, height: 20 });
+  assert.equal(sourceOffsetFromRenderedPoint(viewer, source, link.firstChild.firstChild, 2, 20, 10), 7);
+  assert.equal(sourceOffsetFromRenderedPoint(viewer, source, link.firstChild.firstChild, 2, 100, 10), 37);
+
+  const after = [...viewer.querySelectorAll("span")].find(node => node.textContent.startsWith(" after"));
+  assert.equal(sourceOffsetFromRenderedPoint(viewer, source, after.firstChild, 2), 39);
 });

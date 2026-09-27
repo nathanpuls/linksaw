@@ -227,7 +227,7 @@ test("mobile view and edit are distinct states on one stable visual surface", ()
   assert.match(source, /\$\("close-editor"\)\.innerHTML = icons\[mobileUnified \? "back" : "close"\]/);
   assert.match(source, /function setMobileEditorState\(editing\)[\s\S]*?classList\.toggle\("is-editing", editing\)[\s\S]*?aria-hidden/);
   assert.match(source, /function enterMobileEdit\(offset[\s\S]*?setMobileEditorState\(true\)[\s\S]*?focus\(\{ preventScroll: true \}\)[\s\S]*?setSelectionRange\(offset, offset\)/);
-  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("click", event => \{[\s\S]*?!event\.target\.closest\?\.\("a"\)[\s\S]*?enterMobileEdit\(\)/);
+  assert.match(source, /\$\("mobile-snippet-view"\)\.addEventListener\("click", event => \{[\s\S]*?event\.target\.closest\?\.\("a"\)[\s\S]*?renderedCaretOffset[\s\S]*?enterMobileEdit/);
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("focus"[\s\S]*?setMobileEditorState\(true\)/);
   assert.match(source, /\$\("snippet-body"\)\.addEventListener\("blur"[\s\S]*?setMobileEditorState\(false\)/);
   assert.match(source, /visualViewport\?\.addEventListener\("resize"[\s\S]*?document\.activeElement !== input[\s\S]*?input\.blur\(\)/);
@@ -238,8 +238,8 @@ test("mobile view and edit are distinct states on one stable visual surface", ()
   assert.match(css, /#editor\.mobile-unified \.mobile-snippet-view \{ z-index: 1; \}/);
   assert.match(css, /\.content-input \{[^}]*min-width: 0;[^}]*max-width: 100%;[^}]*white-space: pre-wrap;[^}]*overflow-wrap: anywhere;[^}]*word-break: break-word;/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #snippet-body \{ color: transparent; -webkit-text-fill-color: transparent; caret-color: transparent; \}/);
-  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; pointer-events: none; \}/);
-  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view a \{ pointer-events: auto; \}/);
+  assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-snippet-view \{ display: block; pointer-events: auto; \}/);
+  assert.match(css, /\.mobile-snippet-view \{[^}]*user-select: text;[^}]*-webkit-touch-callout: default;/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) \.mobile-editor-action \{ display: inline-grid; \}/);
   assert.match(css, /#editor\.mobile-unified:not\(\.is-editing\) #editor-undo,[\s\S]*?#editor\.mobile-unified:not\(\.is-editing\) #editor-redo \{ display: none; \}/);
 });
@@ -260,6 +260,8 @@ test("viewer text enters desktop editing at the clicked caret without hijacking 
   assert.match(source, /\$\("preview-body"\)\.addEventListener\("click"[\s\S]*?event\.target\.closest\?\.\("a"\)[\s\S]*?narrowLayout\(\)/);
   assert.match(source, /document\.caretPositionFromPoint[\s\S]*?document\.caretRangeFromPoint/);
   assert.match(source, /openEditor\(snippet, true, \{ focus: false \}\)[\s\S]*?\$\("snippet-body"\)\.focus\(\{ preventScroll: true \}\)[\s\S]*?setSelectionRange\(offset, offset\)/);
+  assert.match(source, /function installRenderedSelectionGuard[\s\S]*?renderedViewLongPressUntil/);
+  assert.match(source, /selectionInside\(\$\("preview-body"\)\)/);
 });
 
 test("sidebar Linksaw mark links home before the account control", () => {
@@ -272,7 +274,11 @@ test("sidebar Linksaw mark links home before the account control", () => {
   assert.match(css, /\.list-pane \{ height: var\(--mobile-viewport-height, 100dvh\);[^}]*grid-template-rows: auto auto minmax\(0, 1fr\) auto;/);
   assert.match(css, /\.sidebar-footer \{ z-index: 1; grid-row: 1; min-height: 58px;[^}]*border-bottom: 1px solid var\(--line\);[^}]*background: var\(--paper\); \}/);
   assert.match(css, /\.status \{ grid-row: 2; \}[\s\S]*?\.results \{ grid-row: 3; \}/);
-  assert.match(css, /\.toolbar \{ grid-row: 4;[^}]*min-height: calc\(64px \+ env\(safe-area-inset-bottom\)\);[^}]*border-top: 1px solid var\(--line\); \}/);
+  assert.match(css, /\.toolbar \{ grid-row: 4;[^}]*min-height: calc\(54px \+ env\(safe-area-inset-bottom\)\);[^}]*border-top: 1px solid var\(--line\); \}/);
+  assert.match(css, /\.list-pane\.search-active \.toolbar \{ grid-row: 2;[^}]*min-height: 50px;[^}]*border-bottom: 1px solid var\(--line\); \}/);
+  assert.match(css, /\.list-pane\.search-active \.results \{ grid-row: 4; \}/);
+  assert.match(source, /\$\("search"\)\.addEventListener\("focus"[\s\S]*?classList\.add\("search-active"\)/);
+  assert.match(source, /\$\("search"\)\.addEventListener\("blur"[\s\S]*?classList\.remove\("search-active"\)/);
   assert.match(source, /\$\("search"\)\.addEventListener\("input"[\s\S]*?render\(\);[\s\S]*?\$\("results"\)\.scrollTop = 0;/);
   assert.match(css, /\.viewer-pane \{[^}]*z-index: 10; height: 100dvh;/);
   assert.match(css, /\.viewer-content \{ height: 100dvh; \}/);
@@ -289,7 +295,7 @@ test("viewer shows only explicit custom names above exact content", () => {
 });
 
 test("viewer uses safe Markdown plus shared QK-style linkification and underlined styling", () => {
-  assert.match(source, /import \{ renderMarkdown \} from "\.\/markdown\.js\?v=20260924-1"/);
+  assert.match(source, /import \{ renderMarkdown, sourceOffsetFromRenderedPoint \} from "\.\/markdown\.js\?v=20260927-1"/);
   assert.match(markdown, /import \{ linkifyText \} from "\.\/linkify\.js"/);
   assert.match(markdown, /export function markdownToSafeHtml/);
   assert.match(markdown, /element\.innerHTML = markdownToSafeHtml\(value\)/);

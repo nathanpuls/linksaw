@@ -1,5 +1,5 @@
 import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-2";
-import { renderMarkdown } from "./markdown.js?v=20260924-1";
+import { renderMarkdown, sourceOffsetFromRenderedPoint } from "./markdown.js?v=20260927-1";
 
 const API = "https://snippets-api.linksaw.com";
 const icons = {
@@ -828,8 +828,13 @@ $("search").addEventListener("input", () => {
   else if (!query && !hasExplicitRoute() && !narrowLayout() && $("editor").hidden) openEditor(null, false, { defaultDraft: true, focus: false });
 });
 $("search").addEventListener("focus", () => {
+  document.querySelector(".list-pane")?.classList.add("search-active");
   syncMobileListViewport();
   setTimeout(syncMobileListViewport, 250);
+});
+$("search").addEventListener("blur", () => {
+  document.querySelector(".list-pane")?.classList.remove("search-active");
+  setTimeout(syncMobileListViewport, 0);
 });
 function defaultEditorOpen() { return state.editorContext === "default" && !$("editor").hidden; }
 $("search").addEventListener("keydown", event => {
@@ -866,19 +871,55 @@ $("preview-title").addEventListener("click", () => {
   openEditor(state.previewing);
   requestAnimationFrame(beginInlineRename);
 });
-$("preview-body").addEventListener("click", event => {
-  if (event.target.closest?.("a") || !state.previewing || narrowLayout()) return;
+let renderedViewLongPressUntil = 0;
+function selectionInside(element) {
+  const selection = getSelection();
+  return Boolean(selection && !selection.isCollapsed
+    && (element.contains(selection.anchorNode) || element.contains(selection.focusNode)));
+}
+function installRenderedSelectionGuard(element) {
+  let timer = 0;
+  let startedAt = 0;
+  let startX = 0;
+  let startY = 0;
+  const cancelTimer = () => { clearTimeout(timer); timer = 0; };
+  element.addEventListener("pointerdown", event => {
+    if (event.button !== 0 || event.target.closest?.("a")) return;
+    cancelTimer();
+    startedAt = performance.now();
+    startX = event.clientX;
+    startY = event.clientY;
+    timer = setTimeout(() => { renderedViewLongPressUntil = Date.now() + 900; }, 450);
+  });
+  element.addEventListener("pointermove", event => {
+    if (Math.hypot(event.clientX - startX, event.clientY - startY) > 8) cancelTimer();
+  });
+  element.addEventListener("pointerup", () => {
+    if (startedAt && performance.now() - startedAt >= 450) renderedViewLongPressUntil = Date.now() + 900;
+    startedAt = 0;
+    cancelTimer();
+  });
+  element.addEventListener("pointercancel", cancelTimer);
+  element.addEventListener("contextmenu", () => { renderedViewLongPressUntil = Date.now() + 900; });
+}
+function renderedCaretOffset(event, element, source) {
   const point = document.caretPositionFromPoint?.(event.clientX, event.clientY);
   const range = document.caretRangeFromPoint?.(event.clientX, event.clientY);
-  const node = point?.offsetNode || range?.startContainer;
-  const nodeOffset = point?.offset ?? range?.startOffset ?? state.previewing.body.length;
-  let offset = state.previewing.body.length;
-  if (node && $("preview-body").contains(node)) {
-    const prefix = document.createRange();
-    prefix.selectNodeContents($("preview-body"));
-    prefix.setEnd(node, nodeOffset);
-    offset = Math.min(prefix.toString().length, state.previewing.body.length);
-  }
+  return sourceOffsetFromRenderedPoint(
+    element,
+    source,
+    point?.offsetNode || range?.startContainer || event.target,
+    point?.offset ?? range?.startOffset ?? 0,
+    event.clientX,
+    event.clientY,
+  );
+}
+installRenderedSelectionGuard($("preview-body"));
+installRenderedSelectionGuard($("mobile-snippet-view"));
+$("preview-body").addEventListener("click", event => {
+  if (event.target.closest?.("a") || !state.previewing || narrowLayout()) return;
+  if (Date.now() < renderedViewLongPressUntil || selectionInside($("preview-body"))) return;
+  const offset = renderedCaretOffset(event, $("preview-body"), state.previewing.body);
   const snippet = state.previewing;
   openEditor(snippet, true, { focus: false });
   requestAnimationFrame(() => {
@@ -959,7 +1000,8 @@ function enterMobileEdit(offset = $("snippet-body").value.length) {
   requestAnimationFrame(() => input.setSelectionRange(offset, offset));
 }
 $("mobile-snippet-view").addEventListener("click", event => {
-  if (!event.target.closest?.("a")) enterMobileEdit();
+  if (event.target.closest?.("a") || Date.now() < renderedViewLongPressUntil || selectionInside($("mobile-snippet-view"))) return;
+  enterMobileEdit(renderedCaretOffset(event, $("mobile-snippet-view"), $("snippet-body").value));
 });
 $("mobile-snippet-view").addEventListener("keydown", event => {
   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); enterMobileEdit(); }
