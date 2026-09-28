@@ -83,10 +83,9 @@ button { color: inherit; }
 .viewer-pane { min-width: 0; height: 100vh; height: 100dvh; overflow: hidden; background: var(--paper); }
 .viewer-empty { height: 100%; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
 .viewer-content { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-.viewer-header { height: 68px; flex: 0 0 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px; }
+.viewer-header { height: 68px; flex: 0 0 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px 9px 12px; }
 .viewer-back { display: none; }
 .reader-toggle { margin-right: 2px; }
-.viewer-header, .editor-header { padding-left: 12px; }
 .preview-title { min-width: 80px; width: min(420px, 42vw); flex: 0 1 420px; min-height: 38px; margin: 0 0 0 -11px; overflow: hidden; border: 0; border-radius: 6px; padding: 7px 11px; background: transparent; color: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
 .preview-title { font-size: 16px; font-weight: 550; letter-spacing: -.01em; }
 .preview-title:empty::before, .editor-name-action:empty::before { content: ""; color: var(--muted); font-weight: 500; }
@@ -126,7 +125,7 @@ button { color: inherit; }
 .surface-inner, .settings-inner { width: 100%; min-height: 100vh; margin: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--paper); }
 .surface-header { min-height: 68px; display: flex; align-items: center; gap: 12px; padding: 9px 22px; border-bottom: 1px solid var(--line); }
 .surface-header h1 { margin: 0; font-size: 20px; font-weight: 550; letter-spacing: -.02em; }
-.editor-header { border-bottom: 0; }
+.editor-header { border-bottom: 0; padding-left: 12px; }
 .editor-name-action { min-width: 0; flex: 1; overflow: hidden; margin-left: -11px; border: 0; border-radius: 6px; padding: 7px 11px; background: transparent; color: var(--muted); text-align: left; text-overflow: ellipsis; white-space: nowrap; font: inherit; font-size: 16px; font-weight: 550; cursor: text; }
 .editor-name-action:hover, .editor-name-action:focus-visible { outline: 0; background: var(--hover); color: var(--ink); }
 .editor-name-input { min-width: 0; width: min(420px, 42vw); flex: 0 1 420px; margin-left: -12px; border: 1px solid var(--control); border-radius: 6px; padding: 7px 11px; background: var(--hover); color: var(--ink); font: inherit; font-size: 16px; font-weight: 550; box-shadow: none; }
