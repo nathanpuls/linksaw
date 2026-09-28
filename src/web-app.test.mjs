@@ -177,6 +177,11 @@ test("navigation flushes autosave and retry preserves the intended destination",
   assert.match(source, /addEventListener\("beforeunload"[\s\S]*?saveInFlight[\s\S]*?saveFailed/);
 });
 
+test("leaving a newly created desktop snippet keeps that snippet selected", () => {
+  assert.match(source, /editorStartedNew = !snippet/);
+  assert.match(source, /function leaveRoutedView\(\) \{[\s\S]*?!narrowLayout\(\) && editorStartedNew && state\.editing && !\$\("editor"\)\.hidden[\s\S]*?snippetId = state\.editing\.id[\s\S]*?updateUrl\(\{ view: null, snippet: snippetId \}, false\)[\s\S]*?applyUrlState\(\)/);
+});
+
 test("autosave queues newer edits behind active requests", () => {
   assert.match(source, /if \(saveInFlight\) \{[\s\S]*?saveAgain = true;[\s\S]*?await saveInFlight[\s\S]*?editorSnapshot\(\) !== editorBaseline[\s\S]*?saveEditorNow\(\)/);
   assert.match(source, /const snapshot = editorSnapshot\(\)[\s\S]*?editorBaseline = snapshot[\s\S]*?if \(editorSnapshot\(\) === editorBaseline\) clearEditorSaveFeedback\(\)/);

@@ -63,6 +63,7 @@ let editorSlowSaveTimer;
 let saveAgain = false;
 let saveFailed = false;
 let editorConflict = null;
+let editorStartedNew = false;
 let pendingNavigation;
 let editorSessionId = 0;
 let editorCreateId = "";
@@ -644,6 +645,13 @@ function finishInlineRename({ cancel = false } = {}) {
   if (!cancel && editorSnapshot() !== editorBaseline) scheduleAutosave();
 }
 function leaveRoutedView() {
+  if (!narrowLayout() && editorStartedNew && state.editing && !$("editor").hidden) {
+    const snippetId = state.editing.id;
+    editorStartedNew = false;
+    updateUrl({ view: null, snippet: snippetId }, false);
+    applyUrlState();
+    return;
+  }
   if (history.state?.linksawPushed) { history.back(); return; }
   const params = new URLSearchParams(location.search);
   const snippet = params.get("view") === "edit" ? params.get("snippet") : null;
@@ -655,6 +663,7 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   editorSessionId++;
   const { defaultDraft = false, focus = true } = options;
   const mobileUnified = narrowLayout();
+  editorStartedNew = !snippet;
   state.editing = snippet; $("snippet-body").value = snippet?.body || ""; editorCustomName = snippet?.title || "";
   editorCreateId = snippet ? "" : crypto.randomUUID();
   saveFailed = false; editorConflict = null; saveAgain = false; pendingNavigation = null; localUndo = []; localRedo = []; localInputGroup = null;
