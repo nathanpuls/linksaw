@@ -284,8 +284,10 @@ function setSelected(index, scroll = true) {
 }
 function beginKeyboardListNavigation() {
   $("results").classList.add("keyboard-navigation");
+  document.activeElement?.closest?.(".result-main")?.blur();
 }
 function hoveredListItem() {
+  if ($("results").classList.contains("keyboard-navigation")) return null;
   const row = document.querySelector(".result-row:hover");
   if (!row) return null;
   const index = Number(row.dataset.index);
