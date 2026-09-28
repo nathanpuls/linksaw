@@ -81,7 +81,7 @@ async function currentSession(request, env) {
     if (user) return { user, tokenHash: "local-preview", viaCookie: false };
   }
   const bearer = request.headers.get("Authorization")?.match(/^Bearer ((?:[A-Za-z0-9_-]{40,})|(?:lsw_[A-Za-z0-9_-]{10,}))$/);
-  const cookie = cookieValue(request.headers.get("Cookie"), "linksaw_session");
+  const cookie = cookieValue(request.headers.get("Cookie"), env.SESSION_COOKIE_NAME || "linksaw_session");
   const token = bearer?.[1] || (/^[A-Za-z0-9_-]{40,}$/.test(cookie) ? cookie : "");
   if (!token) return null;
   const tokenHash = await sha256Base64Url(token);
@@ -224,6 +224,7 @@ export async function handle(request, env) {
   const configuredOrigin = (env.APP_ORIGIN || "https://linksaw.com").replace(/\/$/, "");
   const configuredHost = new URL(configuredOrigin).hostname;
   const cookieDomain = env.SESSION_COOKIE_DOMAIN === "host-only" ? "" : (env.SESSION_COOKIE_DOMAIN || "linksaw.com");
+  const cookieName = env.SESSION_COOKIE_NAME || "linksaw_session";
   const isWebHost = url.hostname === configuredHost;
   const appAssetPaths = new Set([
     "/app/app.css", "/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js", "/app/lucide-menu-icons.js",
@@ -243,7 +244,10 @@ export async function handle(request, env) {
     if (url.pathname === "/" || url.pathname === "/home" || url.pathname === "/home/" || url.pathname.startsWith("/home/")) {
       const session = await currentSession(request, env);
       if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
-      return env.ASSETS.fetch(new Request(`${configuredOrigin}/index.html`, request));
+      // Fetch the preview asset root directly. Cloudflare's asset binding
+      // canonicalizes /index.html back to /, which would otherwise loop with
+      // the signed-in root redirect above.
+      return env.ASSETS.fetch(new Request(`${configuredOrigin}/`, request));
     }
     if (url.pathname.startsWith("/assets/") || ["/favicon.png", "/icon-192.png", "/icon-512.png", "/site.webmanifest"].includes(url.pathname)) {
       return env.ASSETS.fetch(request);
@@ -357,7 +361,7 @@ export async function handle(request, env) {
         env.DB.prepare("UPDATE login_requests SET user_id = ?, consumed_at = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, timestamp, state),
         env.DB.prepare("INSERT INTO sessions(token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)").bind(await sha256Base64Url(token), profile.sub, timestamp, timestamp + 30 * 86400),
       ]);
-      return new Response(null, { status: 302, headers: { Location: `${configuredOrigin}/home/`, "Set-Cookie": webSessionCookie(token, 30 * 86400, cookieDomain), "Cache-Control": "no-store" } });
+      return new Response(null, { status: 302, headers: { Location: `${configuredOrigin}/home/`, "Set-Cookie": webSessionCookie(token, 30 * 86400, cookieDomain, cookieName), "Cache-Control": "no-store" } });
     }
     await env.DB.prepare("UPDATE login_requests SET user_id = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, state).run();
     return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in · Linksaw</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;color:#171717;background:#fafafa}main{text-align:center;padding:32px}h1{font-size:28px;font-weight:500}p{color:#747474;line-height:1.6}.mark{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 24px}</style><main><img class="mark" src="https://linksaw.com/icon.png" alt="Linksaw"><h1>You're signed in</h1><p>Linksaw will open automatically.<br>You can close this tab.</p></main></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; img-src https://linksaw.com; style-src 'unsafe-inline'" } });
@@ -419,11 +423,11 @@ export async function handle(request, env) {
       env.DB.prepare("DELETE FROM login_requests WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
     ]);
-    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain) } : {});
+    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain, cookieName) } : {});
   }
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(session.tokenHash).run();
-    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain) } : {});
+    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain, cookieName) } : {});
   }
   if (url.pathname === "/snippets" && request.method === "GET") return json(request, { snippets: await listSnippets(env, user.id) });
   if (url.pathname === "/deleted-snippets" && request.method === "GET") {

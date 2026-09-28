@@ -16,6 +16,7 @@ run_worker_first = true
 PUBLIC_BASE_URL = "https://react-preview.linksaw.com"
 APP_ORIGIN = "https://react-preview.linksaw.com"
 SESSION_COOKIE_DOMAIN = "host-only"
+SESSION_COOKIE_NAME = "linksaw_preview_session"
 REACT_PREVIEW = "true"
 PREVIEW_SEED = "true"
 GOOGLE_CLIENT_ID = "106682596524-pr2v9t7c201ujahhe66ilbgg3p3of1e3.apps.googleusercontent.com"

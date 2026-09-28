@@ -21,6 +21,7 @@ test("web session cookies are private and scoped to Linksaw", () => {
   assert.match(cookie, /Secure/);
   assert.match(cookie, /Domain=linksaw\.com/);
   assert.equal(cookieValue("one=1; linksaw_session=opaque; two=2", "linksaw_session"), "opaque");
+  assert.match(webSessionCookie("preview", 60, "", "linksaw_preview_session"), /^linksaw_preview_session=preview;/);
 });
 test("share IDs are compact and contain enough random data", () => {
   assert.match(shareToken(), /^[A-Za-z0-9_-]{16}$/);
