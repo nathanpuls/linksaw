@@ -119,6 +119,11 @@ export function App() {
     if (navigator.share) { try { await navigator.share({ title: snippetLabel(snippet), url: result.url }); return; } catch (reason) { if ((reason as Error).name === "AbortError") return; } }
     await navigator.clipboard.writeText(result.url); notify({ message: "Link copied" });
   }, [notify]);
+  const unshare = useCallback(async (snippet: Snippet) => {
+    await linksawApi.unshare(snippet);
+    setSnippets(items => items.map(item => item.id === snippet.id ? { ...item, share_token: null } : item));
+    notify({ message: "Sharing stopped" });
+  }, [notify]);
   const remove = useCallback(async (snippet: Snippet) => {
     const { deleted: removed } = await linksawApi.remove(snippet);
     setSnippets(items => items.filter(item => item.id !== snippet.id));
@@ -185,7 +190,7 @@ export function App() {
         {viewerSnippet ? <Viewer snippet={viewerSnippet} reader={reader} onToggleReader={() => setReader(value => !value)} onBack={() => showLibrary(null)} onCopy={() => void copy(viewerSnippet)} onShare={() => void share(viewerSnippet)} onEdit={() => editSnippet(viewerSnippet)} onDelete={() => void remove(viewerSnippet)} onEditAt={offset => editSnippet(viewerSnippet, true, offset)} /> : <div className="viewer-empty" />}
       </section>
     </main>
-    {route.view === "editor" && <Editor key={route.snippetId || "new"} snippet={route.snippetId ? snippets.find(item => item.id === route.snippetId) || null : null} narrow={narrow} initialOffset={editOffset} onSaved={saveSnippet} onClose={saved => showLibrary(saved?.id || null)} registerFlush={flush => { flushEditor.current = flush; }} onCopy={copy} onShare={share} onDelete={remove} />}
+    {route.view === "editor" && <Editor key={route.snippetId || "new"} snippet={route.snippetId ? snippets.find(item => item.id === route.snippetId) || null : null} narrow={narrow} initialOffset={editOffset} onSaved={saveSnippet} onClose={saved => showLibrary(saved?.id || null)} registerFlush={flush => { flushEditor.current = flush; }} onCopy={copy} onShare={share} onUnshare={unshare} onDelete={remove} />}
     {route.view === "settings" && <SettingsPanel user={user!} preferences={preferences} setPreferences={setPreferences} snippets={snippets} onClose={() => showLibrary(selectedId)} onDeleted={async () => { setDeleted((await linksawApi.deleted()).snippets); setRoute({ view: "deleted", snippetId: null }); updateLocation({ view: "deleted", snippet: null }); }} notify={notify} />}
     {route.view === "deleted" && <DeletedPanel snippets={deleted} setSnippets={setDeleted} onBack={() => openSettings(false)} onLibraryChanged={() => void refresh()} />}
     {actionSnippet && <ActionMenu snippet={actionSnippet} point={actionPoint} onClose={() => { setActionSnippet(null); setSelectedId(null); }} onOpen={() => { const url = snippetUrl(actionSnippet); if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onCopy={() => void copy(actionSnippet)} onShare={() => void share(actionSnippet)} onEdit={() => void afterEditorSave(() => editSnippet(actionSnippet))} onDelete={() => void remove(actionSnippet)} />}
@@ -289,7 +294,7 @@ function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEd
   </article>;
 }
 
-function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlush, onCopy, onShare, onDelete }: { snippet: Snippet | null; narrow: boolean; initialOffset: number | null; onSaved(snippet: Snippet): void; onClose(snippet: Snippet | null): void; registerFlush(flush: (() => Promise<boolean>) | null): void; onCopy(snippet: Snippet): Promise<void>; onShare(snippet: Snippet): Promise<void>; onDelete(snippet: Snippet): Promise<void> }) {
+function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlush, onCopy, onShare, onUnshare, onDelete }: { snippet: Snippet | null; narrow: boolean; initialOffset: number | null; onSaved(snippet: Snippet): void; onClose(snippet: Snippet | null): void; registerFlush(flush: (() => Promise<boolean>) | null): void; onCopy(snippet: Snippet): Promise<void>; onShare(snippet: Snippet): Promise<void>; onUnshare(snippet: Snippet): Promise<void>; onDelete(snippet: Snippet): Promise<void> }) {
   const [saved, setSaved] = useState(snippet);
   const [title, setTitle] = useState(snippet?.title || "");
   const [body, setBody] = useState(snippet?.body || "");
@@ -297,6 +302,7 @@ function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlus
   const [renaming, setRenaming] = useState(false);
   const [failure, setFailure] = useState("");
   const [slow, setSlow] = useState(false);
+  const [confirmUnshare, setConfirmUnshare] = useState(false);
   const version = useRef(0); const savedVersion = useRef(0); const inFlight = useRef<Promise<boolean> | null>(null);
   const savedRef = useRef(snippet); const failureRef = useRef("");
   const baseline = useRef(JSON.stringify({ title: snippet?.title || "", body: snippet?.body || "" }));
@@ -337,6 +343,10 @@ function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlus
   }, [title, body]);
   useEffect(() => { if (editing) requestAnimationFrame(() => { const input = bodyRef.current; if (!input) return; input.focus({ preventScroll: true }); const offset = Math.max(0, Math.min(initialOffset ?? input.value.length, input.value.length)); input.setSelectionRange(offset, offset); }); }, [editing, initialOffset]);
   useEffect(() => { registerFlush(saveNow); return () => registerFlush(null); }, [registerFlush, saveNow]);
+  useEffect(() => {
+    if (!snippet || !savedRef.current || snippet.id !== savedRef.current.id || snippet.share_token === savedRef.current.share_token) return;
+    const next = { ...savedRef.current, share_token: snippet.share_token }; savedRef.current = next; setSaved(next);
+  }, [snippet]);
 
   const close = async () => { const okay = await saveNow(); if (okay) onClose(savedRef.current); };
   const applyHistory = async (direction: "undo" | "redo") => {
@@ -391,10 +401,21 @@ function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlus
         </div>
         <Button label="Close editor" className="desktop-close" onClick={() => void close()}><X /></Button>
       </header>
+      {saved?.share_token && <button className="editor-unshare text-button" type="button" onClick={() => setConfirmUnshare(true)}>Stop sharing</button>}
       {!editing && narrow && <div ref={mobileViewRef} className="content-input mobile-snippet-view markdown-body" role="button" tabIndex={0} aria-label="Edit snippet text" dangerouslySetInnerHTML={markdownHtml(body)} onClick={enterMobileEdit} onPointerDown={mobilePointerDown} onPointerMove={event => { if (Math.hypot(event.clientX - mobileLongPress.current.x, event.clientY - mobileLongPress.current.y) > 8) clearTimeout(mobileLongPress.current.timer); }} onPointerUp={mobilePointerUp} onPointerCancel={mobilePointerUp} onContextMenu={() => { mobileLongPress.current.suppressUntil = Date.now() + 900; }} />}
       <textarea ref={bodyRef} className="content-input" aria-label="Snippet text" autoComplete="off" value={body} onChange={event => setBody(event.target.value)} onBlur={() => { if (narrow) setEditing(false); }} hidden={!editing && narrow} />
     </div>
+    {confirmUnshare && <ConfirmDialog title="Stop sharing?" message="Anyone using the current link will no longer be able to view this snippet." action="Stop sharing" onCancel={() => setConfirmUnshare(false)} onConfirm={async () => { if (saved) await onUnshare(saved); setConfirmUnshare(false); }} />}
   </section>;
+}
+
+function ConfirmDialog({ title, message, action, children, disabled = false, onCancel, onConfirm }: { title: string; message: string; action: string; children?: React.ReactNode; disabled?: boolean; onCancel(): void; onConfirm(): void | Promise<void> }) {
+  return <div className="react-confirm-backdrop" role="presentation" onPointerDown={event => { if (event.target === event.currentTarget) onCancel(); }}>
+    <section className="react-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="react-confirm-title" aria-describedby="react-confirm-message">
+      <h2 id="react-confirm-title">{title}</h2><p id="react-confirm-message">{message}</p>{children}
+      <div className="react-confirm-actions"><button className="text-button" type="button" autoFocus onClick={onCancel}>Cancel</button><button className="confirm-action" type="button" disabled={disabled} onClick={() => void onConfirm()}>{action}</button></div>
+    </section>
+  </div>;
 }
 
 function ActionMenu({ snippet, point, onClose, onOpen, onCopy, onShare, onEdit, onDelete }: { snippet: Snippet; point: { x: number; y: number } | null; onClose(): void; onOpen(): void; onCopy(): void; onShare(): void; onEdit(): void; onDelete(): void }) {
@@ -417,6 +438,7 @@ function SettingsPanel({ user, preferences, setPreferences, snippets, onClose, o
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("linksaw-theme") as Theme) || "system");
   const [trigger, setTrigger] = useState(preferences.autocompleteTrigger);
   const [transferStatus, setTransferStatus] = useState(""); const fileRef = useRef<HTMLInputElement>(null); const parserRef = useRef<"csv" | "json">("json");
+  const [deleteOpen, setDeleteOpen] = useState(false); const [deleteText, setDeleteText] = useState(""); const [deleteError, setDeleteError] = useState("");
   useEffect(() => { document.documentElement.dataset.theme = theme === "system" ? "" : theme; localStorage.setItem("linksaw-theme", theme); }, [theme]);
   const saveTrigger = async () => { const result = await linksawApi.savePreferences(trigger); setPreferences(result); notify({ message: "Saved" }); };
   const importFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -438,9 +460,10 @@ function SettingsPanel({ user, preferences, setPreferences, snippets, onClose, o
         <section className="settings-section transfer-settings"><h2>Import and export</h2><div className="transfer-actions"><button className="transfer-button" onClick={() => choose("csv")}>Import CSV</button><button className="transfer-button" onClick={() => choose("json")}>Import JSON</button><button className="transfer-button" onClick={() => download("csv")}>Export CSV</button><button className="transfer-button" onClick={() => download("json")}>Export JSON</button></div><input ref={fileRef} type="file" hidden onChange={event => void importFile(event)} /><p className="field-help" role="status">{transferStatus}</p></section>
         <section className="settings-section account-block"><h2>Account</h2><p>{user.email}</p><a className="settings-website-link" href="https://linksaw.com/?website=1">Linksaw website</a></section>
         <section className="settings-section recently-deleted-settings"><button className="settings-folder" onClick={onDeleted}><span>Recently deleted</span><span aria-hidden>›</span></button></section>
-        <section className="settings-section delete-account-block"><h2>Danger zone</h2><p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p><button className="text-button danger-button">Delete account</button></section>
+        <section className="settings-section delete-account-block"><h2>Danger zone</h2><p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p><button className="text-button danger-button" onClick={() => { setDeleteText(""); setDeleteError(""); setDeleteOpen(true); }}>Delete account</button></section>
       </div>
     </div>
+    {deleteOpen && <ConfirmDialog title="Delete account?" message="This permanently deletes your account and every snippet associated with it. This cannot be undone." action="Delete account" disabled={deleteText !== "delete"} onCancel={() => setDeleteOpen(false)} onConfirm={async () => { try { await linksawApi.deleteAccount(); location.assign("/"); } catch (reason) { setDeleteError((reason as Error).message); } }}><label className="field-label" htmlFor="delete-confirmation">Type <strong>delete</strong> to confirm.</label><input id="delete-confirmation" className="confirm-input" value={deleteText} autoComplete="off" autoCapitalize="none" spellCheck={false} onChange={event => { setDeleteText(event.target.value); setDeleteError(""); }} />{deleteError && <p className="confirm-error" role="status">{deleteError}</p>}</ConfirmDialog>}
   </section>;
 }
 

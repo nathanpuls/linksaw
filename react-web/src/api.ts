@@ -42,5 +42,6 @@ export const linksawApi = {
   restoreDeleted: (snippet: Snippet) => api<{ ok: boolean }>(`/deleted-snippets/${snippet.id}/restore`, { method: "POST" }),
   deleteForever: (snippet: Snippet) => api<{ ok: boolean }>(`/deleted-snippets/${snippet.id}`, { method: "DELETE" }),
   savePreferences: (autocompleteTrigger: string) => api<{ autocompleteTrigger: string }>("/preferences", { method: "PUT", body: JSON.stringify({ autocompleteTrigger }) }),
+  deleteAccount: () => api<{ ok: boolean }>("/me", { method: "DELETE", body: JSON.stringify({ confirmation: "delete" }) }),
   logout: () => api<{ ok: boolean }>("/auth/logout", { method: "POST" }),
 };

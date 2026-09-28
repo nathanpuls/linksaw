@@ -21,6 +21,15 @@
 .react-settings .transfer-actions { flex-wrap: nowrap; }
 .react-settings .transfer-button { white-space: nowrap; }
 .react-editor .editor-status { flex: 0 1 auto; }
+.react-editor .editor-unshare { position: absolute; left: var(--content-left, 36px); bottom: 24px; color: var(--muted); }
+.react-confirm-backdrop { position: fixed; z-index: 120; inset: 0; display: grid; place-items: center; padding: 16px; background: #0005; }
+.react-confirm-dialog { width: min(440px, 100%); border: 1px solid var(--line); border-radius: 14px; padding: 24px; background: var(--paper); color: var(--ink); box-shadow: 0 18px 60px #0003; }
+.react-confirm-dialog h2 { margin: 0 0 10px; font-size: 20px; }
+.react-confirm-dialog p { margin: 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.react-confirm-dialog .field-label { display: block; margin-bottom: 8px; }
+.react-confirm-dialog .confirm-input { width: 100%; }
+.react-confirm-dialog .confirm-error { margin: 8px 0 0; }
+.react-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 
 @media (max-width: 900px) {
   .react-app .viewer-pane { display: none; }
