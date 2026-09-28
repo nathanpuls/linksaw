@@ -1,10 +1,38 @@
 import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64Url, shareToken, validSnippet, webSessionCookie } from "./lib.mjs";
 import { markdownToSafeHtml } from "../web/app/markdown.js";
 
-const allowedOrigins = new Set(["https://linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
+const allowedOrigins = new Set(["https://linksaw.com", "https://react-preview.linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:4173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
 const DELETED_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 const profileSchemaReady = new WeakMap();
 const apiKeySchemaReady = new WeakMap();
+const previewSamples = [
+  { title: "Article", body: "https://example.com/article" },
+  { title: "White House", body: "1600 Pennsylvania Avenue NW, Washington, DC 20500" },
+  { title: "Phone", body: "+1 (202) 555-0147" },
+  { title: "Coffee order", body: "Iced vanilla latte with oat milk" },
+  { title: "Long note", body: "A quiet place to keep the details that are easy to lose.\n\nThe second paragraph verifies that wrapping, scrolling, searching, editing, and exact whitespace all survive a round trip through Linksaw.\n\nThe final paragraph is intentionally ordinary. It should remain plain text." },
+  { title: "Contact details", body: "Call +1 (202) 555-0147 or email hello@example.com.\nMeet at 1600 Pennsylvania Avenue NW, Washington, DC 20500.\nDetails: https://example.com/meeting" },
+  { title: "Markdown sampler", body: "# Weekend project\n\nBuild a **small** tool that stays *focused*.\n\n- Preserve raw text\n- Render a readable preview\n- [Open the reference](https://example.com/reference)\n\n> Quiet software can still be powerful.\n\nUse `npm run react:build` before sharing a preview." },
+  { title: "TypeScript", body: "```typescript\ntype Snippet = {\n  title: string;\n  body: string;\n};\n\nconst label = (snippet: Snippet) => snippet.title || snippet.body.split(\"\\n\")[0];\n```" },
+  { title: "JSON", body: "{\n  \"project\": \"Linksaw\",\n  \"preview\": true,\n  \"features\": [\"search\", \"autosave\", \"sharing\"]\n}" },
+  { title: "YAML", body: "project: Linksaw\nenvironment: preview\nchecks:\n  - desktop\n  - iPhone\n  - iPad" },
+  { title: "Shell", body: "npm run react:build && npm run react:test" },
+  { title: "Useful links", body: "Documentation: https://developer.mozilla.org/\nTesting: https://testing-library.com/\nCloudflare: https://developers.cloudflare.com/" },
+  { title: "Email", body: "preview@example.com" },
+  { title: "Schedule", body: "Tuesday, October 6, 2026\n9:30 AM–10:15 AM Central\nFollow-up at 2:00 PM." },
+  { title: "Tiny", body: "Hi" },
+  { title: "Unicode", body: "Café · naïve · jalapeño · 中文 · العربية · 👋🏽\nQuotes: “quiet,” ‘focused’ — and an ellipsis…\nDynamic markers stay literal: {cursor} {day}" },
+  { title: "Long scrolling sample", body: Array.from({ length: 45 }, (_, index) => `Paragraph ${index + 1}: This realistic preview line verifies long-content scrolling without truncation or transformation.`).join("\n\n") },
+];
+
+async function seedPreviewLibrary(env, userId) {
+  if (env.PREVIEW_SEED !== "true") return;
+  const existing = await env.DB.prepare("SELECT id FROM snippets WHERE owner_id = ? LIMIT 1").bind(userId).first();
+  if (existing) return;
+  const timestamp = nowSeconds();
+  await env.DB.batch(previewSamples.map((sample, index) => env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, 0)")
+    .bind(crypto.randomUUID(), userId, sample.title, sample.body, timestamp - index, timestamp - index)));
+}
 async function ensureProfileSchema(env) {
   if (!profileSchemaReady.has(env.DB)) {
     const ready = Promise.resolve()
@@ -47,12 +75,16 @@ async function bodyJson(request) {
 }
 
 async function currentSession(request, env) {
+  await ensureProfileSchema(env);
+  if (env.LOCAL_PREVIEW_AUTH === "true") {
+    const user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM users LEFT JOIN user_profiles ON user_profiles.user_id = users.id ORDER BY users.created_at ASC LIMIT 1").first();
+    if (user) return { user, tokenHash: "local-preview", viaCookie: false };
+  }
   const bearer = request.headers.get("Authorization")?.match(/^Bearer ((?:[A-Za-z0-9_-]{40,})|(?:lsw_[A-Za-z0-9_-]{10,}))$/);
   const cookie = cookieValue(request.headers.get("Cookie"), "linksaw_session");
   const token = bearer?.[1] || (/^[A-Za-z0-9_-]{40,}$/.test(cookie) ? cookie : "");
   if (!token) return null;
   const tokenHash = await sha256Base64Url(token);
-  await ensureProfileSchema(env);
   let user;
   if (bearer?.[1].startsWith("lsw_")) {
     await ensureApiKeySchema(env);
@@ -189,7 +221,10 @@ function publicSnippetPage(snippet) {
 
 export async function handle(request, env) {
   const url = new URL(request.url);
-  const isWebHost = url.hostname === "linksaw.com";
+  const configuredOrigin = (env.APP_ORIGIN || "https://linksaw.com").replace(/\/$/, "");
+  const configuredHost = new URL(configuredOrigin).hostname;
+  const cookieDomain = env.SESSION_COOKIE_DOMAIN === "host-only" ? "" : (env.SESSION_COOKIE_DOMAIN || "linksaw.com");
+  const isWebHost = url.hostname === configuredHost;
   const appAssetPaths = new Set([
     "/app/app.css", "/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js", "/app/lucide-menu-icons.js",
     "/app/vendor/lucide/copy.js", "/app/vendor/lucide/create-element.js", "/app/vendor/lucide/default-attributes.js",
@@ -199,9 +234,25 @@ export async function handle(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(request) });
   if (!env.DB) return fail(request, "D1 database is not configured", 503);
 
+  if (env.REACT_PREVIEW === "true" && isWebHost && request.method === "GET") {
+    if (url.pathname === "/login" || url.pathname === "/login/") {
+      const session = await currentSession(request, env);
+      if (session) return Response.redirect(`${configuredOrigin}/home/`, 302);
+      return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start`, 302);
+    }
+    if (url.pathname === "/" || url.pathname === "/home" || url.pathname === "/home/" || url.pathname.startsWith("/home/")) {
+      const session = await currentSession(request, env);
+      if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
+      return env.ASSETS.fetch(new Request(`${configuredOrigin}/index.html`, request));
+    }
+    if (url.pathname.startsWith("/assets/") || ["/favicon.png", "/icon-192.png", "/icon-512.png", "/site.webmanifest"].includes(url.pathname)) {
+      return env.ASSETS.fetch(request);
+    }
+  }
+
   if (isWebHost && request.method === "GET" && url.pathname === "/") {
     const session = await currentSession(request, env);
-    if (session && url.searchParams.get("website") !== "1") return Response.redirect("https://linksaw.com/home/", 302);
+    if (session && url.searchParams.get("website") !== "1") return Response.redirect(`${configuredOrigin}/home/`, 302);
     const response = await env.ASSETS.fetch(new Request("https://linksaw.com/", request));
     if (!session) return response;
     const html = (await response.text())
@@ -227,7 +278,7 @@ export async function handle(request, env) {
   if (isWebHost && request.method === "GET" && appAssetPaths.has(url.pathname)) return env.ASSETS.fetch(request);
   if (isWebHost && request.method === "GET" && (url.pathname === "/login" || url.pathname === "/login/")) {
     const session = await currentSession(request, env);
-    if (session) return Response.redirect("https://linksaw.com/home/", 302);
+    if (session) return Response.redirect(`${configuredOrigin}/home/`, 302);
     return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start`, 302);
   }
   if (isWebHost && request.method === "GET" && url.pathname === "/home") {
@@ -241,13 +292,13 @@ export async function handle(request, env) {
   }
   if (isWebHost && request.method === "GET" && (/^\/home\/s\/[a-f0-9-]{36}\/?$/.test(url.pathname) || url.pathname === "/home/new")) {
     const session = await currentSession(request, env);
-    if (!session) return Response.redirect("https://linksaw.com/login", 302);
+    if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
     // Resolve the app's directory index while preserving the deep link in the browser.
     return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
   }
   if (isWebHost && request.method === "GET" && url.pathname === "/home/") {
     const session = await currentSession(request, env);
-    if (!session) return Response.redirect("https://linksaw.com/login", 302);
+    if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
     return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
   }
   const publicShare = isWebHost ? url.pathname.match(/^\/s\/([A-Za-z0-9_-]{16})\/?$/) : null;
@@ -298,6 +349,7 @@ export async function handle(request, env) {
     await ensureProfileSchema(env);
     await env.DB.prepare("INSERT INTO user_profiles(user_id, avatar_url) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET avatar_url=excluded.avatar_url")
       .bind(profile.sub, profile.picture || null).run();
+    await seedPreviewLibrary(env, profile.sub);
     if (state.startsWith("web_")) {
       const token = randomToken();
       const timestamp = nowSeconds();
@@ -305,7 +357,7 @@ export async function handle(request, env) {
         env.DB.prepare("UPDATE login_requests SET user_id = ?, consumed_at = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, timestamp, state),
         env.DB.prepare("INSERT INTO sessions(token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)").bind(await sha256Base64Url(token), profile.sub, timestamp, timestamp + 30 * 86400),
       ]);
-      return new Response(null, { status: 302, headers: { Location: "https://linksaw.com/home/", "Set-Cookie": webSessionCookie(token), "Cache-Control": "no-store" } });
+      return new Response(null, { status: 302, headers: { Location: `${configuredOrigin}/home/`, "Set-Cookie": webSessionCookie(token, 30 * 86400, cookieDomain), "Cache-Control": "no-store" } });
     }
     await env.DB.prepare("UPDATE login_requests SET user_id = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, state).run();
     return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in · Linksaw</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;color:#171717;background:#fafafa}main{text-align:center;padding:32px}h1{font-size:28px;font-weight:500}p{color:#747474;line-height:1.6}.mark{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 24px}</style><main><img class="mark" src="https://linksaw.com/icon.png" alt="Linksaw"><h1>You're signed in</h1><p>Linksaw will open automatically.<br>You can close this tab.</p></main></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; img-src https://linksaw.com; style-src 'unsafe-inline'" } });
@@ -330,7 +382,7 @@ export async function handle(request, env) {
 
   const session = await currentSession(request, env);
   if (!session) return fail(request, "Sign in required", 401);
-  if (session.viaCookie && !["GET", "HEAD"].includes(request.method) && request.headers.get("Origin") !== "https://linksaw.com") {
+  if (session.viaCookie && !["GET", "HEAD"].includes(request.method) && request.headers.get("Origin") !== configuredOrigin) {
     return fail(request, "Request origin is not allowed", 403);
   }
   const user = session.user;
@@ -367,11 +419,11 @@ export async function handle(request, env) {
       env.DB.prepare("DELETE FROM login_requests WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
     ]);
-    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0) } : {});
+    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain) } : {});
   }
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(session.tokenHash).run();
-    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0) } : {});
+    return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain) } : {});
   }
   if (url.pathname === "/snippets" && request.method === "GET") return json(request, { snippets: await listSnippets(env, user.id) });
   if (url.pathname === "/deleted-snippets" && request.method === "GET") {
@@ -426,7 +478,7 @@ export async function handle(request, env) {
       share = await env.DB.prepare("SELECT token FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).first();
     }
     if (!share) return fail(request, "Share link could not be created", 500);
-    return json(request, { token: share.token, url: `https://linksaw.com/s/${share.token}` });
+    return json(request, { token: share.token, url: `${configuredOrigin}/s/${share.token}` });
   }
   if (shareMatch && request.method === "DELETE") {
     await env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).run();

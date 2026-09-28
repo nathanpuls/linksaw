@@ -1,0 +1,41 @@
+@import "../../web/app/app.css";
+
+.react-loading, .react-error { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 28px; background: var(--paper); color: var(--muted); }
+.react-error img { width: 56px; height: 56px; }
+.react-error h1 { margin: 0; color: var(--ink); font-size: 22px; }
+.react-error p { margin: 0; }
+.react-error a { color: var(--ink); }
+.result-title, .result-preview { display: block; }
+.react-app .viewer-pane { display: block; }
+.react-editor .mobile-back { display: none; }
+.react-editor .desktop-close { display: inline-grid; }
+.react-editor .content-input[hidden] { display: none !important; }
+.react-editor .editor-name-action:empty::before { content: ""; }
+.react-editor .editor-name-action:empty:hover::before, .react-editor .editor-name-action:empty:focus-visible::before { content: "Title"; }
+.react-menu-backdrop { position: fixed; z-index: 80; inset: 0; display: grid; place-items: end center; background: #0003; }
+.react-action-menu { position: relative; display: block; }
+.react-action-menu.desktop-context { position: fixed; }
+.react-action-menu .snippet-action-list button > svg { width: 17px; height: 17px; flex: 0 0 17px; color: var(--muted); stroke-width: 1.8; }
+.react-settings .settings-inner { min-height: 100%; }
+.react-settings .settings-content { overflow-y: auto; }
+.react-settings .transfer-actions { flex-wrap: nowrap; }
+.react-settings .transfer-button { white-space: nowrap; }
+.react-editor .editor-status { flex: 0 1 auto; }
+
+@media (max-width: 900px) {
+  .react-app .viewer-pane { display: none; }
+  .react-app.viewer-open .viewer-pane { display: block; }
+  .react-app.viewer-open .list-pane { display: none; }
+  .react-editor .mobile-back { display: inline-grid; order: -1; width: 48px; height: 48px; margin-left: -13px; }
+  .react-editor .desktop-close { display: none; }
+  .react-editor.mobile-unified .surface-inner { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+  .react-editor.mobile-unified .surface-header { grid-row: 1; }
+  .react-editor.mobile-unified .content-input { grid-row: 2; grid-column: 1; width: 100%; height: 100%; }
+  .react-editor .mobile-delete { display: inline-grid; }
+  .react-action-menu:not(.desktop-context) { margin: 0 12px max(12px, env(safe-area-inset-bottom)); width: min(360px, calc(100vw - 24px)); }
+  .react-settings .settings-content { padding: 28px 22px; }
+}
+
+@media (max-width: 700px) {
+  .react-settings .transfer-actions { display: none; }
+}

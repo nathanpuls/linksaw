@@ -46,6 +46,7 @@ export function cookieValue(header, name) {
   return "";
 }
 
-export function webSessionCookie(token, maxAge = 30 * 86400) {
-  return `linksaw_session=${token}; Max-Age=${maxAge}; Domain=linksaw.com; Path=/; HttpOnly; Secure; SameSite=Lax`;
+export function webSessionCookie(token, maxAge = 30 * 86400, domain = "linksaw.com") {
+  const domainAttribute = domain ? ` Domain=${domain};` : "";
+  return `linksaw_session=${token}; Max-Age=${maxAge};${domainAttribute} Path=/; HttpOnly; Secure; SameSite=Lax`;
 }

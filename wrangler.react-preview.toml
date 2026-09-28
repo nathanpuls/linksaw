@@ -1,0 +1,26 @@
+name = "linksaw-react-preview"
+main = "worker/index.mjs"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[[routes]]
+pattern = "react-preview.linksaw.com"
+custom_domain = true
+
+[assets]
+directory = "./react-web/dist"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+PUBLIC_BASE_URL = "https://react-preview.linksaw.com"
+APP_ORIGIN = "https://react-preview.linksaw.com"
+SESSION_COOKIE_DOMAIN = "host-only"
+REACT_PREVIEW = "true"
+PREVIEW_SEED = "true"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "linksaw-react-preview"
+database_id = "df784795-a179-4f5e-b1c1-1c8d234ef532"
+migrations_dir = "worker/migrations"
