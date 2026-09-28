@@ -345,6 +345,7 @@ function installLongPress(main, snippet, index) {
       navigator.vibrate?.(10);
       const row = main.closest(".result-row");
       row?.classList.add("long-press-source");
+      setSelected(index, false);
       openSnippetActionMenu(snippet);
       requestAnimationFrame(() => row?.classList.add("long-press-fading"));
       setTimeout(() => row?.classList.remove("long-press-source", "long-press-fading"), 180);
