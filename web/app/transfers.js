@@ -11,7 +11,7 @@ function checkedSnippet(value, record) {
   return { title, body };
 }
 
-function csvRows(text) {
+function delimitedRows(text, delimiter = ",") {
   const rows = [], row = [];
   let field = "", quoted = false;
   const source = text.replace(/^\uFEFF/, "");
@@ -22,7 +22,7 @@ function csvRows(text) {
       else if (character === '"') quoted = false;
       else field += character;
     } else if (character === '"' && !field) quoted = true;
-    else if (character === ",") { row.push(field); field = ""; }
+    else if (character === delimiter) { row.push(field); field = ""; }
     else if (character === "\n") { row.push(field); rows.push(row.splice(0)); field = ""; }
     else if (character !== "\r") field += character;
   }
@@ -31,10 +31,8 @@ function csvRows(text) {
   return rows.filter(cells => cells.some(cell => cell.trim()));
 }
 
-export function parseCsvSnippets(text) {
-  if (new TextEncoder().encode(text).length > MAX_IMPORT_BYTES) throw new Error("Choose a CSV smaller than 5 MB.");
-  const rows = csvRows(text);
-  if (!rows.length) throw new Error("This CSV is empty.");
+function snippetsFromRows(rows, kind) {
+  if (!rows.length) throw new Error(`This ${kind} is empty.`);
   const names = rows[0].map(value => value.trim().toLowerCase());
   const titleNames = ["title", "name", "label"];
   const bodyNames = ["content", "body", "text", "snippet"];
@@ -47,8 +45,18 @@ export function parseCsvSnippets(text) {
     title: cells[hasHeaders ? titleIndex : (cells.length > 1 ? 0 : -1)] || "",
     body: cells[hasHeaders ? bodyIndex : (cells.length > 1 ? 1 : 0)] || "",
   }, index + 1));
-  if (!items.length) throw new Error("This CSV contains no snippets.");
+  if (!items.length) throw new Error(`This ${kind} contains no snippets.`);
   return items;
+}
+
+export function parseCsvSnippets(text) {
+  if (new TextEncoder().encode(text).length > MAX_IMPORT_BYTES) throw new Error("Choose a CSV smaller than 5 MB.");
+  return snippetsFromRows(delimitedRows(text), "CSV");
+}
+
+export function parseTsvSnippets(text) {
+  if (new TextEncoder().encode(text).length > MAX_IMPORT_BYTES) throw new Error("Paste less than 5 MB of tabular data.");
+  return snippetsFromRows(delimitedRows(text, "\t"), "tabular data");
 }
 
 export function parseJsonSnippets(text) {
@@ -60,6 +68,23 @@ export function parseJsonSnippets(text) {
   if (!records.length) throw new Error("This JSON file contains no snippets.");
   if (records.length > MAX_IMPORT_ITEMS) throw new Error("Import up to 2,000 snippets at a time.");
   return records.map((item, index) => checkedSnippet(item, index + 1));
+}
+
+export function detectPastedSnippets(text, requestedFormat = "auto") {
+  const source = String(text ?? "").trim();
+  if (!source) throw new Error("Paste JSON, CSV, or tab-separated data first.");
+  if (requestedFormat === "json") return { format: "JSON", snippets: parseJsonSnippets(source) };
+  if (requestedFormat === "csv") return { format: "CSV", snippets: parseCsvSnippets(source) };
+  if (requestedFormat === "tsv") return { format: "tab-separated data", snippets: parseTsvSnippets(source) };
+  if (/^[\[{]/.test(source)) return { format: "JSON", snippets: parseJsonSnippets(source) };
+  const consistent = delimiter => {
+    const rows = delimitedRows(source, delimiter);
+    const width = rows[0]?.length || 0;
+    return rows.length >= 2 && width >= 2 && rows.every(row => row.length === width);
+  };
+  if (source.includes("\t") && consistent("\t")) return { format: "tab-separated data", snippets: parseTsvSnippets(source) };
+  if (source.includes(",") && consistent(",")) return { format: "CSV", snippets: parseCsvSnippets(source) };
+  throw new Error("Linksaw couldn’t confidently detect JSON, CSV, or tab-separated data. Choose a format and try again.");
 }
 
 const csvCell = value => `"${String(value).replaceAll('"', '""')}"`;

@@ -168,7 +168,7 @@ function publicSnippetPage(snippet) {
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .copy-error{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);padding:9px 15px;border-radius:9px;background:#b42318;color:#fff;font-size:13px}
     @media(hover:none),(pointer:coarse){[data-tooltip]::after{display:none}}
-    @media(max-width:700px){.topbar{min-height:64px;padding:10px 12px}.snippet-container{padding:8px 22px 40px}.title{font-size:19px}}
+    @media(max-width:700px){.topbar{position:fixed;z-index:5;inset:auto 0 0;min-height:64px;padding:8px max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:linear-gradient(to top,#fff 72%,#fff0)}.snippet-container{padding:22px 22px calc(88px + env(safe-area-inset-bottom))}.title{font-size:19px}}
   </style>
 </head>
 <body>

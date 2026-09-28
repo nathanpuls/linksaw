@@ -202,6 +202,8 @@ test("public share pages render without sign-in and escape snippet content", asy
   assert.match(html, /<link rel="icon" href="\/icon\.png" type="image\/png">/);
   assert.match(html, /<a class="home" href="https:\/\/linksaw\.com\/" aria-label="Linksaw home" data-tooltip="Linksaw home">/);
   assert.match(html, /<header class="topbar">[\s\S]*id="copy"/);
+  assert.match(html, /@media\(max-width:700px\)\{\.topbar\{position:fixed;z-index:5;inset:auto 0 0;/);
+  assert.match(html, /\.snippet-container\{padding:22px 22px calc\(88px \+ env\(safe-area-inset-bottom\)\)\}/);
   assert.match(html, /@media\(hover:none\),\(pointer:coarse\)\{\[data-tooltip\]::after\{display:none\}\}/);
   assert.match(html, /<article class="snippet-container"><h1 class="title"[\s\S]*<div id="snippet-content" class="content">/);
   assert.match(html, /\.snippet-container\{width:min\(900px,100%\);margin:0 auto;padding:8px 36px 48px\}/);

@@ -5,12 +5,12 @@ const EMAIL = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 const PROTOCOL_URL = /\b(?:https?:\/\/|www\.)[^\s<>"'`]+/gi;
 const PLAIN_URL = /\b(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[a-z0-9-]+\.)+[a-z]{2,})(?::\d+)?(?:\/[\w?&#.\-]*)?(?=\s|$|[),;:!?])/gi;
 const HIGHWAY_ADDRESS = /\b\d{1,5}[ \t]+(?:US|I|SR|Rte|Route)[ \t-]*\d{1,5}(?:(?:[ \t]*,[ \t]*(?:\r?\n)?|[ \t]*\r?\n[ \t]*)[A-Za-z0-9][A-Za-z0-9 \t.\-]{0,80}){0,3}/gi;
-const STREET_ADDRESS = /\b\d{1,5}[ \t]+[A-Za-z0-9][A-Za-z0-9.\-]*(?:[ \t]+(?!Unit\b|Apt\b|Suite\b|Ste\b|#\b|Floor\b|Fl\b)[A-Za-z0-9.\-]+){0,6}[ \t]+(?:St(?:reet)?|Ave(?:nue)?|Rd(?:oad)?|Blvd|Boulevard|Ln|Lane|Dr|Drive|Ct|Court|Cir|Circle|Hwy|Highway|Pkwy|Way|Terrace|Ter|Pl|Place|(?:US|I|SR|Rte|Route)[ \t-]*\d{1,5}|[A-Za-z]{2,6}-\d{1,5})(?:[ \t]+(?:Unit|Apt|Suite|Ste|#|Floor|Fl)\b[^\r\n,]{0,40})?(?:(?:[ \t]*,[ \t]*(?:\r?\n)?|[ \t]*\r?\n[ \t]*)[A-Za-z0-9][A-Za-z0-9 \t.\-]{0,60}){0,3}/gi;
+const STREET_ADDRESS = /\b\d{1,5}[ \t]+[A-Za-z0-9][A-Za-z0-9.\-]*(?:[ \t]+(?!Unit\b|Apt\b|Suite\b|Ste\b|#\b|Floor\b|Fl\b)[A-Za-z0-9.\-]+){0,6}[ \t]+(?:St(?:reet)?|Ave(?:nue)?|Rd(?:oad)?|Blvd|Boulevard|Ln|Lane|Dr|Drive|Ct|Court|Cir|Circle|Hwy|Highway|Pkwy|Way|Terrace|Ter|Pl|Place|(?:US|I|SR|Rte|Route)[ \t-]*\d{1,5}|[A-Za-z]{2,6}-\d{1,5})\b(?:[ \t]+(?:NE|NW|SE|SW|N|S|E|W|North|South|East|West))?(?:[ \t]+(?:Unit|Apt|Suite|Ste|#|Floor|Fl)\b[^\r\n,]{0,40})?(?:(?:[ \t]*,[ \t]*(?:\r?\n)?|[ \t]*\r?\n[ \t]*)[A-Za-z0-9][A-Za-z0-9 \t.\-]{0,60}){0,3}/gi;
 const PHONE = /(?:\+|00)\d[\d \t\-().]{7,}\d|\(?\d{3}\)?[ \t\-.]\d{3}[ \t\-.]\d{4}/g;
 
 function normalizedUrl(value) {
   const destination = value.replace(/[.,;:!?)}\]]+$/g, "");
-  return /^https?:\/\//i.test(destination) ? destination : `http://${destination}`;
+  return /^https?:\/\//i.test(destination) ? destination : `https://${destination}`;
 }
 
 function normalizedAddress(value) {
@@ -58,4 +58,11 @@ export function linkifyText(value) {
   }
   if (cursor < text.length || !parts.length) parts.push({ text: text.slice(cursor) });
   return parts;
+}
+
+export function standaloneWebUrl(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  const linked = linkifyText(text);
+  return linked.length === 1 && linked[0].type === "url" && linked[0].text === text ? linked[0].href : "";
 }

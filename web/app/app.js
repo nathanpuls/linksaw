@@ -1,6 +1,7 @@
-import { parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260923-2";
-import { renderMarkdown, sourceOffsetFromRenderedPoint } from "./markdown.js?v=20260927-2";
+import { detectPastedSnippets, parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "./transfers.js?v=20260927-4";
+import { renderMarkdown, sourceOffsetFromRenderedPoint } from "./markdown.js?v=20260927-3";
 import { createLucideMenuIcon } from "./lucide-menu-icons.js?v=20260927-1";
+import { standaloneWebUrl } from "./linkify.js?v=20260927-3";
 
 const API = "https://snippets-api.linksaw.com";
 const icons = {
@@ -69,6 +70,7 @@ let localUndo = [];
 let localRedo = [];
 let localInputGroup = null;
 let actionMenuSnippet = null;
+let actionMenuIndex = -1;
 let lastPointerPosition = null;
 
 function titleUnderPointer(position = lastPointerPosition) {
@@ -205,10 +207,7 @@ function renderIdentity(user) {
 }
 function snippetText(snippet) { return snippet.body || ""; }
 function standaloneUrl(snippet) {
-  const text = snippetText(snippet).trim();
-  if (/^https?:\/\/[^\s]+$/i.test(text)) return text;
-  if (/^(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i.test(text)) return `https://${text}`;
-  return "";
+  return standaloneWebUrl(snippetText(snippet));
 }
 function openInNewTab(url) {
   if (document.documentElement.dataset.linksawExtension === "ready") {
@@ -320,6 +319,7 @@ function openSnippetActionMenu(snippet, point = null) {
   if (!snippet) return;
   clearInteractiveSelection();
   actionMenuSnippet = snippet;
+  actionMenuIndex = state.filtered.findIndex(item => item.id === snippet.id);
   const menu = $("snippet-action-menu");
   const open = $("snippet-action-open");
   const url = standaloneUrl(snippet);
@@ -347,7 +347,11 @@ function installLongPress(main, snippet, index) {
     timer = setTimeout(() => {
       handled = true;
       navigator.vibrate?.(10);
+      const row = main.closest(".result-row");
+      row?.classList.add("long-press-source");
       openSnippetActionMenu(snippet);
+      requestAnimationFrame(() => row?.classList.add("long-press-fading"));
+      setTimeout(() => row?.classList.remove("long-press-source", "long-press-fading"), 180);
       setTimeout(() => { handled = false; }, 800);
     }, 550);
   });
@@ -623,14 +627,18 @@ async function navigateAfterSave(destination) {
   destination();
   return true;
 }
-function beginInlineRename() {
+function beginInlineRename(caretOffset = null) {
   hideTooltip();
   inlineRenameBaseline = editorCustomName;
   $("editor-name-input").value = editorCustomName;
   $("editor-name").hidden = true;
   $("editor-name-input").hidden = false;
-  $("editor-name-input").focus();
-  $("editor-name-input").select();
+  const input = $("editor-name-input");
+  input.focus({ preventScroll: true });
+  if (Number.isInteger(caretOffset)) {
+    const offset = Math.max(0, Math.min(caretOffset, input.value.length));
+    input.setSelectionRange(offset, offset);
+  } else input.select();
 }
 function finishInlineRename({ cancel = false } = {}) {
   const enteredName = $("editor-name-input").value.trim();
@@ -682,7 +690,15 @@ function openEditor(snippet = null, pushHistory = true, options = {}) {
   } catch { clearEditorDraft(); }
   syncHistoryControls();
   if (pushHistory) updateUrl({ view: snippet && mobileUnified ? null : snippet ? "edit" : "new", snippet: snippet?.id || null });
-  if (focus) setTimeout(() => { $("snippet-body").focus(); if (!snippet) $("snippet-body").setSelectionRange(0, 0); }, 0);
+  if (focus) setTimeout(() => {
+    const input = $("snippet-body");
+    const previousScrollTop = input.scrollTop;
+    input.focus({ preventScroll: true });
+    const fullyVisible = input.scrollHeight <= input.clientHeight + 2;
+    const offset = !snippet ? 0 : mobileUnified && fullyVisible ? input.value.length : 0;
+    input.setSelectionRange(offset, offset);
+    if (mobileUnified && !fullyVisible) input.scrollTop = previousScrollTop;
+  }, 0);
 }
 function renderViewer(snippet) {
   state.previewing = snippet;
@@ -721,6 +737,7 @@ function openPreview(snippet, pushHistory = true) {
   setTimeout(() => $("close-preview").focus(), 0);
 }
 function closePreview() {
+  $("close-preview").blur();
   leaveRoutedView();
 }
 function openSettings(pushHistory = true) {
@@ -943,6 +960,7 @@ $("mobile-search-trigger").addEventListener("click", activateMobileSearch);
 $("add").addEventListener("click", () => { void navigateAfterSave(() => openEditor()); });
 $("settings").addEventListener("click", () => { void navigateAfterSave(() => openSettings()); });
 function closeEditorFromControl() {
+  $("close-editor").blur();
   const mobileEditing = narrowLayout() && $("editor").classList.contains("is-editing");
   if (!mobileEditing) { void navigateAfterSave(leaveRoutedView); return; }
   const emptyUnsavedSnippet = !state.editing && !$('snippet-body').value.trim();
@@ -962,10 +980,15 @@ $("preview-copy").addEventListener("click", () => copySnippet(state.previewing).
 $("preview-share").addEventListener("click", () => shareSnippet(state.previewing).catch(showError));
 $("preview-edit").addEventListener("click", () => openEditor(state.previewing));
 $("preview-delete").addEventListener("click", () => deleteSnippet(state.previewing));
-$("preview-title").addEventListener("click", () => {
+$("preview-title").addEventListener("click", event => {
   if (!state.previewing) return;
-  openEditor(state.previewing);
-  requestAnimationFrame(beginInlineRename);
+  const point = document.caretPositionFromPoint?.(event.clientX, event.clientY);
+  const range = document.caretRangeFromPoint?.(event.clientX, event.clientY);
+  const node = point?.offsetNode || range?.startContainer;
+  const rawOffset = point?.offset ?? range?.startOffset;
+  const offset = node && $("preview-title").contains(node) && Number.isInteger(rawOffset) ? rawOffset : null;
+  openEditor(state.previewing, true, { focus: false });
+  requestAnimationFrame(() => beginInlineRename(offset));
 });
 let renderedViewLongPressUntil = 0;
 function selectionInside(element) {
@@ -1203,6 +1226,7 @@ function cancelDialogOnBackdrop(dialog) {
 cancelDialogOnBackdrop($("action-confirm-dialog"));
 cancelDialogOnBackdrop($("delete-account-dialog"));
 cancelDialogOnBackdrop($("snippet-action-menu"));
+cancelDialogOnBackdrop($("paste-import-dialog"));
 $("snippet-action-menu").addEventListener("touchstart", clearInteractiveSelection, { passive: true });
 $("snippet-action-menu").addEventListener("selectstart", event => event.preventDefault());
 $("snippet-action-menu").addEventListener("contextmenu", event => event.preventDefault());
@@ -1239,8 +1263,15 @@ $("snippet-action-open").addEventListener("click", () => {
   if (url) openInNewTab(url);
 });
 $("snippet-action-copy").addEventListener("click", () => {
-  const snippet = actionMenuSnippet; closeSnippetActionMenu();
-  if (snippet) navigator.clipboard.writeText(snippetText(snippet)).then(() => showToast("Copied")).catch(showCopyError);
+  const snippet = actionMenuSnippet;
+  const index = actionMenuIndex;
+  closeSnippetActionMenu();
+  if (index >= 0) setSelected(index, false);
+  if (snippet) navigator.clipboard.writeText(snippetText(snippet)).then(() => {
+    const currentIndex = state.filtered.findIndex(item => item.id === snippet.id);
+    if (currentIndex >= 0) setSelected(currentIndex, false);
+    showToast("Copied");
+  }).catch(showCopyError);
 });
 $("snippet-action-share").addEventListener("click", () => {
   const snippet = actionMenuSnippet; const button = $("snippet-action-share"); closeSnippetActionMenu();
@@ -1301,26 +1332,31 @@ async function importLibrary(input, parser) {
   const file = input.files?.[0];
   if (!file || transferBusy) return;
   setTransferBusy(true); $("transfer-status").textContent = `Reading ${file.name}…`;
-  let completed = 0;
   try {
     const snippets = parser(await file.text());
-    for (const snippet of snippets) {
-      $("transfer-status").textContent = `Importing ${completed + 1} of ${snippets.length}…`;
-      await api("/snippets", { method: "POST", body: JSON.stringify({ ...snippet, importId: crypto.randomUUID() }) });
-      completed++;
-    }
-    const data = await api("/snippets"); state.snippets = data.snippets; state.selected = -1; render();
-    $("transfer-status").textContent = `Imported ${completed} snippet${completed === 1 ? "" : "s"}. Existing snippets were not changed.`;
+    await importParsedSnippets(snippets, $("transfer-status"));
   } catch (error) {
-    if (completed) {
-      const data = await api("/snippets").catch(() => null);
-      if (data) { state.snippets = data.snippets; state.selected = -1; render(); }
-    }
-    $("transfer-status").textContent = `${completed ? `${completed} imported. ` : ""}${error.message || error}`;
+    $("transfer-status").textContent = error.message || String(error);
   } finally {
     input.value = "";
     setTransferBusy(false);
   }
+}
+async function importParsedSnippets(snippets, status) {
+  let completed = 0;
+  try {
+    for (const snippet of snippets) {
+      status.textContent = `Importing ${completed + 1} of ${snippets.length}…`;
+      await api("/snippets", { method: "POST", body: JSON.stringify({ ...snippet, importId: crypto.randomUUID() }) });
+      completed++;
+    }
+  } finally {
+    if (completed) {
+      const data = await api("/snippets").catch(() => null);
+      if (data) { state.snippets = data.snippets; state.selected = -1; render(); }
+    }
+  }
+  status.textContent = `Imported ${completed} snippet${completed === 1 ? "" : "s"}. Existing snippets were not changed.`;
 }
 function chooseImport(id) {
   const input = $(id); input.value = ""; input.click();
@@ -1341,6 +1377,48 @@ $("export-format").addEventListener("change", event => {
   event.target.value = "";
   if (format === "csv") downloadLibrary(snippetsToCsv(state.snippets), "text/csv;charset=utf-8", "csv");
   if (format === "json") downloadLibrary(snippetsToJson(state.snippets), "application/json;charset=utf-8", "json");
+});
+
+let reviewedPasteImport = null;
+function openPasteImport() {
+  reviewedPasteImport = null;
+  $("paste-import-data").value = "";
+  $("paste-import-format").value = "auto";
+  $("paste-import-status").textContent = "";
+  $("confirm-paste-import").disabled = true;
+  $("paste-import-dialog").showModal();
+  $("paste-import-data").focus();
+}
+function reviewPasteImport() {
+  reviewedPasteImport = null;
+  $("confirm-paste-import").disabled = true;
+  try {
+    reviewedPasteImport = detectPastedSnippets($("paste-import-data").value, $("paste-import-format").value);
+    const count = reviewedPasteImport.snippets.length;
+    $("paste-import-status").textContent = `${count} snippet${count === 1 ? "" : "s"} ready to import · ${reviewedPasteImport.format}`;
+    $("confirm-paste-import").disabled = false;
+  } catch (error) { $("paste-import-status").textContent = error.message || String(error); }
+}
+$("paste-import").addEventListener("click", openPasteImport);
+$("paste-import-mobile").addEventListener("click", openPasteImport);
+$("cancel-paste-import").addEventListener("click", () => $("paste-import-dialog").close());
+$("preview-paste-import").addEventListener("click", reviewPasteImport);
+for (const id of ["paste-import-data", "paste-import-format"]) $(id).addEventListener("input", () => {
+  reviewedPasteImport = null;
+  $("confirm-paste-import").disabled = true;
+  $("paste-import-status").textContent = "";
+});
+$("paste-import-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!reviewedPasteImport || transferBusy) return;
+  setTransferBusy(true);
+  const button = $("confirm-paste-import"); button.disabled = true;
+  try {
+    await importParsedSnippets(reviewedPasteImport.snippets, $("paste-import-status"));
+    $("transfer-status").textContent = $("paste-import-status").textContent;
+    $("paste-import-dialog").close();
+  } catch (error) { $("paste-import-status").textContent = error.message || String(error); }
+  finally { setTransferBusy(false); }
 });
 
 $("sign-out").addEventListener("click", async () => { try { await api("/auth/logout", { method: "POST" }); } finally { location.replace("/"); } });

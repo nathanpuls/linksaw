@@ -59,7 +59,7 @@ test("plain text keeps its line breaks and automatic links", () => {
   assert.equal(main.querySelectorAll("p").length, 1);
   assert.equal(main.querySelectorAll("br").length, 2);
   assert.equal(main.querySelector('a[href="tel:3125551212"]')?.textContent, "(312) 555-1212");
-  assert.equal(main.querySelector('a[href="http://linksaw.com"]')?.textContent, "linksaw.com");
+  assert.equal(main.querySelector('a[href="https://linksaw.com"]')?.textContent, "linksaw.com");
   assert.equal(main.textContent, source.replaceAll("\n", ""));
 });
 

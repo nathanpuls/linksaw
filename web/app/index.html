@@ -11,7 +11,7 @@
   <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="manifest" href="/app/site.webmanifest">
-  <link rel="stylesheet" href="/app/app.css?v=20260927-10">
+  <link rel="stylesheet" href="/app/app.css?v=20260927-11">
 </head>
 <body>
   <main id="app" class="app" aria-busy="true">
@@ -138,12 +138,14 @@
         <section id="import-export" class="settings-section transfer-settings" tabindex="-1">
           <h2>Import and export</h2>
           <div class="transfer-actions">
+            <button id="paste-import" class="transfer-button" type="button">Paste data</button>
             <button id="import-csv" class="transfer-button" type="button">Import CSV</button>
             <button id="import-json" class="transfer-button" type="button">Import JSON</button>
             <button id="export-csv" class="transfer-button" type="button">Export CSV</button>
             <button id="export-json" class="transfer-button" type="button">Export JSON</button>
           </div>
           <div class="transfer-mobile-actions">
+            <button id="paste-import-mobile" class="transfer-button" type="button">Paste data</button>
             <label class="sr-only" for="import-format">Import format</label>
             <select id="import-format" class="transfer-select">
               <option value="" selected>Import</option>
@@ -213,6 +215,29 @@
     </form>
   </dialog>
 
+  <dialog id="paste-import-dialog" class="confirm-dialog paste-import-dialog" aria-labelledby="paste-import-title">
+    <form id="paste-import-form">
+      <h2 id="paste-import-title">Paste import data</h2>
+      <label class="field-label" for="paste-import-data">JSON, CSV, or tab-separated data</label>
+      <textarea id="paste-import-data" class="paste-import-data" spellcheck="false" autocomplete="off"></textarea>
+      <div class="paste-import-options">
+        <label class="field-label" for="paste-import-format">Format</label>
+        <select id="paste-import-format">
+          <option value="auto">Detect automatically</option>
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+          <option value="tsv">Tab-separated</option>
+        </select>
+      </div>
+      <p id="paste-import-status" class="field-help paste-import-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions">
+        <button id="cancel-paste-import" class="text-button" type="button">Cancel</button>
+        <button id="preview-paste-import" class="text-button" type="button">Review</button>
+        <button id="confirm-paste-import" class="confirm-action" type="submit" disabled>Import</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="delete-account-dialog" class="confirm-dialog" aria-labelledby="delete-account-title">
     <form id="delete-account-form">
       <h2 id="delete-account-title">Confirm account deletion</h2>
@@ -233,6 +258,6 @@
   </div>
   <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
   <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <script type="module" src="/app/app.js?v=20260927-4"></script>
+  <script type="module" src="/app/app.js?v=20260927-5"></script>
 </body>
 </html>

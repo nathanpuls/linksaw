@@ -98,6 +98,24 @@ test("web rows stay clean while desktop right click and mobile long press share 
   assert.match(html, /id="preview-edit"[^>]*aria-label="Edit"[^>]*data-tooltip="Edit"/);
 });
 
+test("detail, import, and list polish preserve stable mobile and desktop interactions", () => {
+  assert.match(source, /if \(focus\) setTimeout\(\(\) => \{[\s\S]*?input\.focus\(\{ preventScroll: true \}\)[\s\S]*?fullyVisible[\s\S]*?input\.value\.length[\s\S]*?input\.scrollTop = previousScrollTop/);
+  assert.match(source, /function beginInlineRename\(caretOffset = null\)[\s\S]*?input\.focus\(\{ preventScroll: true \}\)[\s\S]*?input\.setSelectionRange\(offset, offset\)/);
+  assert.match(source, /\$\("preview-title"\)\.addEventListener\("click", event =>[\s\S]*?caretPositionFromPoint[\s\S]*?openEditor\(state\.previewing, true, \{ focus: false \}\)[\s\S]*?beginInlineRename\(offset\)/);
+  assert.match(css, /\.empty \{ display: flex; flex-direction: column; align-items: center; gap: 18px;/);
+  assert.match(css, /\.sidebar-footer \{[^}]*justify-content: space-between;/);
+  assert.match(css, /\.identity-name \{ display: none; \}/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.viewer-header, \.surface-header \{ height: 58px; min-height: 58px; padding: 2px 12px 11px 16px; \}/);
+  assert.match(css, /#editor\.mobile-unified #close-editor, #close-deleted \{ width: 48px; height: 48px; min-width: 48px; flex: 0 0 48px; \}/);
+  assert.match(css, /\.result-row\.long-press-source \{[^}]*transition: background-color \.16s ease;/);
+  assert.match(source, /row\?\.classList\.add\("long-press-source"\)[\s\S]*?requestAnimationFrame\(\(\) => row\?\.classList\.add\("long-press-fading"\)\)/);
+  assert.match(source, /function closeEditorFromControl\(\) \{\s*\$\("close-editor"\)\.blur\(\)/);
+  assert.match(source, /function closePreview\(\) \{\s*\$\("close-preview"\)\.blur\(\)/);
+  assert.match(html, /id="paste-import-dialog"[\s\S]*?id="paste-import-data"[\s\S]*?id="paste-import-format"[\s\S]*?id="preview-paste-import"[^>]*>Review<[\s\S]*?id="confirm-paste-import"[^>]*disabled>Import</);
+  assert.match(source, /detectPastedSnippets\(\$\("paste-import-data"\)\.value, \$\("paste-import-format"\)\.value\)/);
+  assert.match(source, /const index = actionMenuIndex;[\s\S]*?closeSnippetActionMenu\(\);[\s\S]*?setSelected\(index, false\)[\s\S]*?navigator\.clipboard\.writeText[\s\S]*?setSelected\(currentIndex, false\)/);
+});
+
 test("viewer delete is last, reversible, and restores stored metadata", () => {
   assert.match(html, /id="preview-copy"[\s\S]*id="preview-share"[\s\S]*id="preview-edit"[\s\S]*id="preview-delete" class="icon-button viewer-delete"[^>]*aria-label="Delete"[^>]*data-tooltip="Delete"/);
   assert.match(source, /icon\("preview-delete", "trash"\)/);
@@ -211,7 +229,7 @@ test("interactive web controls expose Voice Control names without changing the p
   assert.match(html, /id="preview-title" class="preview-title" type="button" aria-label="Edit title"/);
   assert.match(html, /id="preview-body" class="preview-body markdown-body" role="region" tabindex="0" aria-label="Edit snippet content"/);
   assert.match(html, /class="viewer-scroll" role="region" aria-label="Snippet content" tabindex="-1"/);
-  assert.match(source, /\$\("preview-title"\)\.addEventListener\("click"[\s\S]*?openEditor\(state\.previewing\)[\s\S]*?beginInlineRename/);
+  assert.match(source, /\$\("preview-title"\)\.addEventListener\("click"[\s\S]*?openEditor\(state\.previewing, true, \{ focus: false \}\)[\s\S]*?beginInlineRename/);
   assert.match(source, /\$\("preview-body"\)\.addEventListener\("keydown"[\s\S]*?event\.key !== "Enter"[\s\S]*?openEditor\(snippet/);
 });
 
@@ -363,8 +381,8 @@ test("viewer shows only explicit custom names above exact content", () => {
 });
 
 test("viewer uses safe Markdown plus shared QK-style linkification and underlined styling", () => {
-  assert.match(source, /import \{ renderMarkdown, sourceOffsetFromRenderedPoint \} from "\.\/markdown\.js\?v=20260927-2"/);
-  assert.match(markdown, /import \{ linkifyText \} from "\.\/linkify\.js"/);
+  assert.match(source, /import \{ renderMarkdown, sourceOffsetFromRenderedPoint \} from "\.\/markdown\.js\?v=\d+-\d+"/);
+  assert.match(markdown, /import \{ linkifyText \} from "\.\/linkify\.js(?:\?v=\d+-\d+)?"/);
   assert.match(markdown, /export function markdownToSafeHtml/);
   assert.match(markdown, /element\.innerHTML = markdownToSafeHtml\(value\)/);
   assert.match(linkifier, /const EMAIL =/);

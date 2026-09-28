@@ -1,4 +1,4 @@
-import { linkifyText } from "./linkify.js";
+import { linkifyText } from "./linkify.js?v=20260927-3";
 
 // Linksaw stores Markdown as plain text. This renderer deliberately supports a
 // small, useful Markdown subset and escapes everything else. Because raw HTML
