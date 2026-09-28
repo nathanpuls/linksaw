@@ -205,19 +205,12 @@ function renderIdentity(user) {
     avatar.src = url.href;
   } catch {}
 }
-function snippetText(snippet) { return snippet.body || ""; }
+function snippetText(snippet) { return snippet.body || snippet.title || ""; }
 function standaloneUrl(snippet) {
   return standaloneWebUrl(snippetText(snippet));
 }
 function openInNewTab(url) {
-  if (document.documentElement.dataset.linksawExtension === "ready") {
-    window.dispatchEvent(new CustomEvent("LINKSAW_OPEN_ACTIVE_TAB", { detail: url }));
-    return;
-  }
-  const opened = window.open(url, "_blank");
-  if (!opened) return;
-  opened.opener = null;
-  opened.focus();
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 function showToast(message = "Copied") {
   if (pendingUndo) return;

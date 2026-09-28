@@ -44,7 +44,7 @@ test("primary editor is content-only and supports quiet inline custom names", ()
   assert.doesNotMatch(source, /routeEmptySnippetPaste/);
   assert.match(source, /function openEditor[\s\S]*?\$\("snippet-body"\)\.value = snippet\?\.body \|\| ""; editorCustomName = snippet\?\.title \|\| "";[\s\S]*?setSelectionRange\(0, 0\)/);
   assert.match(source, /function editorSnapshot\(\)[\s\S]*?JSON\.stringify\(\{ title, body: \$\("snippet-body"\)\.value \}\)/);
-  assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| ""; \}/);
+  assert.match(source, /function snippetText\(snippet\) \{ return snippet\.body \|\| snippet\.title \|\| ""; \}/);
   assert.match(source, /function derivedLabel\(body\)[\s\S]*?find\(line => line\.trim\(\)\)/);
   assert.match(source, /function label\(snippet\) \{ return snippet\.title\.trim\(\) \|\| derivedLabel\(snippet\.body\); \}/);
   assert.match(html, /id="editor-name" class="editor-name-action"[^>]*aria-label="Rename"[^>]*data-tooltip="Rename"/);
@@ -114,6 +114,14 @@ test("detail, import, and list polish preserve stable mobile and desktop interac
   assert.match(html, /id="paste-import-dialog"[\s\S]*?id="paste-import-data"[\s\S]*?id="paste-import-format"[\s\S]*?id="preview-paste-import"[^>]*>Review<[\s\S]*?id="confirm-paste-import"[^>]*disabled>Import</);
   assert.match(source, /detectPastedSnippets\(\$\("paste-import-data"\)\.value, \$\("paste-import-format"\)\.value\)/);
   assert.match(source, /const index = actionMenuIndex;[\s\S]*?closeSnippetActionMenu\(\);[\s\S]*?setSelected\(index, false\)[\s\S]*?navigator\.clipboard\.writeText[\s\S]*?setSelected\(currentIndex, false\)/);
+});
+
+test("website actions open directly even when the Chrome extension bridge is stale", () => {
+  assert.match(source, /function openInNewTab\(url\) \{\s*window\.open\(url, "_blank", "noopener,noreferrer"\);\s*\}/);
+  assert.doesNotMatch(source, /function openInNewTab\(url\)[\s\S]*?dataset\.linksawExtension/);
+  assert.match(source, /function standaloneUrl\(snippet\) \{\s*return standaloneWebUrl\(snippetText\(snippet\)\);\s*\}/);
+  assert.match(source, /\$\("snippet-action-open"\)\.addEventListener\("click"[\s\S]*?standaloneUrl\(snippet\)[\s\S]*?openInNewTab\(url\)/);
+  assert.match(source, /event\.key === "ArrowRight"[\s\S]*?useSnippet\(target\)/);
 });
 
 test("viewer delete is last, reversible, and restores stored metadata", () => {
