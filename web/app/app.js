@@ -72,6 +72,7 @@ let localRedo = [];
 let localInputGroup = null;
 let actionMenuSnippet = null;
 let actionMenuIndex = -1;
+let actionMenuClearsSelection = false;
 let lastPointerPosition = null;
 
 function titleUnderPointer(position = lastPointerPosition) {
@@ -283,6 +284,14 @@ function setSelected(index, scroll = true) {
   if (scroll) document.querySelector(`.result-row[data-index="${state.selected}"]`)?.scrollIntoView({ block: "nearest" });
   renderViewer(state.filtered[state.selected] || null);
 }
+function clearListSelection() {
+  state.selected = -1;
+  document.querySelectorAll(".result-row").forEach(row => {
+    row.classList.remove("selected");
+    row.querySelector(".result-main")?.setAttribute("aria-current", "false");
+  });
+  renderViewer(null);
+}
 function beginKeyboardListNavigation() {
   $("results").classList.add("keyboard-navigation");
   document.activeElement?.closest?.(".result-main")?.blur();
@@ -305,17 +314,20 @@ async function useSnippet(snippet) {
   showToast("Copied");
 }
 function closeSnippetActionMenu() {
+  if (actionMenuClearsSelection) clearListSelection();
+  actionMenuClearsSelection = false;
   actionMenuSnippet = null;
   if ($("snippet-action-menu").open) $("snippet-action-menu").close();
 }
 function clearInteractiveSelection() {
   window.getSelection?.()?.removeAllRanges();
 }
-function openSnippetActionMenu(snippet, point = null) {
+function openSnippetActionMenu(snippet, point = null, { clearSelectionOnClose = false } = {}) {
   if (!snippet) return;
   clearInteractiveSelection();
   actionMenuSnippet = snippet;
   actionMenuIndex = state.filtered.findIndex(item => item.id === snippet.id);
+  actionMenuClearsSelection = clearSelectionOnClose;
   const menu = $("snippet-action-menu");
   const open = $("snippet-action-open");
   const url = standaloneUrl(snippet);
@@ -344,7 +356,7 @@ function installLongPress(main, snippet, index) {
       handled = true;
       navigator.vibrate?.(10);
       setSelected(index, false);
-      openSnippetActionMenu(snippet);
+      openSnippetActionMenu(snippet, null, { clearSelectionOnClose: true });
       setTimeout(() => { handled = false; }, 800);
     }, 550);
   });
@@ -1231,8 +1243,12 @@ cancelDialogOnBackdrop($("paste-import-dialog"));
 $("snippet-action-menu").addEventListener("touchstart", clearInteractiveSelection, { passive: true });
 $("snippet-action-menu").addEventListener("selectstart", event => event.preventDefault());
 $("snippet-action-menu").addEventListener("contextmenu", event => event.preventDefault());
-$("snippet-action-menu").addEventListener("close", () => { actionMenuSnippet = null; });
-async function deleteSnippet(snippet) {
+$("snippet-action-menu").addEventListener("close", () => {
+  if (actionMenuClearsSelection) clearListSelection();
+  actionMenuClearsSelection = false;
+  actionMenuSnippet = null;
+});
+async function deleteSnippet(snippet, { selectNext = true } = {}) {
   if (!snippet || deletingSnippetId === snippet.id) return;
   if (!$("editor").hidden && state.editing?.id === snippet.id && !await flushEditorSave()) return;
   deletingSnippetId = snippet.id;
@@ -1243,7 +1259,7 @@ async function deleteSnippet(snippet) {
   try {
     const { deleted } = await api(`/snippets/${snippet.id}`, { method: "DELETE" });
     state.snippets = state.snippets.filter(item => item.id !== snippet.id);
-    state.selected = filteredCount > 1 ? Math.min(Math.max(filteredIndex, 0), filteredCount - 2) : -1;
+    state.selected = selectNext && filteredCount > 1 ? Math.min(Math.max(filteredIndex, 0), filteredCount - 2) : -1;
     if (!$("editor").hidden) { editorSessionId++; clearTimeout(autosaveTimer); closeSurface("editor"); }
     render();
     const next = state.filtered[state.selected] || null;
@@ -1266,11 +1282,12 @@ $("snippet-action-open").addEventListener("click", () => {
 $("snippet-action-copy").addEventListener("click", () => {
   const snippet = actionMenuSnippet;
   const index = actionMenuIndex;
+  const keepSelection = !actionMenuClearsSelection;
   closeSnippetActionMenu();
-  if (index >= 0) setSelected(index, false);
+  if (keepSelection && index >= 0) setSelected(index, false);
   if (snippet) navigator.clipboard.writeText(snippetText(snippet)).then(() => {
     const currentIndex = state.filtered.findIndex(item => item.id === snippet.id);
-    if (currentIndex >= 0) setSelected(currentIndex, false);
+    if (keepSelection && currentIndex >= 0) setSelected(currentIndex, false);
     showToast("Copied");
   }).catch(showCopyError);
 });
@@ -1283,8 +1300,10 @@ $("snippet-action-edit").addEventListener("click", () => {
   if (snippet) runListActionAfterSave(() => openEditor(snippet));
 });
 $("snippet-action-delete").addEventListener("click", () => {
-  const snippet = actionMenuSnippet; closeSnippetActionMenu();
-  if (snippet) void deleteSnippet(snippet);
+  const snippet = actionMenuSnippet;
+  const selectNext = !actionMenuClearsSelection;
+  closeSnippetActionMenu();
+  if (snippet) void deleteSnippet(snippet, { selectNext });
 });
 async function undoRecentDeletion() {
   if (!pendingUndo) return;

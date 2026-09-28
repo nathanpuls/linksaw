@@ -72,7 +72,7 @@ test("web rows stay clean while desktop right click and mobile long press share 
   assert.match(source, /function hoveredListItem\(\)[\s\S]*?classList\.contains\("keyboard-navigation"\)[\s\S]*?return null[\s\S]*?querySelector\("\.result-row:hover"\)[\s\S]*?state\.filtered\[index\]/);
   assert.match(source, /event\.key === "ArrowRight"[\s\S]*?const hovered = hoveredListItem\(\)[\s\S]*?const target = hovered\?\.snippet \|\| selected[\s\S]*?if \(hovered\) setSelected\(hovered\.index, false\)[\s\S]*?useSnippet\(target\)/);
   assert.match(source, /event\.key === "Enter" && selected && document\.activeElement === \$\("search"\)[\s\S]*?openSnippet\(selected\)/);
-  assert.match(source, /function installLongPress\(main, snippet, index\)[\s\S]*?setTimeout\([\s\S]*?setSelected\(index, false\)[\s\S]*?openSnippetActionMenu\(snippet\)[\s\S]*?550/);
+  assert.match(source, /function installLongPress\(main, snippet, index\)[\s\S]*?setTimeout\([\s\S]*?setSelected\(index, false\)[\s\S]*?openSnippetActionMenu\(snippet, null, \{ clearSelectionOnClose: true \}\)[\s\S]*?550/);
   assert.match(source, /main\.addEventListener\("contextmenu"[\s\S]*?preventDefault\(\)[\s\S]*?!narrowLayout\(\)[\s\S]*?openSnippetActionMenu\(snippet, point\)/);
   assert.match(html, /id="snippet-action-menu" class="snippet-action-menu"[\s\S]*?snippet-action-open[\s\S]*?>Open<[\s\S]*?>Copy<[\s\S]*?>Share<[\s\S]*?>Edit<[\s\S]*?>Delete</);
   assert.match(html, /id="snippet-action-menu" class="snippet-action-menu" aria-label="Snippet actions" tabindex="-1"/);
@@ -89,7 +89,9 @@ test("web rows stay clean while desktop right click and mobile long press share 
   assert.match(css, /\.snippet-action-icon \{ width: 17px; height: 17px;/);
   assert.match(css, /\.result-row \{ min-height: 44px; display: block;/);
   assert.doesNotMatch(css, /\.result-view/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-main \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; \}/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-main \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; \}/);
+  assert.match(source, /function clearListSelection\(\)[\s\S]*?state\.selected = -1[\s\S]*?classList\.remove\("selected"\)[\s\S]*?aria-current", "false"/);
+  assert.match(source, /snippet-action-menu"\)\.addEventListener\("close"[\s\S]*?actionMenuClearsSelection[\s\S]*?clearListSelection\(\)/);
   assert.match(css, /\.snippet-action-menu, \.snippet-action-menu \* \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; \}/);
   assert.match(source, /function clearInteractiveSelection\(\)[\s\S]*?getSelection[\s\S]*?removeAllRanges/);
   assert.match(source, /main\.addEventListener\("touchstart", clearInteractiveSelection, \{ passive: true \}\)/);
@@ -133,7 +135,7 @@ test("viewer delete is last, reversible, and restores stored metadata", () => {
   assert.match(source, /icon\("preview-delete", "trash"\)/);
   assert.match(css, /\.viewer-delete \{ margin-left: 9px; \}/);
   assert.match(source, /\$\("preview-delete"\)\.addEventListener\("click", \(\) => deleteSnippet\(state\.previewing\)\)/);
-  assert.match(source, /async function deleteSnippet\(snippet\)[\s\S]*?method: "DELETE"[\s\S]*?state\.snippets = state\.snippets\.filter[\s\S]*?showDeleteUndo\(deleted, viewerWasOpen\)/);
+  assert.match(source, /async function deleteSnippet\(snippet, \{ selectNext = true \} = \{\}\)[\s\S]*?method: "DELETE"[\s\S]*?state\.snippets = state\.snippets\.filter[\s\S]*?showDeleteUndo\(deleted, viewerWasOpen\)/);
   assert.match(source, /"Snippet deleted ·"[\s\S]*?"Undo"[\s\S]*?}, 7000\)/);
   assert.match(source, /\/snippets\/\$\{undo\.deleted\.id\}\/restore[\s\S]*?method: "POST"[\s\S]*?JSON\.stringify\(undo\.deleted\)/);
   assert.match(source, /async function undoRecentDeletion\(\)[\s\S]*?const undo = pendingUndo/);

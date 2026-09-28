@@ -299,7 +299,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .viewer-actions { gap: 0; }
   .preview-body, .content-input { padding: 8px 22px 40px 16px; }
   .results { padding-inline: 5px; }
-  .result-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .result-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   .settings-content { padding: 28px 22px; }
 }
 
