@@ -136,6 +136,7 @@ test("viewer delete is last, reversible, and restores stored metadata", () => {
   assert.match(source, /\/snippets\/\$\{undo\.deleted\.id\}\/restore[\s\S]*?method: "POST"[\s\S]*?JSON\.stringify\(undo\.deleted\)/);
   assert.match(source, /async function undoRecentDeletion\(\)[\s\S]*?const undo = pendingUndo/);
   assert.match(source, /deletionUndoShortcut = pendingUndo && !editing[\s\S]*?event\.key\.toLowerCase\(\) === "z"[\s\S]*?event\.preventDefault\(\); void undoRecentDeletion\(\)/);
+  assert.match(source, /const deleteKey = event\.key === "Delete" \|\| \(isMacPlatform && event\.key === "Backspace"\)[\s\S]*?searchHasText[\s\S]*?!narrowLayout\(\) && deleteKey && selected && !searchHasText[\s\S]*?deleteSnippet\(selected\)/);
   assert.match(html, /id="toast-message"[\s\S]*id="toast-action" class="toast-action"/);
   assert.doesNotMatch(css, /\.viewer-delete[^}]*red|\.toast-action[^}]*red/);
   assert.match(css, /\.toast \{[^}]*top: max\(16px, env\(safe-area-inset-top\)\);[^}]*max-width: calc\(100vw - 24px\);/);

@@ -1545,6 +1545,13 @@ document.addEventListener("keydown", event => {
     const url = standaloneUrl(selected); if (url) { event.preventDefault(); openInNewTab(url); }
     return;
   }
+  const deleteKey = event.key === "Delete" || (isMacPlatform && event.key === "Backspace");
+  const searchHasText = document.activeElement === $("search") && Boolean($("search").value);
+  if (!narrowLayout() && deleteKey && selected && !searchHasText) {
+    event.preventDefault();
+    void deleteSnippet(selected);
+    return;
+  }
   if (modifier && /^[1-9]$/.test(event.key)) {
     const numbered = state.filtered[Number(event.key) - 1];
     if (numbered) { event.preventDefault(); setSelected(Number(event.key) - 1); }
