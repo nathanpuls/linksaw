@@ -226,9 +226,6 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 .snippet-action-icon { width: 17px; height: 17px; flex: 0 0 17px; display: inline-grid; place-items: center; color: var(--muted); }
 .snippet-action-icon svg { width: 17px; height: 17px; }
 .snippet-action-list button:hover, .snippet-action-list button:focus-visible { outline: 0; background: var(--selected); }
-.result-row.long-press-source { background: var(--selected); transition: background-color .16s ease; }
-.result-row.long-press-source.long-press-fading, .result-row.long-press-source.long-press-fading:hover { background: transparent; }
-
 @media (hover: none), (pointer: coarse) {
   .custom-tooltip { display: none !important; }
   .sidebar-footer .identity-logo-link:hover { background: transparent; }
@@ -303,6 +300,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .preview-body, .content-input { padding: 8px 22px 40px 16px; }
   .results { padding-inline: 5px; }
   .result-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .result-row.selected .result-title { font-weight: 500; }
   .settings-content { padding: 28px 22px; }
 }
 

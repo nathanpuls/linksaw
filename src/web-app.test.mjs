@@ -109,8 +109,9 @@ test("detail, import, and list polish preserve stable mobile and desktop interac
   assert.match(css, /\.identity-name \{ display: none; \}/);
   assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.viewer-header, \.surface-header \{ height: 58px; min-height: 58px; padding: 2px 12px 11px 16px; \}/);
   assert.match(css, /#editor\.mobile-unified #close-editor, #close-deleted \{ width: 48px; height: 48px; min-width: 48px; flex: 0 0 48px; \}/);
-  assert.match(css, /\.result-row\.long-press-source \{[^}]*transition: background-color \.16s ease;/);
-  assert.match(source, /row\?\.classList\.add\("long-press-source"\)[\s\S]*?requestAnimationFrame\(\(\) => row\?\.classList\.add\("long-press-fading"\)\)/);
+  assert.doesNotMatch(css, /long-press-source|long-press-fading/);
+  assert.doesNotMatch(source, /long-press-source|long-press-fading/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-row\.selected \.result-title \{ font-weight: 500; \}/);
   assert.match(source, /function closeEditorFromControl\(\) \{\s*\$\("close-editor"\)\.blur\(\)/);
   assert.match(source, /function closePreview\(\) \{\s*\$\("close-preview"\)\.blur\(\)/);
   assert.match(css, /@media \(hover: none\), \(pointer: coarse\) \{[\s\S]*?\.sidebar-footer \.identity-logo-link:hover \{ background: transparent; \}/);

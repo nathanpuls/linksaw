@@ -343,12 +343,8 @@ function installLongPress(main, snippet, index) {
     timer = setTimeout(() => {
       handled = true;
       navigator.vibrate?.(10);
-      const row = main.closest(".result-row");
-      row?.classList.add("long-press-source");
       setSelected(index, false);
       openSnippetActionMenu(snippet);
-      requestAnimationFrame(() => row?.classList.add("long-press-fading"));
-      setTimeout(() => row?.classList.remove("long-press-source", "long-press-fading"), 180);
       setTimeout(() => { handled = false; }, 800);
     }, 550);
   });
