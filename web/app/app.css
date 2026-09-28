@@ -231,6 +231,7 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
 
 @media (hover: none), (pointer: coarse) {
   .custom-tooltip { display: none !important; }
+  .sidebar-footer .identity-logo-link:hover { background: transparent; }
 }
 
 @media (min-width: 901px) {

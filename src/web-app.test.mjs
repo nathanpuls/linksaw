@@ -113,6 +113,7 @@ test("detail, import, and list polish preserve stable mobile and desktop interac
   assert.match(source, /row\?\.classList\.add\("long-press-source"\)[\s\S]*?requestAnimationFrame\(\(\) => row\?\.classList\.add\("long-press-fading"\)\)/);
   assert.match(source, /function closeEditorFromControl\(\) \{\s*\$\("close-editor"\)\.blur\(\)/);
   assert.match(source, /function closePreview\(\) \{\s*\$\("close-preview"\)\.blur\(\)/);
+  assert.match(css, /@media \(hover: none\), \(pointer: coarse\) \{[\s\S]*?\.sidebar-footer \.identity-logo-link:hover \{ background: transparent; \}/);
   assert.match(html, /id="paste-import-dialog"[\s\S]*?id="paste-import-data"[\s\S]*?id="paste-import-format"[\s\S]*?id="preview-paste-import"[^>]*>Review<[\s\S]*?id="confirm-paste-import"[^>]*disabled>Import</);
   assert.match(source, /detectPastedSnippets\(\$\("paste-import-data"\)\.value, \$\("paste-import-format"\)\.value\)/);
   assert.match(source, /const index = actionMenuIndex;[\s\S]*?closeSnippetActionMenu\(\);[\s\S]*?setSelected\(index, false\)[\s\S]*?navigator\.clipboard\.writeText[\s\S]*?setSelected\(currentIndex, false\)/);
