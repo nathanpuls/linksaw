@@ -1,6 +1,6 @@
 import {
-  ArrowLeft, Check, ChevronLeft, Copy, Download, Edit3, ExternalLink, FileJson, FileSpreadsheet,
-  LogOut, Menu, PanelLeft, Plus, Redo2, Search, Settings, Share2, Trash2, Undo2, Upload, X,
+  ArrowLeft, Check, ChevronLeft, Copy, Download, ExternalLink, FileJson, FileSpreadsheet,
+  LogOut, Menu, PanelLeft, Pencil, Plus, Redo2, Search, Settings, Share, Trash2, Undo2, Upload, X,
 } from "lucide-react";
 import {
   type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent,
@@ -57,6 +57,7 @@ export function App() {
   const [actionPoint, setActionPoint] = useState<{ x: number; y: number } | null>(null);
   const [deleted, setDeleted] = useState<Snippet[]>([]);
   const [editOffset, setEditOffset] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const hoveredId = useRef<string | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
@@ -71,6 +72,13 @@ export function App() {
   const notify = useCallback((value: Toast, duration = 1600) => {
     clearTimeout(toastTimer.current); setToast(value);
     if (value) toastTimer.current = window.setTimeout(() => setToast(null), duration);
+  }, []);
+  const toggleReader = useCallback(() => {
+    setReader(value => {
+      const next = !value;
+      sessionStorage.setItem("linksaw-react-reader", String(next));
+      return next;
+    });
   }, []);
   const refresh = useCallback(async () => {
     const [, library] = await Promise.all([Promise.resolve(), linksawApi.session().then(([me, data, prefs]) => {
@@ -101,8 +109,9 @@ export function App() {
     setRoute({ view: "library", snippetId }); setSelectedId(snippetId); updateLocation({ view: null, snippet: snippetId }, push);
   }, []);
   const openSnippet = useCallback((snippet: Snippet, push = true) => showLibrary(snippet.id, push), [showLibrary]);
-  const editSnippet = useCallback((snippet: Snippet | null, push = true, offset: number | null = null) => {
+  const editSnippet = useCallback((snippet: Snippet | null, push = true, offset: number | null = null, title = false) => {
     setEditOffset(offset);
+    setEditTitle(title);
     setRoute({ view: "editor", snippetId: snippet?.id || null }); setSelectedId(snippet?.id || null);
     updateLocation({ view: snippet ? "edit" : "new", snippet: snippet?.id || null }, push);
   }, []);
@@ -152,7 +161,7 @@ export function App() {
         if (reader) { event.preventDefault(); setReader(false); sessionStorage.setItem("linksaw-react-reader", "false"); }
         return;
       }
-      if (command && event.key === "\\") { event.preventDefault(); setReader(value => { sessionStorage.setItem("linksaw-react-reader", String(!value)); return !value; }); return; }
+      if (command && event.key === "\\") { event.preventDefault(); toggleReader(); return; }
       if (!editingText && event.key === "/") { event.preventDefault(); searchRef.current?.focus(); return; }
       if (route.view !== "library" || editingText || !filtered.length) return;
       const index = Math.max(0, filtered.findIndex(item => item.id === selectedId));
@@ -165,7 +174,7 @@ export function App() {
       if ((event.key === "Delete" || event.key === "Backspace") && selected) { event.preventDefault(); void remove(selected); }
     };
     addEventListener("keydown", keydown); return () => removeEventListener("keydown", keydown);
-  }, [actionSnippet, filtered, openSnippet, reader, remove, route.view, selected, selectedId, showLibrary, snippets, useItem]);
+  }, [actionSnippet, filtered, openSnippet, reader, remove, route.view, selected, selectedId, showLibrary, snippets, toggleReader, useItem]);
 
   const saveSnippet = useCallback((saved: Snippet) => {
     setSnippets(items => [saved, ...items.filter(item => item.id !== saved.id)].sort((a, b) => b.updated_at - a.updated_at));
@@ -179,7 +188,7 @@ export function App() {
   const viewerSnippet = narrow ? routeSnippet : selected;
 
   return <>
-    <main id="app" className={`app react-app ${reader ? "reader-mode" : ""} ${routeSnippet ? "viewer-open" : ""}`}>
+    <main id="app" className={`app react-app ${reader ? "reader-mode" : ""} ${routeSnippet ? "viewer-open" : ""}`} aria-hidden={route.view === "library" ? undefined : true}>
       <Library
         user={user!} snippets={filtered} query={query} onQuery={setQuery} searchRef={searchRef}
         selectedId={selectedId} onSelect={setSelectedId} onOpen={snippet => void afterEditorSave(() => openSnippet(snippet))} onNew={() => void afterEditorSave(() => editSnippet(null))}
@@ -187,13 +196,13 @@ export function App() {
         hoveredId={hoveredId} error={error}
       />
       <section className="viewer-pane" aria-label="Snippet viewer">
-        {viewerSnippet ? <Viewer snippet={viewerSnippet} reader={reader} onToggleReader={() => setReader(value => !value)} onBack={() => showLibrary(null)} onCopy={() => void copy(viewerSnippet)} onShare={() => void share(viewerSnippet)} onEdit={() => editSnippet(viewerSnippet)} onDelete={() => void remove(viewerSnippet)} onEditAt={offset => editSnippet(viewerSnippet, true, offset)} /> : <div className="viewer-empty" />}
+        {viewerSnippet ? <Viewer snippet={viewerSnippet} reader={reader} onToggleReader={toggleReader} onBack={() => showLibrary(null)} onCopy={() => void copy(viewerSnippet)} onShare={() => void share(viewerSnippet)} onEdit={() => editSnippet(viewerSnippet, true, viewerSnippet.body.length)} onRename={() => editSnippet(viewerSnippet, true, null, true)} onDelete={() => void remove(viewerSnippet)} onEditAt={offset => editSnippet(viewerSnippet, true, offset)} /> : <div className="viewer-empty" />}
       </section>
     </main>
-    {route.view === "editor" && <Editor key={route.snippetId || "new"} snippet={route.snippetId ? snippets.find(item => item.id === route.snippetId) || null : null} narrow={narrow} initialOffset={editOffset} onSaved={saveSnippet} onClose={saved => showLibrary(saved?.id || null)} registerFlush={flush => { flushEditor.current = flush; }} onCopy={copy} onShare={share} onUnshare={unshare} onDelete={remove} />}
+    {route.view === "editor" && <Editor key={route.snippetId || "new"} snippet={route.snippetId ? snippets.find(item => item.id === route.snippetId) || null : null} narrow={narrow} reader={reader} initialOffset={editOffset} initialRenaming={editTitle} onToggleReader={toggleReader} onSaved={saveSnippet} onClose={saved => showLibrary(saved?.id || null)} registerFlush={flush => { flushEditor.current = flush; }} onCopy={copy} onShare={share} onUnshare={unshare} onDelete={remove} />}
     {route.view === "settings" && <SettingsPanel user={user!} preferences={preferences} setPreferences={setPreferences} snippets={snippets} onClose={() => showLibrary(selectedId)} onDeleted={async () => { setDeleted((await linksawApi.deleted()).snippets); setRoute({ view: "deleted", snippetId: null }); updateLocation({ view: "deleted", snippet: null }); }} notify={notify} />}
     {route.view === "deleted" && <DeletedPanel snippets={deleted} setSnippets={setDeleted} onBack={() => openSettings(false)} onLibraryChanged={() => void refresh()} />}
-    {actionSnippet && <ActionMenu snippet={actionSnippet} point={actionPoint} onClose={() => { setActionSnippet(null); setSelectedId(null); }} onOpen={() => { const url = snippetUrl(actionSnippet); if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onCopy={() => void copy(actionSnippet)} onShare={() => void share(actionSnippet)} onEdit={() => void afterEditorSave(() => editSnippet(actionSnippet))} onDelete={() => void remove(actionSnippet)} />}
+    {actionSnippet && <ActionMenu snippet={actionSnippet} point={actionPoint} onClose={() => { setActionSnippet(null); setSelectedId(null); }} onOpen={() => { const url = snippetUrl(actionSnippet); if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onCopy={() => void copy(actionSnippet)} onShare={() => void share(actionSnippet)} onEdit={() => void afterEditorSave(() => editSnippet(actionSnippet, true, actionSnippet.body.length))} onDelete={() => void remove(actionSnippet)} />}
     {toast && <div className="toast" role="status" aria-live="polite"><span>{toast.message}</span>{toast.action && <button className="toast-action" onClick={toast.onAction}>{toast.action}</button>}</div>}
   </>;
 }
@@ -249,7 +258,7 @@ function Library(props: LibraryProps) {
   </section>;
 }
 
-function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEdit, onDelete, onEditAt }: { snippet: Snippet; reader: boolean; onToggleReader(): void; onBack(): void; onCopy(): void; onShare(): void; onEdit(): void; onDelete(): void; onEditAt(offset: number): void }) {
+function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEdit, onRename, onDelete, onEditAt }: { snippet: Snippet; reader: boolean; onToggleReader(): void; onBack(): void; onCopy(): void; onShare(): void; onEdit(): void; onRename(): void; onDelete(): void; onEditAt(offset: number): void }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const longPress = useRef({ timer: 0, started: 0, x: 0, y: 0, suppressUntil: 0 });
   const selectionInside = () => {
@@ -279,12 +288,12 @@ function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEd
   return <article className="viewer-content">
     <header className="viewer-header">
       <Button label="Back to snippets" className="viewer-back" onClick={onBack}><ChevronLeft /></Button>
-      <Button label={reader ? "Show sidebar" : "Hide sidebar"} className="reader-toggle" onClick={onToggleReader}><PanelLeft /></Button>
-      <button className="preview-title" type="button" aria-label="Edit title" onClick={onEdit}>{snippet.title}</button>
+      <Button label={reader ? "Show sidebar" : "Hide sidebar"} shortcut={isMac ? "⌘\\" : "Ctrl+\\"} className="reader-toggle" onClick={onToggleReader}><PanelLeft /></Button>
+      <button className="preview-title" type="button" aria-label="Edit title" onClick={onRename}>{snippet.title}</button>
       <div className="viewer-actions">
         <Button label="Copy" shortcut={isMac ? "⌘C" : "Ctrl+C"} onClick={onCopy}><Copy /></Button>
-        <Button label="Share" onClick={onShare}><Share2 /></Button>
-        <Button label="Edit" onClick={onEdit}><Edit3 /></Button>
+        <Button label="Share" onClick={onShare}><Share /></Button>
+        <Button label="Edit" onClick={onEdit}><Pencil /></Button>
         <Button label="Delete" className="viewer-delete" onClick={onDelete}><Trash2 /></Button>
       </div>
     </header>
@@ -294,12 +303,12 @@ function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEd
   </article>;
 }
 
-function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlush, onCopy, onShare, onUnshare, onDelete }: { snippet: Snippet | null; narrow: boolean; initialOffset: number | null; onSaved(snippet: Snippet): void; onClose(snippet: Snippet | null): void; registerFlush(flush: (() => Promise<boolean>) | null): void; onCopy(snippet: Snippet): Promise<void>; onShare(snippet: Snippet): Promise<void>; onUnshare(snippet: Snippet): Promise<void>; onDelete(snippet: Snippet): Promise<void> }) {
+function Editor({ snippet, narrow, reader, initialOffset, initialRenaming, onToggleReader, onSaved, onClose, registerFlush, onCopy, onShare, onUnshare, onDelete }: { snippet: Snippet | null; narrow: boolean; reader: boolean; initialOffset: number | null; initialRenaming: boolean; onToggleReader(): void; onSaved(snippet: Snippet): void; onClose(snippet: Snippet | null): void; registerFlush(flush: (() => Promise<boolean>) | null): void; onCopy(snippet: Snippet): Promise<void>; onShare(snippet: Snippet): Promise<void>; onUnshare(snippet: Snippet): Promise<void>; onDelete(snippet: Snippet): Promise<void> }) {
   const [saved, setSaved] = useState(snippet);
   const [title, setTitle] = useState(snippet?.title || "");
   const [body, setBody] = useState(snippet?.body || "");
-  const [editing, setEditing] = useState(!snippet);
-  const [renaming, setRenaming] = useState(false);
+  const [editing, setEditing] = useState(!snippet || !narrow || initialOffset !== null);
+  const [renaming, setRenaming] = useState(initialRenaming);
   const [failure, setFailure] = useState("");
   const [slow, setSlow] = useState(false);
   const [confirmUnshare, setConfirmUnshare] = useState(false);
@@ -341,7 +350,7 @@ function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlus
     const beforeUnload = (event: BeforeUnloadEvent) => { if (snapshot() !== baseline.current) { event.preventDefault(); event.returnValue = ""; } };
     addEventListener("beforeunload", beforeUnload); return () => removeEventListener("beforeunload", beforeUnload);
   }, [title, body]);
-  useEffect(() => { if (editing) requestAnimationFrame(() => { const input = bodyRef.current; if (!input) return; input.focus({ preventScroll: true }); const offset = Math.max(0, Math.min(initialOffset ?? input.value.length, input.value.length)); input.setSelectionRange(offset, offset); }); }, [editing, initialOffset]);
+  useEffect(() => { if (editing && !renaming) requestAnimationFrame(() => { const input = bodyRef.current; if (!input) return; input.focus({ preventScroll: true }); const offset = Math.max(0, Math.min(initialOffset ?? input.value.length, input.value.length)); input.setSelectionRange(offset, offset); }); }, [editing, initialOffset, renaming]);
   useEffect(() => { registerFlush(saveNow); return () => registerFlush(null); }, [registerFlush, saveNow]);
   useEffect(() => {
     if (!snippet || !savedRef.current || snippet.id !== savedRef.current.id || snippet.share_token === savedRef.current.share_token) return;
@@ -390,11 +399,12 @@ function Editor({ snippet, narrow, initialOffset, onSaved, onClose, registerFlus
       <header className="surface-header editor-header">
         <h1 id="editor-heading" className="sr-only">{saved ? "Edit snippet" : "New snippet"}</h1>
         <Button label="Back" className="mobile-back" onClick={() => void close()}><ChevronLeft /></Button>
+        <Button label={reader ? "Show sidebar" : "Hide sidebar"} shortcut={isMac ? "⌘\\" : "Ctrl+\\"} className="reader-toggle" onClick={onToggleReader}><PanelLeft /></Button>
         {renaming ? <input className="editor-name-input" aria-label="Title" placeholder="Title" value={title} autoFocus maxLength={160} onChange={event => setTitle(event.target.value)} onBlur={() => setRenaming(false)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); setRenaming(false); bodyRef.current?.focus(); } if (event.key === "Escape") setRenaming(false); }} /> : <button className="editor-name-action" type="button" aria-label="Rename" title="Rename" onClick={() => setRenaming(true)}>{title}</button>}
         {slow && <span className="editor-status">Saving…</span>}{failure && <span className="editor-status">Couldn’t save · <button className="editor-retry" onClick={() => void saveNow()}>Retry</button></span>}
         <div className="editor-actions">
           <Button label="Copy" onClick={() => saved && void onCopy({ ...saved, body, title })}><Copy /></Button>
-          <Button label="Share" onClick={() => saved && void onShare(saved)} disabled={!saved}><Share2 /></Button>
+          <Button label="Share" onClick={() => saved && void onShare(saved)} disabled={!saved}><Share /></Button>
           <Button label="Undo" onClick={() => void applyHistory("undo")} disabled={!localUndo.current.length && !saved?.can_undo}><Undo2 /></Button>
           <Button label="Redo" onClick={() => void applyHistory("redo")} disabled={!localRedo.current.length && !saved?.can_redo}><Redo2 /></Button>
           <Button label="Delete" className="mobile-delete" onClick={async () => { if (saved) await onDelete(saved); }} disabled={!saved}><Trash2 /></Button>
@@ -426,8 +436,8 @@ function ActionMenu({ snippet, point, onClose, onOpen, onCopy, onShare, onEdit, 
       <div className="snippet-action-list">
         {url && <button role="menuitem" onClick={() => run(onOpen)}><ExternalLink /><span>Open</span></button>}
         <button role="menuitem" onClick={() => run(onCopy)}><Copy /><span>Copy</span></button>
-        <button role="menuitem" onClick={() => run(onShare)}><Share2 /><span>Share</span></button>
-        <button role="menuitem" onClick={() => run(onEdit)}><Edit3 /><span>Edit</span></button>
+        <button role="menuitem" onClick={() => run(onShare)}><Share /><span>Share</span></button>
+        <button role="menuitem" onClick={() => run(onEdit)}><Pencil /><span>Edit</span></button>
         <button role="menuitem" onClick={() => run(onDelete)}><Trash2 /><span>Delete</span></button>
       </div>
     </div>

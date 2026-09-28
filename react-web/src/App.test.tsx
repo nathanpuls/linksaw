@@ -61,4 +61,24 @@ describe("React library interactions", () => {
     await waitFor(() => expect(within(screen.getByRole("region", { name: "Snippet content" })).getByText("Second body")).toBeVisible());
     expect(screen.getByRole("button", { name: "Open Second note in Linksaw" })).toHaveAttribute("aria-current", "true");
   });
+
+  it("enters focused editing in one click and keeps the sidebar toggle in the editor", async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open First note in Linksaw" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit snippet content" }));
+    const editor = await screen.findByRole("textbox", { name: "Snippet text" });
+    await waitFor(() => expect(editor).toHaveFocus());
+    const editorSurface = document.getElementById("editor");
+    expect(editorSurface).not.toBeNull();
+    expect(within(editorSurface!).getByRole("button", { name: "Hide sidebar" })).toBeVisible();
+  });
+
+  it("opens the existing title directly for inline renaming", async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Open First note in Linksaw" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit title" }));
+    const title = await screen.findByRole("textbox", { name: "Title" });
+    await waitFor(() => expect(title).toHaveFocus());
+    expect(title).toHaveValue("First note");
+  });
 });
