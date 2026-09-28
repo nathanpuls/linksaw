@@ -62,7 +62,7 @@ button { color: inherit; }
 .result-main:focus-visible { outline: 1px solid var(--focus); outline-offset: -2px; }
 .result-text { min-width: 0; display: block; overflow: hidden; }
 .result-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 500; }
-.result-row.selected .result-title { font-weight: 600; }
+.result-row.selected .result-title { font-weight: 500; }
 .results:not(.keyboard-navigation):has(.result-row:hover) .result-row.selected:not(:hover) .result-title { font-weight: 500; }
 .result-preview { margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 13px; font-weight: 400; line-height: 1.25; }
 .result-link-text { text-decoration: underline; text-decoration-color: var(--control); text-underline-offset: 2px; }
@@ -300,7 +300,6 @@ select { width: min(260px, 100%); border: 1px solid var(--control); border-radiu
   .preview-body, .content-input { padding: 8px 22px 40px 16px; }
   .results { padding-inline: 5px; }
   .result-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-  .result-row.selected .result-title { font-weight: 500; }
   .settings-content { padding: 28px 22px; }
 }
 

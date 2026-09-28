@@ -111,7 +111,7 @@ test("detail, import, and list polish preserve stable mobile and desktop interac
   assert.match(css, /#editor\.mobile-unified #close-editor, #close-deleted \{ width: 48px; height: 48px; min-width: 48px; flex: 0 0 48px; \}/);
   assert.doesNotMatch(css, /long-press-source|long-press-fading/);
   assert.doesNotMatch(source, /long-press-source|long-press-fading/);
-  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.result-row\.selected \.result-title \{ font-weight: 500; \}/);
+  assert.match(css, /\.result-row\.selected \.result-title \{ font-weight: 500; \}/);
   assert.match(source, /function closeEditorFromControl\(\) \{\s*\$\("close-editor"\)\.blur\(\)/);
   assert.match(source, /function closePreview\(\) \{\s*\$\("close-preview"\)\.blur\(\)/);
   assert.match(css, /@media \(hover: none\), \(pointer: coarse\) \{[\s\S]*?\.sidebar-footer \.identity-logo-link:hover \{ background: transparent; \}/);
