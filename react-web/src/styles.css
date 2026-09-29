@@ -6,6 +6,8 @@
 .react-error p { margin: 0; }
 .react-error a { color: var(--ink); }
 .result-title, .result-preview { display: block; }
+.react-app .toolbar { gap: 0; }
+.react-app .search-wrap { padding-right: 8px; cursor: text; }
 .result-markdown, .result-markdown * { display: inline; margin: 0; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; line-height: inherit; white-space: inherit; }
 .result-markdown { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .result-markdown br { display: none; }
@@ -40,8 +42,8 @@
 .react-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 
 @media (max-width: 900px) {
-  .react-app, .react-app .list-pane { overscroll-behavior: none; }
-  .react-app .results { overscroll-behavior: contain; touch-action: pan-y; }
+  #root, .react-app, .react-app .list-pane { max-height: var(--mobile-viewport-height, 100dvh); overflow: hidden; overscroll-behavior: none; }
+  .react-app .results { overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
   .react-app .viewer-pane { display: none; }
   .react-app.viewer-open .viewer-pane { display: block; }
   .react-app.viewer-open .list-pane { display: none; }
@@ -65,6 +67,13 @@
 }
 
 @media (min-width: 701px) and (max-width: 900px) {
+  .react-menu-backdrop { place-items: center; }
+  .react-action-menu:not(.desktop-context) { margin: 12px; }
+}
+
+@media (hover: none) and (pointer: coarse) and (min-width: 701px) {
+  .react-app, .react-app .list-pane { height: 100dvh; max-height: 100dvh; overflow: hidden; overscroll-behavior: none; }
+  .react-app .results { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
   .react-menu-backdrop { place-items: center; }
   .react-action-menu:not(.desktop-context) { margin: 12px; }
 }

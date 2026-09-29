@@ -294,10 +294,14 @@ function Library(props: LibraryProps) {
     if (event && event.type === "pointermove" && Math.hypot(event.clientX - info.x, event.clientY - info.y) <= 10) return;
     clearTimeout(info.timer); longPress.current = null;
   };
+  const activateSearch = () => {
+    flushSync(() => setSearchActive(true));
+    props.searchRef.current?.focus();
+  };
   return <section className={`list-pane ${searchActive ? "search-active" : ""}`} aria-label="Snippet library">
     <header className="toolbar">
-      <button className="mobile-search-trigger" type="button" aria-label="Search snippets" onClick={() => { setSearchActive(true); requestAnimationFrame(() => props.searchRef.current?.focus()); }}><Search aria-hidden size={18} /><span>Search</span></button>
-      <div className="search-wrap">
+      <button className="mobile-search-trigger" type="button" aria-label="Search snippets" onClick={activateSearch}><Search aria-hidden size={18} /><span>Search</span></button>
+      <div className="search-wrap" onPointerDown={event => { if (!(event.target as Element).closest(".search-clear")) props.searchRef.current?.focus(); }}>
         <button className="search-icon" type="button" tabIndex={-1} aria-label="Focus search" onClick={() => props.searchRef.current?.focus()}><Search /></button>
         <input id="search" ref={props.searchRef} type="search" placeholder="Search" autoComplete="off" value={props.query} onChange={event => props.onQuery(event.target.value)} onFocus={() => setSearchActive(true)} onBlur={() => { if (!props.query) setSearchActive(false); }} />
         {props.query && <button className="search-clear" type="button" aria-label="Clear search" onPointerDown={event => event.preventDefault()} onClick={() => { props.onQuery(""); props.searchRef.current?.focus(); }}><X /></button>}

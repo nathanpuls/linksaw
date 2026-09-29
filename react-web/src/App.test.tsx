@@ -55,6 +55,17 @@ describe("React library interactions", () => {
     expect(screen.queryByRole("button", { name: "Open First note in Linksaw" })).not.toBeInTheDocument();
   });
 
+  it("focuses search from both the mobile trigger and the full search hit area", async () => {
+    render(<App />);
+    const search = await screen.findByRole("searchbox");
+    fireEvent.click(screen.getByRole("button", { name: "Search snippets" }));
+    expect(search).toHaveFocus();
+    expect(search.closest(".list-pane")).toHaveClass("search-active");
+    search.blur();
+    fireEvent.pointerDown(search.closest(".search-wrap")!);
+    expect(search).toHaveFocus();
+  });
+
   it("opens a neutral Lucide action menu on right click", async () => {
     render(<App />);
     const row = await screen.findByRole("button", { name: "Open Linksaw in Linksaw" });

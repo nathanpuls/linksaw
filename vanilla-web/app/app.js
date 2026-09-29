@@ -878,8 +878,10 @@ async function load() {
 }
 
 let syncInFlight = false;
-async function syncFromServer() {
-  if (syncInFlight || document.hidden || !state.user) return;
+let lastFullSyncAt = Date.now();
+async function syncFromServer(force = false) {
+  if (syncInFlight || document.hidden || !state.user || (!force && Date.now() - lastFullSyncAt < 600000)) return;
+  lastFullSyncAt = Date.now();
   syncInFlight = true;
   try {
     const { snippets } = await api("/snippets");
@@ -1511,13 +1513,11 @@ addEventListener("beforeunload", event => {
 });
 addEventListener("online", () => {
   if (!$('editor').hidden && editorSnapshot() !== editorBaseline) void saveEditorNow();
-  else void syncFromServer();
+  else void syncFromServer(true);
 });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) void syncFromServer(); });
-// The vanilla client remains available during the React migration, but it no
-// longer scans the complete library every few seconds. Returning to the tab
-// still refreshes immediately; React owns the near-real-time change feed.
-setInterval(() => { if (!document.hidden) void syncFromServer(); }, 600000);
+// The frozen vanilla client loads once and only checks again after a sufficiently
+// long absence or reconnection. React owns ongoing near-real-time sync.
 document.addEventListener("keydown", event => {
   const modifier = event.metaKey || event.ctrlKey;
   const saveShortcut = event.key.toLowerCase() === "s" && !event.altKey && !event.shiftKey
