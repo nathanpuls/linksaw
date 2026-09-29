@@ -7,8 +7,8 @@ import {
   type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState,
 } from "react";
 import { flushSync } from "react-dom";
-import { linksawApi, ApiError } from "./api";
-import { compactMarkdownHtml, derivedLabel, markdownHtml, snippetLabel, snippetText, snippetUrl } from "./content";
+import { linksawApi, ApiError, snippetEventsUrl } from "./api";
+import { compactMarkdownHtml, derivedLabel, markdownHtml, searchExcerpt, searchScore, snippetLabel, snippetText, snippetUrl } from "./content";
 import { sourceOffsetFromRenderedPoint } from "../../web/app/markdown.js";
 import type { Snippet, Theme, Toast, User, View } from "./types";
 import { detectPastedSnippets, parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "../../web/app/transfers.js";
@@ -67,10 +67,17 @@ export function App() {
   const hoveredId = useRef<string | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const flushEditor = useRef<(() => Promise<boolean>) | null>(null);
+  const changeCursor = useRef(0);
+  const changeRequest = useRef<Promise<void> | null>(null);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
-    return snippets.filter(snippet => !term || `${snippet.title}\n${snippet.body}`.toLocaleLowerCase().includes(term));
+    if (!term) return snippets;
+    return snippets
+      .map((snippet, index) => ({ snippet, index, score: searchScore(snippet, term) }))
+      .filter(result => Number.isFinite(result.score))
+      .sort((a, b) => a.score - b.score || a.index - b.index)
+      .map(result => result.snippet);
   }, [query, snippets]);
   const selected = snippets.find(snippet => snippet.id === selectedId) || null;
 
@@ -85,19 +92,11 @@ export function App() {
       return next;
     });
   }, []);
-  const refresh = useCallback(async () => {
-    const [, library] = await Promise.all([Promise.resolve(), linksawApi.session().then(([me, data, prefs]) => {
-      setUser(me.user); setPreferences(prefs); return data;
-    })]);
-    setSnippets(library.snippets);
-    return library.snippets;
-  }, []);
-
   useEffect(() => {
     let active = true;
     linksawApi.session().then(([me, library, prefs]) => {
       if (!active) return;
-      setUser(me.user); setSnippets(library.snippets); setPreferences(prefs);
+      changeCursor.current = library.cursor || 0; setUser(me.user); setSnippets(library.snippets); setPreferences(prefs);
       const initial = routeFromLocation();
       setRoute(initial); setSelectedId(initial.snippetId);
     }).catch(reason => { if (active) setError(reason.message); }).finally(() => { if (active) setLoading(false); });
@@ -109,6 +108,57 @@ export function App() {
   }, []);
   useEffect(() => { sessionStorage.setItem("linksaw-react-search", query); }, [query]);
   useEffect(() => { if (!toast) return; const escape = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") setToast(null); }; addEventListener("keydown", escape); return () => removeEventListener("keydown", escape); }, [toast]);
+  useEffect(() => {
+    const syncViewport = () => {
+      const viewport = window.visualViewport;
+      document.documentElement.style.setProperty("--mobile-viewport-height", `${Math.round(viewport?.height || innerHeight)}px`);
+      document.documentElement.style.setProperty("--mobile-viewport-top", `${Math.round(viewport?.offsetTop || 0)}px`);
+    };
+    syncViewport(); window.visualViewport?.addEventListener("resize", syncViewport); window.visualViewport?.addEventListener("scroll", syncViewport);
+    return () => { window.visualViewport?.removeEventListener("resize", syncViewport); window.visualViewport?.removeEventListener("scroll", syncViewport); };
+  }, []);
+
+  const pullChanges = useCallback(async () => {
+    if (changeRequest.current) return changeRequest.current;
+    const request = (async () => {
+      let more = false;
+      do {
+        const page = await linksawApi.changes(changeCursor.current);
+        changeCursor.current = page.cursor;
+        more = page.more;
+        if (page.changes.length) {
+          setSnippets(items => {
+            const next = new Map(items.map(item => [item.id, item]));
+            for (const change of page.changes) {
+              if (change.action === "delete" || !change.snippet) next.delete(change.snippetId);
+              else next.set(change.snippet.id, change.snippet);
+            }
+            return [...next.values()].sort((a, b) => b.updated_at - a.updated_at || b.id.localeCompare(a.id));
+          });
+        }
+      } while (more);
+    })().finally(() => { changeRequest.current = null; });
+    changeRequest.current = request;
+    return request;
+  }, []);
+
+  useEffect(() => {
+    if (!user || typeof WebSocket === "undefined") return;
+    let active = true; let socket: WebSocket | null = null; let retryTimer: number | undefined; let retryDelay = 1000;
+    const connect = () => {
+      if (!active || document.hidden || socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;
+      socket = new WebSocket(snippetEventsUrl());
+      socket.addEventListener("open", () => { retryDelay = 1000; void pullChanges(); });
+      socket.addEventListener("message", () => { void pullChanges(); });
+      socket.addEventListener("close", () => {
+        socket = null; if (!active || document.hidden) return;
+        retryTimer = window.setTimeout(connect, retryDelay); retryDelay = Math.min(30_000, retryDelay * 2);
+      });
+    };
+    const resume = () => { if (!document.hidden) { void pullChanges(); connect(); } else socket?.close(1000, "hidden"); };
+    connect(); addEventListener("online", resume); document.addEventListener("visibilitychange", resume);
+    return () => { active = false; clearTimeout(retryTimer); removeEventListener("online", resume); document.removeEventListener("visibilitychange", resume); socket?.close(1000, "closed"); };
+  }, [pullChanges, user?.id]);
 
   const showLibrary = useCallback((snippetId: string | null = null, push = true) => {
     setRoute({ view: "library", snippetId }); setSelectedId(snippetId); updateLocation({ view: null, snippet: snippetId }, push);
@@ -156,10 +206,11 @@ export function App() {
     const next = remaining[Math.min(Math.max(0, currentIndex), remaining.length - 1)] || null;
     showLibrary(next?.id || null, false);
     notify({ message: "Snippet deleted ·", action: "Undo", onAction: async () => {
-      await linksawApi.restore(removed); const nextItems = await refresh(); setSelectedId(removed.id);
-      if (nextItems.some(item => item.id === removed.id)) showLibrary(removed.id, false); setToast(null);
+      await linksawApi.restore(removed);
+      setSnippets(items => [removed, ...items.filter(item => item.id !== removed.id)].sort((a, b) => b.updated_at - a.updated_at));
+      showLibrary(removed.id, false); setToast(null);
     } }, 7000);
-  }, [filtered, notify, refresh, showLibrary]);
+  }, [filtered, notify, showLibrary]);
 
   const useItem = useCallback(async (snippet: Snippet) => {
     const url = snippetUrl(snippet); if (url) window.open(url, "_blank", "noopener,noreferrer"); else await copy(snippet);
@@ -216,7 +267,7 @@ export function App() {
     </main>
     {route.view === "editor" && <Editor key={route.snippetId || "new"} snippet={route.snippetId ? snippets.find(item => item.id === route.snippetId) || null : null} narrow={narrow} reader={reader} initialOffset={editOffset} initialRenaming={editTitle} onToggleReader={toggleReader} onSaved={saveSnippet} onClose={saved => showLibrary(saved?.id || null)} registerFlush={flush => { flushEditor.current = flush; }} onCopy={copy} onShare={share} onUnshare={unshare} onDelete={remove} />}
     {route.view === "settings" && <SettingsPanel user={user!} preferences={preferences} setPreferences={setPreferences} snippets={snippets} onClose={() => showLibrary(selectedId)} onDeleted={async () => { setDeleted((await linksawApi.deleted()).snippets); setRoute({ view: "deleted", snippetId: null }); updateLocation({ view: "deleted", snippet: null }); }} notify={notify} />}
-    {route.view === "deleted" && <DeletedPanel snippets={deleted} setSnippets={setDeleted} onBack={() => openSettings(false)} onLibraryChanged={() => void refresh()} />}
+    {route.view === "deleted" && <DeletedPanel snippets={deleted} setSnippets={setDeleted} onBack={() => openSettings(false)} onRestored={saveSnippet} />}
     {actionSnippet && <ActionMenu snippet={actionSnippet} point={actionPoint} onClose={() => { setActionSnippet(null); setSelectedId(null); }} onOpen={() => { const url = snippetUrl(actionSnippet); if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onCopy={() => void copy(actionSnippet)} onShare={() => void share(actionSnippet)} onEdit={() => void afterEditorSave(() => editSnippet(actionSnippet, true, actionPoint === null && isLongSnippet(actionSnippet) ? 0 : actionSnippet.body.length))} onDelete={() => void remove(actionSnippet)} />}
     {toast && <div className="toast" role="status" aria-live="polite"><span>{toast.message}</span>{toast.action && <button className="toast-action" onClick={toast.onAction}>{toast.action}</button>}</div>}
   </>;
@@ -256,12 +307,13 @@ function Library(props: LibraryProps) {
     <div className="status" role="status">{props.error}</div>
     <section className="results" role="list" aria-label="Snippets">
       {!props.snippets.length ? <div className="empty">{props.query.trim() ? "No matches" : "No snippets yet"}</div> : props.snippets.map(snippet => {
-        const url = snippetUrl(snippet); const titled = Boolean(snippet.title.trim()); const preview = titled && Boolean(snippet.body.trim());
+        const url = snippetUrl(snippet); const titled = Boolean(snippet.title.trim()); const excerpt = searchExcerpt(snippet.body, props.query);
+        const preview = Boolean(snippet.body.trim()) && (titled || Boolean(props.query.trim() && excerpt.trim() !== derivedLabel(snippet.body)));
         return <article key={snippet.id} className={`result-row ${url ? "has-url" : ""} ${preview ? "has-preview" : ""} ${props.selectedId === snippet.id ? "selected" : ""}`} role="listitem" onPointerEnter={() => { props.hoveredId.current = snippet.id; }} onPointerLeave={() => { if (props.hoveredId.current === snippet.id) props.hoveredId.current = null; }}>
           <button className="result-main" type="button" aria-label={`Open ${snippetLabel(snippet)} in Linksaw`} aria-current={props.selectedId === snippet.id} onFocus={() => props.onSelect(snippet.id)} onClick={() => { if (Date.now() >= suppressClickUntil.current) props.onOpen(snippet); }} onContextMenu={event => { event.preventDefault(); if (Date.now() >= suppressClickUntil.current) { props.onSelect(snippet.id); props.onContext(snippet, { x: event.clientX, y: event.clientY }); } }} onPointerDown={event => startLongPress(event, snippet)} onPointerMove={cancelLongPress} onPointerUp={cancelLongPress} onPointerCancel={cancelLongPress}>
             <span className="result-text">
               {titled ? <span className="result-title">{snippet.title}</span> : <span className={`result-title result-markdown ${url ? "result-link-text" : ""}`} dangerouslySetInnerHTML={compactMarkdownHtml(derivedLabel(snippet.body))} />}
-              {preview && <span className={`result-preview result-markdown ${url ? "result-link-text" : ""}`} dangerouslySetInnerHTML={compactMarkdownHtml(snippet.body)} />}
+              {preview && <span className={`result-preview result-markdown ${url ? "result-link-text" : ""}`} dangerouslySetInnerHTML={compactMarkdownHtml(excerpt)} />}
             </span>
           </button>
         </article>;
@@ -360,7 +412,7 @@ function Editor({ snippet, narrow, reader, initialOffset, initialRenaming, onTog
       try {
         const result: { snippet?: Snippet; id?: string } = saved ? await linksawApi.update(saved, value) : await linksawApi.create({ ...value, importId: createId.current });
         let next: Snippet | undefined = result.snippet;
-        if (!next && result.id) next = (await linksawApi.session())[1].snippets.find(item => item.id === result.id);
+        if (!next && result.id) next = (await linksawApi.get(result.id)).snippet;
         if (!next) throw new Error("Saved snippet could not be loaded");
         savedRef.current = next; setSaved(next); onSaved(next); baseline.current = JSON.stringify(value); savedVersion.current = requestVersion; failureRef.current = ""; setFailure(""); return true;
       } catch (reason) { const message = (reason as Error).message || "Couldn’t save"; failureRef.current = message; setFailure(message); return false; }
@@ -505,7 +557,7 @@ function SettingsPanel({ user, preferences, setPreferences, snippets, onClose, o
   </section>;
 }
 
-function DeletedPanel({ snippets, setSnippets, onBack, onLibraryChanged }: { snippets: Snippet[]; setSnippets(value: Snippet[]): void; onBack(): void; onLibraryChanged(): void }) {
+function DeletedPanel({ snippets, setSnippets, onBack, onRestored }: { snippets: Snippet[]; setSnippets(value: Snippet[]): void; onBack(): void; onRestored(snippet: Snippet): void }) {
   const [status, setStatus] = useState("");
-  return <section className="surface"><div className="settings-inner"><header className="surface-header"><Button label="Back to Settings" onClick={onBack}><ChevronLeft /></Button><h1>Recently deleted</h1></header><div className="deleted-panel-content"><p className="field-help">Deleted snippets remain available for 30 days.</p><div className="deleted-snippet-list" role="list">{!snippets.length ? <p className="deleted-snippet-empty">No recently deleted snippets.</p> : snippets.map(snippet => <div className="deleted-snippet-row" role="listitem" key={snippet.id}><span className="deleted-snippet-name">{snippetLabel(snippet)}</span><button className="deleted-snippet-action" onClick={async () => { await linksawApi.restoreDeleted(snippet); setSnippets(snippets.filter(item => item.id !== snippet.id)); onLibraryChanged(); setStatus("Restored"); }}>Restore</button><button className="deleted-snippet-action" onClick={async () => { await linksawApi.deleteForever(snippet); setSnippets(snippets.filter(item => item.id !== snippet.id)); setStatus("Permanently deleted"); }}>Delete permanently</button></div>)}</div><p className="field-help" role="status">{status}</p></div></div></section>;
+  return <section className="surface"><div className="settings-inner"><header className="surface-header"><Button label="Back to Settings" onClick={onBack}><ChevronLeft /></Button><h1>Recently deleted</h1></header><div className="deleted-panel-content"><p className="field-help">Deleted snippets remain available for 30 days.</p><div className="deleted-snippet-list" role="list">{!snippets.length ? <p className="deleted-snippet-empty">No recently deleted snippets.</p> : snippets.map(snippet => <div className="deleted-snippet-row" role="listitem" key={snippet.id}><span className="deleted-snippet-name">{snippetLabel(snippet)}</span><button className="deleted-snippet-action" onClick={async () => { const restored = await linksawApi.restoreDeleted(snippet); setSnippets(snippets.filter(item => item.id !== snippet.id)); onRestored(restored.snippet); setStatus("Restored"); }}>Restore</button><button className="deleted-snippet-action" onClick={async () => { await linksawApi.deleteForever(snippet); setSnippets(snippets.filter(item => item.id !== snippet.id)); setStatus("Permanently deleted"); }}>Delete permanently</button></div>)}</div><p className="field-help" role="status">{status}</p></div></div></section>;
 }

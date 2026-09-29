@@ -64,6 +64,14 @@ directory = "./web"
 binding = "ASSETS"
 run_worker_first = true
 
+[[durable_objects.bindings]]
+name = "SNIPPET_SYNC"
+class_name = "SnippetSync"
+
+[[migrations]]
+tag = "snippet-sync-v1"
+new_sqlite_classes = ["SnippetSync"]
+
 [vars]
 PUBLIC_BASE_URL = "https://snippets-api.linksaw.com"
 

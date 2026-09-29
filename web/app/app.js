@@ -1514,7 +1514,10 @@ addEventListener("online", () => {
   else void syncFromServer();
 });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) void syncFromServer(); });
-setInterval(() => { void syncFromServer(); }, 3000);
+// The vanilla client remains available during the React migration, but it no
+// longer scans the complete library every few seconds. Returning to the tab
+// still refreshes immediately; React owns the near-real-time change feed.
+setInterval(() => { if (!document.hidden) void syncFromServer(); }, 600000);
 document.addEventListener("keydown", event => {
   const modifier = event.metaKey || event.ctrlKey;
   const saveShortcut = event.key.toLowerCase() === "s" && !event.altKey && !event.shiftKey

@@ -217,7 +217,9 @@ async function act(item) {
   } else { await copyText(expanded.text); copiedToast(); }
 }
 
-const STALE_AFTER_MS = 2_500;
+// The legacy desktop client intentionally refreshes conservatively while the
+// React client owns near-real-time, change-based synchronization.
+const STALE_AFTER_MS = 600_000;
 let refreshPromise = null, refreshAgain = false, refreshSlowTimer = null;
 function snippetFingerprint(snippets) {
   return JSON.stringify(snippets.map(snippet => [
@@ -826,5 +828,5 @@ async function boot() {
   try { await restoreSession(); recoverLocalEditorDraft(); } catch (error) { status(errorMessage(error)); }
   render();
 }
-setInterval(() => { void refreshIfStale(); }, 3000);
+setInterval(() => { if (!document.hidden) void refreshIfStale(); }, 15000);
 boot();

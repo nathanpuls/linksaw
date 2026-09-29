@@ -5,6 +5,7 @@ const allowedOrigins = new Set(["https://linksaw.com", "https://react-preview.li
 const DELETED_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 const profileSchemaReady = new WeakMap();
 const apiKeySchemaReady = new WeakMap();
+const changeSchemaReady = new WeakMap();
 const previewSamples = [
   { title: "Article", body: "https://example.com/article" },
   { title: "White House", body: "1600 Pennsylvania Avenue NW, Washington, DC 20500" },
@@ -49,6 +50,15 @@ async function ensureApiKeySchema(env) {
     apiKeySchemaReady.set(env.DB, ready);
   }
   await apiKeySchemaReady.get(env.DB);
+}
+async function ensureChangeSchema(env) {
+  if (!changeSchemaReady.has(env.DB)) {
+    const ready = Promise.resolve()
+      .then(() => env.DB.prepare("CREATE TABLE IF NOT EXISTS snippet_changes (sequence INTEGER PRIMARY KEY AUTOINCREMENT, owner_id TEXT NOT NULL, snippet_id TEXT NOT NULL, action TEXT NOT NULL CHECK (action IN ('upsert', 'delete')), changed_at INTEGER NOT NULL, FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE)").run())
+      .then(() => { const statement = env.DB.prepare("CREATE INDEX IF NOT EXISTS snippet_changes_owner_sequence ON snippet_changes(owner_id, sequence)"); return typeof statement.run === "function" ? statement.run() : null; });
+    changeSchemaReady.set(env.DB, ready);
+  }
+  await changeSchemaReady.get(env.DB);
 }
 function responseHeaders(request, extra = {}) {
   const origin = request.headers.get("Origin");
@@ -118,6 +128,46 @@ async function storedSnippet(env, userId, snippetId) {
   return row ? { ...row, can_undo: Boolean(row.can_undo), can_redo: Boolean(row.can_redo), details: [] } : null;
 }
 
+async function latestChangeSequence(env, userId) {
+  const row = await env.DB.prepare("SELECT sequence FROM snippet_changes WHERE owner_id = ? ORDER BY sequence DESC LIMIT 1")
+    .bind(userId).first();
+  return Number(row?.sequence || 0);
+}
+
+function snippetChangeStatement(env, userId, snippetId, action, timestamp = nowSeconds()) {
+  return env.DB.prepare("INSERT INTO snippet_changes(owner_id, snippet_id, action, changed_at) VALUES (?, ?, ?, ?)")
+    .bind(userId, snippetId, action, timestamp);
+}
+
+async function listSnippetChanges(env, userId, after) {
+  const { results } = await env.DB.prepare("SELECT snippet_changes.sequence, snippet_changes.snippet_id, snippet_changes.action, snippets.id, snippets.title, snippets.body, snippets.created_at, snippets.updated_at, snippets.version, snippet_shares.token AS share_token, CASE WHEN snippets.id IS NULL THEN 0 ELSE EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version < snippets.version) END AS can_undo, CASE WHEN snippets.id IS NULL THEN 0 ELSE EXISTS(SELECT 1 FROM snippet_revisions WHERE snippet_revisions.snippet_id = snippets.id AND snippet_revisions.version > snippets.version) END AS can_redo FROM snippet_changes LEFT JOIN snippets ON snippets.id = snippet_changes.snippet_id AND snippets.owner_id = snippet_changes.owner_id LEFT JOIN snippet_shares ON snippet_shares.snippet_id = snippets.id WHERE snippet_changes.owner_id = ? AND snippet_changes.sequence > ? ORDER BY snippet_changes.sequence ASC LIMIT 201")
+    .bind(userId, after).all();
+  const more = results.length > 200;
+  const page = results.slice(0, 200);
+  return {
+    cursor: page.length ? Number(page.at(-1).sequence) : after,
+    more,
+    changes: page.map(row => ({
+      sequence: Number(row.sequence),
+      snippetId: row.snippet_id,
+      action: row.action,
+      snippet: row.action === "upsert" && row.id ? {
+        id: row.id, title: row.title, body: row.body, created_at: row.created_at, updated_at: row.updated_at,
+        version: row.version, share_token: row.share_token, can_undo: Boolean(row.can_undo), can_redo: Boolean(row.can_redo), details: [],
+      } : null,
+    })),
+  };
+}
+
+async function publishSnippetChange(env, userId) {
+  if (!env.SNIPPET_SYNC) return;
+  try {
+    await env.SNIPPET_SYNC.getByName(userId).fetch("https://linksaw-sync/change", { method: "POST" });
+  } catch (error) {
+    console.error("Could not publish snippet change", error);
+  }
+}
+
 async function deletedSnippet(env, userId, snippetId) {
   return env.DB.prepare("SELECT id, title, body, created_at, updated_at, version, share_token, deleted_at FROM deleted_snippets WHERE id = ? AND owner_id = ?")
     .bind(snippetId, userId).first();
@@ -136,6 +186,7 @@ async function restoreStoredDeletion(env, userId, deleted) {
     statements.push(env.DB.prepare("INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)")
       .bind(deleted.share_token, deleted.id, userId, deleted.created_at));
   }
+  statements.push(snippetChangeStatement(env, userId, deleted.id, "upsert"));
   statements.push(env.DB.prepare("DELETE FROM deleted_snippets WHERE id = ? AND owner_id = ?").bind(deleted.id, userId));
   await env.DB.batch(statements);
   return true;
@@ -390,6 +441,12 @@ export async function handle(request, env) {
     return fail(request, "Request origin is not allowed", 403);
   }
   const user = session.user;
+  if (env.SNIPPET_SYNC) await ensureChangeSchema(env);
+  if (url.pathname === "/snippet-events" && request.method === "GET") {
+    if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") return fail(request, "WebSocket upgrade required", 426);
+    if (!env.SNIPPET_SYNC) return fail(request, "Live sync is not configured", 503);
+    return env.SNIPPET_SYNC.getByName(user.id).fetch(request);
+  }
   if (url.pathname === "/me" && request.method === "GET") return json(request, { user });
   if (url.pathname === "/preferences" && request.method === "GET") {
     return json(request, { autocompleteTrigger: await autocompleteTrigger(env, user.id) });
@@ -429,7 +486,15 @@ export async function handle(request, env) {
     await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(session.tokenHash).run();
     return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain, cookieName) } : {});
   }
-  if (url.pathname === "/snippets" && request.method === "GET") return json(request, { snippets: await listSnippets(env, user.id) });
+  if (url.pathname === "/snippets" && request.method === "GET") {
+    const [snippets, cursor] = await Promise.all([listSnippets(env, user.id), latestChangeSequence(env, user.id)]);
+    return json(request, { snippets, cursor });
+  }
+  if (url.pathname === "/snippet-changes" && request.method === "GET") {
+    const rawAfter = url.searchParams.get("after") || "0";
+    if (!/^\d+$/.test(rawAfter)) return fail(request, "Invalid change cursor");
+    return json(request, await listSnippetChanges(env, user.id, Number(rawAfter)));
+  }
   if (url.pathname === "/deleted-snippets" && request.method === "GET") {
     await env.DB.prepare("DELETE FROM deleted_snippets WHERE owner_id = ? AND deleted_at < ?")
       .bind(user.id, nowSeconds() - DELETED_RETENTION_SECONDS).run();
@@ -442,6 +507,7 @@ export async function handle(request, env) {
     const deleted = await deletedSnippet(env, user.id, deletedMatch[1]);
     if (!deleted) return fail(request, "Deleted snippet not found", 404);
     if (!await restoreStoredDeletion(env, user.id, deleted)) return fail(request, "Snippet already exists", 409);
+    await publishSnippetChange(env, user.id);
     return json(request, { ok: true, snippet: await storedSnippet(env, user.id, deleted.id) });
   }
   if (deletedMatch && request.method === "DELETE" && !deletedMatch[2]) {
@@ -468,7 +534,9 @@ export async function handle(request, env) {
     await env.DB.batch([
       env.DB.prepare("INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, 0)").bind(id, user.id, value.title, value.body, timestamp, timestamp),
       env.DB.prepare("INSERT INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, 0, ?, ?, ?)").bind(id, user.id, value.title, value.body, timestamp),
+      snippetChangeStatement(env, user.id, id, "upsert", timestamp),
     ]);
+    await publishSnippetChange(env, user.id);
     return json(request, { id, snippet: { id, title: value.title, body: value.body, created_at: timestamp, updated_at: timestamp, version: 0, share_token: null, can_undo: false, can_redo: false, details: [] } }, 201);
   }
   const shareMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/share$/);
@@ -482,10 +550,16 @@ export async function handle(request, env) {
       share = await env.DB.prepare("SELECT token FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).first();
     }
     if (!share) return fail(request, "Share link could not be created", 500);
+    await snippetChangeStatement(env, user.id, shareMatch[1], "upsert").run();
+    await publishSnippetChange(env, user.id);
     return json(request, { token: share.token, url: `${configuredOrigin}/s/${share.token}` });
   }
   if (shareMatch && request.method === "DELETE") {
-    await env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id).run();
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(shareMatch[1], user.id),
+      snippetChangeStatement(env, user.id, shareMatch[1], "upsert"),
+    ]);
+    await publishSnippetChange(env, user.id);
     return json(request, { ok: true });
   }
   const restoreMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/restore$/);
@@ -493,6 +567,7 @@ export async function handle(request, env) {
     const storedDeletion = await deletedSnippet(env, user.id, restoreMatch[1]);
     if (storedDeletion) {
       if (!await restoreStoredDeletion(env, user.id, storedDeletion)) return fail(request, "Snippet already exists", 409);
+      await publishSnippetChange(env, user.id);
       return json(request, { ok: true });
     }
     const input = await bodyJson(request);
@@ -513,7 +588,9 @@ export async function handle(request, env) {
       statements.push(env.DB.prepare("INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)")
         .bind(input.share_token, input.id, user.id, input.created_at));
     }
+    statements.push(snippetChangeStatement(env, user.id, input.id, "upsert"));
     await env.DB.batch(statements);
+    await publishSnippetChange(env, user.id);
     return json(request, { ok: true });
   }
   const revisionMatch = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})\/revisions\/(undo|redo)$/);
@@ -527,11 +604,20 @@ export async function handle(request, env) {
     const target = await env.DB.prepare(`SELECT version, title, body FROM snippet_revisions WHERE snippet_id = ? AND owner_id = ? AND version ${comparison} ? ORDER BY version ${order} LIMIT 1`)
       .bind(current.id, user.id, current.version).first();
     if (!target) return json(request, { snippet: await storedSnippet(env, user.id, current.id) });
-    await env.DB.prepare("UPDATE snippets SET title = ?, body = ?, version = ?, updated_at = ? WHERE id = ? AND owner_id = ?")
-      .bind(target.title, target.body, target.version, nowSeconds(), current.id, user.id).run();
+    const timestamp = nowSeconds();
+    await env.DB.batch([
+      env.DB.prepare("UPDATE snippets SET title = ?, body = ?, version = ?, updated_at = ? WHERE id = ? AND owner_id = ?")
+        .bind(target.title, target.body, target.version, timestamp, current.id, user.id),
+      snippetChangeStatement(env, user.id, current.id, "upsert", timestamp),
+    ]);
+    await publishSnippetChange(env, user.id);
     return json(request, { snippet: await storedSnippet(env, user.id, current.id) });
   }
   const match = url.pathname.match(/^\/snippets\/([a-f0-9-]{36})$/);
+  if (match && request.method === "GET") {
+    const snippet = await storedSnippet(env, user.id, match[1]);
+    return snippet ? json(request, { snippet }) : fail(request, "Snippet not found", 404);
+  }
   if (match && request.method === "PUT") {
     const existing = await env.DB.prepare("SELECT id, title, body, version FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id).first();
     if (!existing) return fail(request, "Snippet not found", 404);
@@ -551,7 +637,9 @@ export async function handle(request, env) {
       env.DB.prepare("DELETE FROM snippet_revisions WHERE snippet_id = ? AND owner_id = ? AND version > ?").bind(existing.id, user.id, existing.version),
       env.DB.prepare("INSERT INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(existing.id, user.id, nextVersion, value.title, value.body, timestamp),
       env.DB.prepare("DELETE FROM details WHERE snippet_id = ?").bind(match[1]),
+      snippetChangeStatement(env, user.id, existing.id, "upsert", timestamp),
     ]);
+    await publishSnippetChange(env, user.id);
     return json(request, { snippet: await storedSnippet(env, user.id, existing.id) });
   }
   if (match && request.method === "DELETE") {
@@ -564,10 +652,42 @@ export async function handle(request, env) {
       env.DB.prepare("DELETE FROM details WHERE snippet_id = ?").bind(match[1]),
       env.DB.prepare("DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?").bind(match[1], user.id),
       env.DB.prepare("DELETE FROM snippets WHERE id = ? AND owner_id = ?").bind(match[1], user.id),
+      snippetChangeStatement(env, user.id, deleted.id, "delete"),
     ]);
+    await publishSnippetChange(env, user.id);
     return json(request, { ok: true, deleted });
   }
   return fail(request, "Not found", 404);
+}
+
+export class SnippetSync {
+  constructor(state) {
+    this.state = state;
+  }
+
+  async fetch(request) {
+    if (request.method === "POST") {
+      for (const socket of this.state.getWebSockets()) {
+        try { socket.send("change"); } catch { /* The runtime removes disconnected sockets. */ }
+      }
+      return new Response(null, { status: 204 });
+    }
+    if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
+      return new Response("WebSocket upgrade required", { status: 426 });
+    }
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
+    this.state.acceptWebSocket(server);
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  webSocketMessage(socket, message) {
+    if (message === "ping") socket.send("pong");
+  }
+
+  webSocketClose(socket, code, reason) {
+    socket.close(code, reason);
+  }
 }
 
 export default { async fetch(request, env) {

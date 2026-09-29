@@ -437,6 +437,7 @@ test('snippet deletion returns the exact stored record needed for undo', async (
     'DELETE FROM details WHERE snippet_id = ?',
     'DELETE FROM snippet_shares WHERE snippet_id = ? AND owner_id = ?',
     'DELETE FROM snippets WHERE id = ? AND owner_id = ?',
+    'INSERT INTO snippet_changes(owner_id, snippet_id, action, changed_at) VALUES (?, ?, ?, ?)',
   ]);
 });
 
@@ -469,6 +470,7 @@ test('undo restores identity, position timestamps, custom name, content, and sha
     'INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?)',
     'INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     'INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)',
+    'INSERT INTO snippet_changes(owner_id, snippet_id, action, changed_at) VALUES (?, ?, ?, ?)',
   ]);
   assert.deepEqual(restoredStatements[0].values, [id, 'user', stored.title, stored.body, stored.created_at, stored.updated_at, 0]);
   assert.deepEqual(restoredStatements[1].values, [id, 'user', 0, stored.title, stored.body, stored.updated_at]);
@@ -505,6 +507,7 @@ test('recently deleted snippets can be listed and restored from server storage',
     'INSERT INTO snippets(id, owner_id, title, body, created_at, updated_at, version) VALUES (?, ?, ?, ?, ?, ?, ?)',
     'INSERT OR IGNORE INTO snippet_revisions(snippet_id, owner_id, version, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)',
     'INSERT INTO snippet_shares(token, snippet_id, owner_id, created_at) VALUES (?, ?, ?, ?)',
+    'INSERT INTO snippet_changes(owner_id, snippet_id, action, changed_at) VALUES (?, ?, ?, ?)',
     'DELETE FROM deleted_snippets WHERE id = ? AND owner_id = ?',
   ]);
 });
@@ -536,4 +539,34 @@ test('snippet updates require the current version and return the stored row on c
   }), env);
   assert.equal(stale.status, 409);
   assert.deepEqual(await stale.json(), { error: 'Snippet changed elsewhere', conflict: true, snippet: { ...current, can_undo: true, can_redo: false, details: [] } });
+});
+
+test('change feed returns only changes after the client cursor', async () => {
+  const id = '12345678-1234-1234-1234-123456789abc';
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.startsWith('CREATE TABLE')) return { run: async () => ({}) };
+        return { bind(...values) {
+          if (sql.includes('FROM sessions')) return { first: async () => ({ id: 'user', email: 'user@example.com' }) };
+          if (sql.includes('FROM snippet_changes LEFT JOIN snippets')) return { all: async () => ({ results: [
+            { sequence: 8, snippet_id: id, action: 'upsert', id, title: 'Changed', body: 'Only this row', created_at: 1, updated_at: 2, version: 3, share_token: null, can_undo: 1, can_redo: 0 },
+            { sequence: 9, snippet_id: 'deleted-id', action: 'delete', id: null },
+          ] }) };
+          return { sql, values };
+        } };
+      },
+    },
+  };
+  const response = await handle(new Request('https://linksaw.com/snippet-changes?after=7', {
+    headers: { Cookie: `linksaw_session=${'a'.repeat(64)}` },
+  }), env);
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.cursor, 9);
+  assert.equal(body.more, false);
+  assert.deepEqual(body.changes.map(change => [change.sequence, change.action, change.snippet?.title || null]), [
+    [8, 'upsert', 'Changed'],
+    [9, 'delete', null],
+  ]);
 });

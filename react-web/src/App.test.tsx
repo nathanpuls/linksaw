@@ -8,6 +8,7 @@ const snippets = [
   { id: "link", title: "Linksaw", body: "https://linksaw.com", created_at: 3, updated_at: 4, version: 1, share_token: null, can_undo: false, can_redo: false },
   { id: "markdown", title: "Markdown preview", body: "**Bold** and *italic* with [a link](https://example.com)\n\n# Compact heading", created_at: 4, updated_at: 5, version: 1, share_token: null, can_undo: false, can_redo: false },
   { id: "long", title: "Long note", body: Array.from({ length: 20 }, (_, index) => `Paragraph ${index + 1}: ${"long content ".repeat(5)}`).join("\n\n"), created_at: 5, updated_at: 6, version: 1, share_token: null, can_undo: false, can_redo: false },
+  { id: "context", title: "", body: "Ordinary first line\nThe useful hidden target is here", created_at: 6, updated_at: 7, version: 1, share_token: null, can_undo: false, can_redo: false },
 ];
 
 function json(value: unknown, status = 200) {
@@ -92,6 +93,15 @@ describe("React library interactions", () => {
     expect(preview?.querySelector("em")).toHaveTextContent("italic");
     expect(preview?.querySelector(".result-markdown-link")).toHaveTextContent("a link");
     expect(preview?.querySelector("a")).toBeNull();
+  });
+
+  it("shows the matching body line instead of an unrelated opening preview", async () => {
+    render(<App />);
+    const search = await screen.findByRole("searchbox");
+    fireEvent.change(search, { target: { value: "hidden target" } });
+    const row = screen.getByRole("button", { name: "Open Ordinary first line in Linksaw" });
+    expect(row.querySelector(".result-title")).toHaveTextContent("Ordinary first line");
+    expect(row.querySelector(".result-preview")).toHaveTextContent("The useful hidden target is here");
   });
 
   it("supports iPad-width long press and focuses long content without jumping to its end", async () => {

@@ -222,6 +222,6 @@ test('popup refreshes quietly while open without rebuilding unchanged Voice Cont
   assert.match(source, /if \(refreshInFlight\) return;/);
   assert.match(source, /const changed = !hasLoaded \|\| libraryFingerprint\(snippets\) !== libraryFingerprint\(incoming\)/);
   assert.match(source, /if \(changed\) \{[\s\S]*?render\(\)/);
-  assert.match(source, /setInterval\(\(\) => \{ if \(!document\.hidden\) void refresh\(\{ quiet: true \}\); \}, 3000\)/);
+  assert.match(source, /setInterval\(\(\) => \{ if \(!document\.hidden\) void refresh\(\{ quiet: true \}\); \}, 120000\)/);
   assert.match(source, /visibilitychange/);
 });

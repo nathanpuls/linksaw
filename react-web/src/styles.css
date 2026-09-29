@@ -40,17 +40,33 @@
 .react-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 
 @media (max-width: 900px) {
+  .react-app, .react-app .list-pane { overscroll-behavior: none; }
+  .react-app .results { overscroll-behavior: contain; touch-action: pan-y; }
   .react-app .viewer-pane { display: none; }
   .react-app.viewer-open .viewer-pane { display: block; }
   .react-app.viewer-open .list-pane { display: none; }
   .react-editor .mobile-back { display: inline-grid; order: -1; width: 48px; height: 48px; margin-left: -13px; }
   .react-editor .desktop-close { display: none; }
+  .react-app .viewer-header, .react-editor .editor-header { display: grid; grid-template-columns: 48px minmax(0, 1fr) 154px; align-items: center; gap: 3px; }
+  .react-app .viewer-back, .react-editor .mobile-back { grid-column: 1; }
+  .react-app .preview-title, .react-editor .editor-name-action, .react-editor .editor-name-input { grid-column: 2; width: 100%; max-width: 100%; min-width: 0; margin-left: 0; }
+  .react-app .viewer-actions, .react-editor .editor-actions { grid-column: 3; width: 154px; margin-left: 0; justify-content: flex-end; }
+  .react-editor .editor-header { position: relative; }
+  .react-editor .editor-status { position: absolute; z-index: 2; top: 50px; right: 14px; border-radius: 7px; padding: 5px 8px; background: var(--paper); box-shadow: var(--tooltip-shadow); }
+  .react-editor.is-editing .editor-actions > :nth-child(-n+2),
+  .react-editor:not(.is-editing) .editor-actions > :nth-child(3),
+  .react-editor:not(.is-editing) .editor-actions > :nth-child(4) { display: none; }
   .react-editor.mobile-unified .surface-inner { display: grid; grid-template-rows: auto minmax(0, 1fr); }
   .react-editor.mobile-unified .surface-header { grid-row: 1; }
   .react-editor.mobile-unified .content-input { grid-row: 2; grid-column: 1; width: 100%; height: 100%; }
   .react-editor .mobile-delete { display: inline-grid; }
   .react-action-menu:not(.desktop-context) { margin: 0 12px max(12px, env(safe-area-inset-bottom)); width: min(360px, calc(100vw - 24px)); }
   .react-settings .settings-content { padding: 28px 22px; }
+}
+
+@media (min-width: 701px) and (max-width: 900px) {
+  .react-menu-backdrop { place-items: center; }
+  .react-action-menu:not(.desktop-context) { margin: 12px; }
 }
 
 @media (max-width: 700px) {

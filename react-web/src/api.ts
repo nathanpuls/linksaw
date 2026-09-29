@@ -2,6 +2,8 @@ import type { Snippet, User } from "./types";
 
 const base = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? "/api" : "");
 
+export type SnippetChange = { sequence: number; snippetId: string; action: "upsert" | "delete"; snippet: Snippet | null };
+
 export class ApiError extends Error {
   status: number;
   data: Record<string, unknown>;
@@ -28,9 +30,11 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 export const linksawApi = {
   session: () => Promise.all([
     api<{ user: User }>("/me"),
-    api<{ snippets: Snippet[] }>("/snippets"),
+    api<{ snippets: Snippet[]; cursor?: number }>("/snippets"),
     api<{ autocompleteTrigger: string }>("/preferences"),
   ]),
+  changes: (after: number) => api<{ changes: SnippetChange[]; cursor: number; more: boolean }>(`/snippet-changes?after=${after}`),
+  get: (id: string) => api<{ snippet: Snippet }>(`/snippets/${id}`),
   create: (value: { title: string; body: string; importId: string }) => api<{ snippet?: Snippet; id?: string }>("/snippets", { method: "POST", body: JSON.stringify(value) }),
   update: (snippet: Snippet, value: { title: string; body: string }) => api<{ snippet: Snippet }>(`/snippets/${snippet.id}`, { method: "PUT", body: JSON.stringify({ ...value, version: snippet.version }) }),
   remove: (snippet: Snippet) => api<{ deleted: Snippet }>(`/snippets/${snippet.id}`, { method: "DELETE" }),
@@ -39,9 +43,17 @@ export const linksawApi = {
   unshare: (snippet: Snippet) => api<{ ok: boolean }>(`/snippets/${snippet.id}/share`, { method: "DELETE" }),
   revision: (snippet: Snippet, direction: "undo" | "redo") => api<{ snippet: Snippet }>(`/snippets/${snippet.id}/revisions/${direction}`, { method: "POST" }),
   deleted: () => api<{ snippets: Snippet[] }>("/deleted-snippets"),
-  restoreDeleted: (snippet: Snippet) => api<{ ok: boolean }>(`/deleted-snippets/${snippet.id}/restore`, { method: "POST" }),
+  restoreDeleted: (snippet: Snippet) => api<{ ok: boolean; snippet: Snippet }>(`/deleted-snippets/${snippet.id}/restore`, { method: "POST" }),
   deleteForever: (snippet: Snippet) => api<{ ok: boolean }>(`/deleted-snippets/${snippet.id}`, { method: "DELETE" }),
   savePreferences: (autocompleteTrigger: string) => api<{ autocompleteTrigger: string }>("/preferences", { method: "PUT", body: JSON.stringify({ autocompleteTrigger }) }),
   deleteAccount: () => api<{ ok: boolean }>("/me", { method: "DELETE", body: JSON.stringify({ confirmation: "delete" }) }),
   logout: () => api<{ ok: boolean }>("/auth/logout", { method: "POST" }),
 };
+
+export function snippetEventsUrl() {
+  const url = new URL(base || location.origin, location.origin);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.pathname = "/snippet-events";
+  url.search = "";
+  return url.toString();
+}

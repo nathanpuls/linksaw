@@ -19,7 +19,7 @@ test("Mac settings delegates import and export to the anchored web settings sect
 test("Mac editing autosaves with version checks and avoids duplicate list text", () => {
   assert.match(source, /editorAutosaveTimer = setTimeout\(\(\) => \{ void saveEditor\(null, \{ closeAfter: false \}\); \}, 700\)/);
   assert.match(source, /state\.editing \? \{ version: state\.editing\.version \} : \{\}/);
-  assert.match(source, /const STALE_AFTER_MS = 2_500/);
+  assert.match(source, /const STALE_AFTER_MS = 600_000/);
   assert.match(source, /const repeatsTitle = item\.type === 'snippet' && trim\(item\.title\) === trim\(item\.body\)/);
 });
 

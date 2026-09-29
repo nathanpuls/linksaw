@@ -123,5 +123,5 @@ $('search').addEventListener('keydown', event => {
 const [active] = await chrome.tabs.query({ active: true, currentWindow: true }); tabId = active?.id;
 await refresh();
 $('search').focus();
-setInterval(() => { if (!document.hidden) void refresh({ quiet: true }); }, 3000);
+setInterval(() => { if (!document.hidden) void refresh({ quiet: true }); }, 120000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) void refresh({ quiet: true }); });
