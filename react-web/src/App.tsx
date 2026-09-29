@@ -6,14 +6,19 @@ import {
   type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { linksawApi, ApiError } from "./api";
-import { derivedLabel, markdownHtml, snippetLabel, snippetText, snippetUrl } from "./content";
+import { compactMarkdownHtml, derivedLabel, markdownHtml, snippetLabel, snippetText, snippetUrl } from "./content";
 import { sourceOffsetFromRenderedPoint } from "../../web/app/markdown.js";
 import type { Snippet, Theme, Toast, User, View } from "./types";
 import { detectPastedSnippets, parseCsvSnippets, parseJsonSnippets, snippetsToCsv, snippetsToJson } from "../../web/app/transfers.js";
 
 const isMac = /Mac|iPhone|iPad|iPod/i.test((navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform || navigator.platform || "");
 const narrowQuery = "(max-width: 900px)";
+
+function isLongSnippet(snippet: Pick<Snippet, "body">) {
+  return snippet.body.length > 500 || snippet.body.split(/\r?\n/).length > 10;
+}
 
 function useMedia(query: string) {
   const [matches, setMatches] = useState(() => matchMedia(query).matches);
@@ -110,10 +115,20 @@ export function App() {
   }, []);
   const openSnippet = useCallback((snippet: Snippet, push = true) => showLibrary(snippet.id, push), [showLibrary]);
   const editSnippet = useCallback((snippet: Snippet | null, push = true, offset: number | null = null, title = false) => {
-    setEditOffset(offset);
-    setEditTitle(title);
-    setRoute({ view: "editor", snippetId: snippet?.id || null }); setSelectedId(snippet?.id || null);
+    flushSync(() => {
+      setEditOffset(offset);
+      setEditTitle(title);
+      setRoute({ view: "editor", snippetId: snippet?.id || null }); setSelectedId(snippet?.id || null);
+    });
     updateLocation({ view: snippet ? "edit" : "new", snippet: snippet?.id || null }, push);
+    if (!title) {
+      const input = document.querySelector<HTMLTextAreaElement>("#editor textarea");
+      if (input) {
+        input.focus({ preventScroll: true });
+        const caret = Math.max(0, Math.min(offset ?? input.value.length, input.value.length));
+        input.setSelectionRange(caret, caret);
+      }
+    }
   }, []);
   const openSettings = useCallback((push = true) => { setRoute({ view: "settings", snippetId: null }); updateLocation({ view: "settings", snippet: null }, push); }, []);
   const afterEditorSave = useCallback(async (action: () => void) => {
@@ -196,13 +211,13 @@ export function App() {
         hoveredId={hoveredId} error={error}
       />
       <section className="viewer-pane" aria-label="Snippet viewer">
-        {viewerSnippet ? <Viewer snippet={viewerSnippet} reader={reader} onToggleReader={toggleReader} onBack={() => showLibrary(null)} onCopy={() => void copy(viewerSnippet)} onShare={() => void share(viewerSnippet)} onEdit={() => editSnippet(viewerSnippet, true, viewerSnippet.body.length)} onRename={() => editSnippet(viewerSnippet, true, null, true)} onDelete={() => void remove(viewerSnippet)} onEditAt={offset => editSnippet(viewerSnippet, true, offset)} /> : <div className="viewer-empty" />}
+        {viewerSnippet ? <Viewer snippet={viewerSnippet} narrow={narrow} reader={reader} onToggleReader={toggleReader} onBack={() => showLibrary(null)} onCopy={() => void copy(viewerSnippet)} onShare={() => void share(viewerSnippet)} onRename={() => editSnippet(viewerSnippet, true, null, true)} onDelete={() => void remove(viewerSnippet)} onEditAt={offset => editSnippet(viewerSnippet, true, offset)} /> : <div className="viewer-empty" />}
       </section>
     </main>
     {route.view === "editor" && <Editor key={route.snippetId || "new"} snippet={route.snippetId ? snippets.find(item => item.id === route.snippetId) || null : null} narrow={narrow} reader={reader} initialOffset={editOffset} initialRenaming={editTitle} onToggleReader={toggleReader} onSaved={saveSnippet} onClose={saved => showLibrary(saved?.id || null)} registerFlush={flush => { flushEditor.current = flush; }} onCopy={copy} onShare={share} onUnshare={unshare} onDelete={remove} />}
     {route.view === "settings" && <SettingsPanel user={user!} preferences={preferences} setPreferences={setPreferences} snippets={snippets} onClose={() => showLibrary(selectedId)} onDeleted={async () => { setDeleted((await linksawApi.deleted()).snippets); setRoute({ view: "deleted", snippetId: null }); updateLocation({ view: "deleted", snippet: null }); }} notify={notify} />}
     {route.view === "deleted" && <DeletedPanel snippets={deleted} setSnippets={setDeleted} onBack={() => openSettings(false)} onLibraryChanged={() => void refresh()} />}
-    {actionSnippet && <ActionMenu snippet={actionSnippet} point={actionPoint} onClose={() => { setActionSnippet(null); setSelectedId(null); }} onOpen={() => { const url = snippetUrl(actionSnippet); if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onCopy={() => void copy(actionSnippet)} onShare={() => void share(actionSnippet)} onEdit={() => void afterEditorSave(() => editSnippet(actionSnippet, true, actionSnippet.body.length))} onDelete={() => void remove(actionSnippet)} />}
+    {actionSnippet && <ActionMenu snippet={actionSnippet} point={actionPoint} onClose={() => { setActionSnippet(null); setSelectedId(null); }} onOpen={() => { const url = snippetUrl(actionSnippet); if (url) window.open(url, "_blank", "noopener,noreferrer"); }} onCopy={() => void copy(actionSnippet)} onShare={() => void share(actionSnippet)} onEdit={() => void afterEditorSave(() => editSnippet(actionSnippet, true, actionPoint === null && isLongSnippet(actionSnippet) ? 0 : actionSnippet.body.length))} onDelete={() => void remove(actionSnippet)} />}
     {toast && <div className="toast" role="status" aria-live="polite"><span>{toast.message}</span>{toast.action && <button className="toast-action" onClick={toast.onAction}>{toast.action}</button>}</div>}
   </>;
 }
@@ -215,11 +230,12 @@ type LibraryProps = {
 function Library(props: LibraryProps) {
   const [searchActive, setSearchActive] = useState(false);
   const longPress = useRef<{ timer: number; x: number; y: number; snippet: Snippet } | null>(null);
+  const suppressClickUntil = useRef(0);
   const initials = (props.user.display_name || props.user.email).split(/\s+/).slice(0, 2).map(value => value[0]).join("").toUpperCase();
   const startLongPress = (event: ReactPointerEvent, snippet: Snippet) => {
-    if (event.pointerType === "mouse" || !matchMedia(narrowQuery).matches) return;
+    if (event.pointerType === "mouse") return;
     const info = { timer: 0, x: event.clientX, y: event.clientY, snippet };
-    info.timer = window.setTimeout(() => { props.onSelect(snippet.id); props.onContext(snippet, null); navigator.vibrate?.(10); longPress.current = null; }, 550);
+    info.timer = window.setTimeout(() => { suppressClickUntil.current = Date.now() + 900; props.onSelect(snippet.id); props.onContext(snippet, null); navigator.vibrate?.(10); longPress.current = null; }, 550);
     longPress.current = info;
   };
   const cancelLongPress = (event?: ReactPointerEvent) => {
@@ -242,8 +258,11 @@ function Library(props: LibraryProps) {
       {!props.snippets.length ? <div className="empty">{props.query.trim() ? "No matches" : "No snippets yet"}</div> : props.snippets.map(snippet => {
         const url = snippetUrl(snippet); const titled = Boolean(snippet.title.trim()); const preview = titled && Boolean(snippet.body.trim());
         return <article key={snippet.id} className={`result-row ${url ? "has-url" : ""} ${preview ? "has-preview" : ""} ${props.selectedId === snippet.id ? "selected" : ""}`} role="listitem" onPointerEnter={() => { props.hoveredId.current = snippet.id; }} onPointerLeave={() => { if (props.hoveredId.current === snippet.id) props.hoveredId.current = null; }}>
-          <button className="result-main" type="button" aria-label={`Open ${snippetLabel(snippet)} in Linksaw`} aria-current={props.selectedId === snippet.id} onFocus={() => props.onSelect(snippet.id)} onClick={() => props.onOpen(snippet)} onContextMenu={event => { event.preventDefault(); props.onSelect(snippet.id); props.onContext(snippet, { x: event.clientX, y: event.clientY }); }} onPointerDown={event => startLongPress(event, snippet)} onPointerMove={cancelLongPress} onPointerUp={cancelLongPress} onPointerCancel={cancelLongPress}>
-            <span className="result-text"><span className={`result-title ${url && !titled ? "result-link-text" : ""}`}>{snippetLabel(snippet)}</span>{preview && <span className={`result-preview ${url ? "result-link-text" : ""}`}>{snippet.body.replace(/\s+/g, " ").trim()}</span>}</span>
+          <button className="result-main" type="button" aria-label={`Open ${snippetLabel(snippet)} in Linksaw`} aria-current={props.selectedId === snippet.id} onFocus={() => props.onSelect(snippet.id)} onClick={() => { if (Date.now() >= suppressClickUntil.current) props.onOpen(snippet); }} onContextMenu={event => { event.preventDefault(); if (Date.now() >= suppressClickUntil.current) { props.onSelect(snippet.id); props.onContext(snippet, { x: event.clientX, y: event.clientY }); } }} onPointerDown={event => startLongPress(event, snippet)} onPointerMove={cancelLongPress} onPointerUp={cancelLongPress} onPointerCancel={cancelLongPress}>
+            <span className="result-text">
+              {titled ? <span className="result-title">{snippet.title}</span> : <span className={`result-title result-markdown ${url ? "result-link-text" : ""}`} dangerouslySetInnerHTML={compactMarkdownHtml(derivedLabel(snippet.body))} />}
+              {preview && <span className={`result-preview result-markdown ${url ? "result-link-text" : ""}`} dangerouslySetInnerHTML={compactMarkdownHtml(snippet.body)} />}
+            </span>
           </button>
         </article>;
       })}
@@ -258,8 +277,9 @@ function Library(props: LibraryProps) {
   </section>;
 }
 
-function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEdit, onRename, onDelete, onEditAt }: { snippet: Snippet; reader: boolean; onToggleReader(): void; onBack(): void; onCopy(): void; onShare(): void; onEdit(): void; onRename(): void; onDelete(): void; onEditAt(offset: number): void }) {
+function Viewer({ snippet, narrow, reader, onToggleReader, onBack, onCopy, onShare, onRename, onDelete, onEditAt }: { snippet: Snippet; narrow: boolean; reader: boolean; onToggleReader(): void; onBack(): void; onCopy(): void; onShare(): void; onRename(): void; onDelete(): void; onEditAt(offset: number): void }) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const longPress = useRef({ timer: 0, started: 0, x: 0, y: 0, suppressUntil: 0 });
   const selectionInside = () => {
     const selection = getSelection();
@@ -285,6 +305,14 @@ function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEd
     const range = document.caretRangeFromPoint?.(event.clientX, event.clientY);
     onEditAt(sourceOffsetFromRenderedPoint(root, snippet.body, point?.offsetNode || range?.startContainer || event.target, point?.offset ?? range?.startOffset ?? 0, event.clientX, event.clientY));
   };
+  const editFromAction = () => {
+    const root = bodyRef.current; const scroll = scrollRef.current;
+    if (!narrow || !root || !scroll || scroll.scrollHeight <= scroll.clientHeight + 2) { onEditAt(snippet.body.length); return; }
+    const rootRect = root.getBoundingClientRect(); const scrollRect = scroll.getBoundingClientRect();
+    const x = Math.min(rootRect.right - 2, rootRect.left + 24); const y = Math.min(rootRect.bottom - 2, scrollRect.top + 12);
+    const point = document.caretPositionFromPoint?.(x, y); const range = document.caretRangeFromPoint?.(x, y);
+    onEditAt(sourceOffsetFromRenderedPoint(root, snippet.body, point?.offsetNode || range?.startContainer || root, point?.offset ?? range?.startOffset ?? 0, x, y));
+  };
   return <article className="viewer-content">
     <header className="viewer-header">
       <Button label="Back to snippets" className="viewer-back" onClick={onBack}><ChevronLeft /></Button>
@@ -293,11 +321,11 @@ function Viewer({ snippet, reader, onToggleReader, onBack, onCopy, onShare, onEd
       <div className="viewer-actions">
         <Button label="Copy" shortcut={isMac ? "⌘C" : "Ctrl+C"} onClick={onCopy}><Copy /></Button>
         <Button label="Share" onClick={onShare}><Share /></Button>
-        <Button label="Edit" onClick={onEdit}><Pencil /></Button>
+        <Button label="Edit" onClick={editFromAction}><Pencil /></Button>
         <Button label="Delete" className="viewer-delete" onClick={onDelete}><Trash2 /></Button>
       </div>
     </header>
-    <div className="viewer-scroll" role="region" aria-label="Snippet content" tabIndex={-1}>
+    <div ref={scrollRef} className="viewer-scroll" role="region" aria-label="Snippet content" tabIndex={-1}>
       <div ref={bodyRef} className="preview-body markdown-body" role="button" tabIndex={0} aria-label="Edit snippet content" dangerouslySetInnerHTML={markdownHtml(snippet.body)} onClick={editFromPoint} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} onContextMenu={() => { longPress.current.suppressUntil = Date.now() + 900; }} />
     </div>
   </article>;

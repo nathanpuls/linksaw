@@ -6,6 +6,14 @@
 .react-error p { margin: 0; }
 .react-error a { color: var(--ink); }
 .result-title, .result-preview { display: block; }
+.result-markdown, .result-markdown * { display: inline; margin: 0; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; line-height: inherit; white-space: inherit; }
+.result-markdown { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result-markdown br { display: none; }
+.result-markdown > * + *::before, .result-markdown li + li::before { display: inline; content: " · "; }
+.result-markdown strong { font-weight: 650; }
+.result-markdown em { font-style: italic; }
+.result-markdown .result-markdown-link { text-decoration: underline; text-decoration-color: var(--control); text-underline-offset: 2px; }
+.result-markdown code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
 .react-app .viewer-pane { display: block; }
 .react-editor .mobile-back { display: none; }
 .react-editor .desktop-close { display: inline-grid; }

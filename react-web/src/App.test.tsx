@@ -6,6 +6,8 @@ const snippets = [
   { id: "one", title: "First note", body: "First body", created_at: 1, updated_at: 2, version: 1, share_token: null, can_undo: false, can_redo: false },
   { id: "two", title: "Second note", body: "Second body", created_at: 2, updated_at: 3, version: 1, share_token: null, can_undo: false, can_redo: false },
   { id: "link", title: "Linksaw", body: "https://linksaw.com", created_at: 3, updated_at: 4, version: 1, share_token: null, can_undo: false, can_redo: false },
+  { id: "markdown", title: "Markdown preview", body: "**Bold** and *italic* with [a link](https://example.com)\n\n# Compact heading", created_at: 4, updated_at: 5, version: 1, share_token: null, can_undo: false, can_redo: false },
+  { id: "long", title: "Long note", body: Array.from({ length: 20 }, (_, index) => `Paragraph ${index + 1}: ${"long content ".repeat(5)}`).join("\n\n"), created_at: 5, updated_at: 6, version: 1, share_token: null, can_undo: false, can_redo: false },
 ];
 
 function json(value: unknown, status = 200) {
@@ -80,5 +82,27 @@ describe("React library interactions", () => {
     const title = await screen.findByRole("textbox", { name: "Title" });
     await waitFor(() => expect(title).toHaveFocus());
     expect(title).toHaveValue("First note");
+  });
+
+  it("keeps useful inline Markdown in a compact list preview", async () => {
+    render(<App />);
+    const row = await screen.findByRole("button", { name: "Open Markdown preview in Linksaw" });
+    const preview = row.querySelector(".result-preview");
+    expect(preview?.querySelector("strong")).toHaveTextContent("Bold");
+    expect(preview?.querySelector("em")).toHaveTextContent("italic");
+    expect(preview?.querySelector(".result-markdown-link")).toHaveTextContent("a link");
+    expect(preview?.querySelector("a")).toBeNull();
+  });
+
+  it("supports iPad-width long press and focuses long content without jumping to its end", async () => {
+    render(<App />);
+    const row = await screen.findByRole("button", { name: "Open Long note in Linksaw" });
+    fireEvent.pointerDown(row, { pointerType: "touch", clientX: 80, clientY: 120 });
+    await new Promise(resolve => setTimeout(resolve, 600));
+    const menu = screen.getByRole("menu", { name: "Snippet actions" });
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Edit" }));
+    const editor = await screen.findByRole("textbox", { name: "Snippet text" });
+    await waitFor(() => expect(editor).toHaveFocus());
+    expect((editor as HTMLTextAreaElement).selectionStart).toBe(0);
   });
 });
