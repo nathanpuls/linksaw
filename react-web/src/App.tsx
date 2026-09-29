@@ -248,7 +248,7 @@ export function App() {
   }, []);
 
   if (loading) return <div className="react-loading" role="status">Loading Linksaw…</div>;
-  if (error && !user) return <main className="react-error"><img src="/favicon.png" alt="" /><h1>Linksaw preview</h1><p>{error}</p><a href="/login">Sign in</a></main>;
+  if (error && !user) return <main className="react-error"><img src="/favicon.png" alt="" /><h1>Linksaw can’t load right now</h1><p>Your snippets are safe. Please try again shortly.</p><a href="/home/">Try again</a></main>;
 
   const routeSnippet = route.view === "library" && route.snippetId ? snippets.find(item => item.id === route.snippetId) || null : null;
   const viewerSnippet = narrow ? routeSnippet : selected;

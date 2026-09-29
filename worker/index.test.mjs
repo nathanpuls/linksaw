@@ -55,6 +55,13 @@ test("vanilla sign-in returns to vanilla after using the production OAuth flow",
   assert.equal(new URL(start.headers.get("Location")).searchParams.get("state"), requestId);
 });
 
+test("web sign-in callback failures return to the app instead of exposing JSON", async () => {
+  const env = { DB: { prepare() { throw new Error("database unavailable"); } } };
+  const response = await handle(new Request("https://snippets-api.linksaw.com/auth/callback?state=web_test&code=google-code"), env);
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("Location"), "https://linksaw.com/home/?unavailable=1");
+});
+
 test("home route without a trailing slash has one canonical redirect", async () => {
   const response = await handle(new Request("https://linksaw.com/home"), { DB: {} });
   assert.equal(response.status, 308);

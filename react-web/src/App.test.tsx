@@ -30,6 +30,14 @@ describe("React library interactions", () => {
 
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
+  it("shows a friendly page-level message when initial data cannot load", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => json({ error: "Internal server error" }, 500)));
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Linksaw can’t load right now" })).toBeVisible();
+    expect(screen.getByText("Your snippets are safe. Please try again shortly.")).toBeVisible();
+    expect(screen.queryByText("Internal server error")).not.toBeInTheDocument();
+  });
+
   it("opens the row that was clicked and keeps its highlight aligned with the viewer", async () => {
     render(<App />);
     const second = await screen.findByRole("button", { name: "Open Second note in Linksaw" });

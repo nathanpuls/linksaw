@@ -439,6 +439,7 @@ export async function handle(request, env) {
   if (url.pathname === "/auth/callback" && request.method === "GET") {
     const state = url.searchParams.get("state") || "";
     const code = url.searchParams.get("code") || "";
+    try {
     const row = await env.DB.prepare("SELECT id FROM login_requests WHERE id = ? AND created_at > ? AND consumed_at IS NULL")
       .bind(state, nowSeconds() - 300).first();
     if (!row || !code) return new Response("Sign-in expired or cancelled. Return to the app and try again.", { status: 400, headers: { "Content-Type": "text/plain" } });
@@ -471,6 +472,17 @@ export async function handle(request, env) {
     }
     await env.DB.prepare("UPDATE login_requests SET user_id = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, state).run();
     return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in · Linksaw</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;color:#171717;background:#fafafa}main{text-align:center;padding:32px}h1{font-size:28px;font-weight:500}p{color:#747474;line-height:1.6}.mark{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 24px}</style><main><img class="mark" src="https://linksaw.com/icon.png" alt="Linksaw"><h1>You're signed in</h1><p>Linksaw will open automatically.<br>You can close this tab.</p></main></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; img-src https://linksaw.com; style-src 'unsafe-inline'" } });
+    } catch (error) {
+      console.error("Sign-in callback failed", error);
+      if (state.startsWith("web_")) {
+        const destination = state.startsWith("web_vanilla_") ? "https://vanilla.linksaw.com/home/" : `${configuredOrigin}/home/`;
+        return Response.redirect(`${destination}?unavailable=1`, 302);
+      }
+      return new Response("Linksaw can’t finish signing you in right now. Please try again shortly.", {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
   }
 
   if (url.pathname === "/auth/poll" && request.method === "POST") {
