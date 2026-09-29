@@ -14,7 +14,7 @@
     "worker:dev": "wrangler dev --port 8799",
     "worker:migrate": "wrangler d1 migrations apply linksaw-snippets --local",
     "react:dev": "vite --config react-web/vite.config.ts",
-    "react:mock": "VITE_MOCK_DATA=true vite --config react-web/vite.config.ts",
+    "react:mock": "VITE_MOCK_DATA=true vite --config react-web/vite.config.ts --host 0.0.0.0",
     "react:build": "tsc -p react-web/tsconfig.json && vite build --config react-web/vite.config.ts",
     "react:test": "vitest run --config react-web/vitest.config.ts",
     "production:build": "VITE_API_BASE=https://snippets-api.linksaw.com npm run react:build && node scripts/build-production-web.mjs",
