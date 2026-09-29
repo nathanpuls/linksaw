@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -15,8 +15,10 @@ cpSync(resolve(root, "web"), output, { recursive: true });
 rmSync(resolve(output, "app"), { recursive: true, force: true });
 cpSync(resolve(root, "vanilla-web/app"), resolve(output, "app"), { recursive: true });
 
-mkdirSync(resolve(output, "react"), { recursive: true });
-cpSync(resolve(react, "index.html"), resolve(output, "react/index.html"));
+// Keep the React shell under a non-HTML asset name so Cloudflare Assets does
+// not canonicalize the internal binding request and redirect /home/ to the
+// implementation-only asset path. The Worker supplies the HTML content type.
+cpSync(resolve(react, "index.html"), resolve(output, "react-shell.txt"));
 cpSync(resolve(react, "assets"), resolve(output, "assets"), { recursive: true });
 for (const name of ["favicon.png", "icon-192.png", "icon-512.png", "site.webmanifest"]) {
   cpSync(resolve(react, name), resolve(output, name));

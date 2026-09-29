@@ -306,6 +306,14 @@ function publicSnippetPage(snippet) {
   return { html, nonce };
 }
 
+async function reactAppShell(request, env) {
+  const asset = await env.ASSETS.fetch(new Request("https://linksaw.com/react-shell.txt", request));
+  const headers = new Headers(asset.headers);
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("Cache-Control", "no-cache");
+  return new Response(asset.body, { status: asset.status, headers });
+}
+
 export async function handle(request, env) {
   const url = new URL(request.url);
   const configuredOrigin = (env.APP_ORIGIN || "https://linksaw.com").replace(/\/$/, "");
@@ -349,13 +357,9 @@ export async function handle(request, env) {
     if (url.pathname === "/") return Response.redirect(`${vanillaOrigin}/home/`, 302);
     if (url.pathname === "/home") return Response.redirect(`${vanillaOrigin}/home/${url.search}`, 308);
     if (url.pathname === "/login" || url.pathname === "/login/") {
-      const session = await currentSession(request, env);
-      if (session) return Response.redirect(`${vanillaOrigin}/home/`, 302);
       return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start?client=vanilla`, 302);
     }
     if (url.pathname === "/home/" || url.pathname.startsWith("/home/")) {
-      const session = await currentSession(request, env);
-      if (!session) return Response.redirect(`${vanillaOrigin}/login`, 302);
       return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
     }
     if (url.pathname.startsWith("/app/") || appAssetPaths.has(url.pathname)
@@ -365,14 +369,7 @@ export async function handle(request, env) {
   }
 
   if (isWebHost && request.method === "GET" && url.pathname === "/") {
-    const session = await currentSession(request, env);
-    if (session && url.searchParams.get("website") !== "1") return Response.redirect(`${configuredOrigin}/home/`, 302);
-    const response = await env.ASSETS.fetch(new Request("https://linksaw.com/", request));
-    if (!session) return response;
-    const html = (await response.text())
-      .replace('id="primary-cta" class="login" href="/login"', 'id="primary-cta" class="login" href="/home/"')
-      .replace(/<img class="google-sign-in-button"[^>]*>/, "<span>Open Linksaw</span>");
-    return new Response(html, { status: response.status, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+    return env.ASSETS.fetch(new Request("https://linksaw.com/", request));
   }
   if (isWebHost && ["GET", "HEAD"].includes(request.method) && url.pathname === "/privacy/") {
     return Response.redirect("https://linksaw.com/privacy", 308);
@@ -395,8 +392,6 @@ export async function handle(request, env) {
     return env.ASSETS.fetch(request);
   }
   if (isWebHost && request.method === "GET" && (url.pathname === "/login" || url.pathname === "/login/")) {
-    const session = await currentSession(request, env);
-    if (session) return Response.redirect(`${configuredOrigin}/home/`, 302);
     return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start`, 302);
   }
   if (!isVanillaHost && isWebHost && request.method === "GET" && url.pathname === "/home") {
@@ -409,15 +404,11 @@ export async function handle(request, env) {
     return Response.redirect(`https://linksaw.com${destination}`, 308);
   }
   if (!isVanillaHost && isWebHost && request.method === "GET" && (/^\/home\/s\/[a-f0-9-]{36}\/?$/.test(url.pathname) || url.pathname === "/home/new")) {
-    const session = await currentSession(request, env);
-    if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
     // Resolve the app's directory index while preserving the deep link in the browser.
-    return env.ASSETS.fetch(new Request("https://linksaw.com/react/index.html", request));
+    return reactAppShell(request, env);
   }
   if (!isVanillaHost && isWebHost && request.method === "GET" && url.pathname === "/home/") {
-    const session = await currentSession(request, env);
-    if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
-    return env.ASSETS.fetch(new Request("https://linksaw.com/react/index.html", request));
+    return reactAppShell(request, env);
   }
   const publicShare = isWebHost ? url.pathname.match(/^\/s\/([A-Za-z0-9_-]{16})\/?$/) : null;
   if (publicShare && request.method === "GET") {

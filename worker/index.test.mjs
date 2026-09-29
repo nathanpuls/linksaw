@@ -4,18 +4,10 @@ import { readFileSync } from "node:fs";
 import { handle, SnippetSync } from "./index.mjs";
 import { sha256Base64Url } from "./lib.mjs";
 
-test("signed-in production home resolves the React index without changing the visible route", async () => {
+test("production home resolves the React index without a database-backed page gate", async () => {
   let assetUrl = "";
   const env = {
-    DB: {
-      prepare() {
-        return {
-          bind() {
-            return { first: async () => ({ id: "user", email: "user@example.com", display_name: "User" }) };
-          },
-        };
-      },
-    },
+    DB: {},
     ASSETS: {
       async fetch(request) {
         assetUrl = request.url;
@@ -23,26 +15,24 @@ test("signed-in production home resolves the React index without changing the vi
       },
     },
   };
-  const request = new Request("https://linksaw.com/home/", {
-    headers: { Cookie: `linksaw_session=${"a".repeat(64)}` },
-  });
+  const request = new Request("https://linksaw.com/home/");
 
   const response = await handle(request, env);
 
   assert.equal(response.status, 200);
-  assert.equal(assetUrl, "https://linksaw.com/react/index.html");
+  assert.equal(assetUrl, "https://linksaw.com/react-shell.txt");
+  assert.match(response.headers.get("Content-Type"), /^text\/html/);
 });
 
-test("vanilla host serves the frozen app with the shared production session", async () => {
+test("vanilla host serves the frozen app without a database-backed page gate", async () => {
   const assets = [];
   const env = {
-    DB: { prepare() { return { bind() { return { first: async () => ({ id: "user", email: "user@example.com" }) }; } }; } },
+    DB: {},
     ASSETS: { async fetch(request) { assets.push(request.url); return new Response("vanilla", { status: 200 }); } },
   };
-  const headers = { Cookie: `linksaw_session=${"a".repeat(64)}` };
-  const root = await handle(new Request("https://vanilla.linksaw.com/", { headers }), env);
+  const root = await handle(new Request("https://vanilla.linksaw.com/"), env);
   assert.equal(root.headers.get("Location"), "https://vanilla.linksaw.com/home/");
-  const home = await handle(new Request("https://vanilla.linksaw.com/home/", { headers }), env);
+  const home = await handle(new Request("https://vanilla.linksaw.com/home/"), env);
   assert.equal(home.status, 200);
   const asset = await handle(new Request("https://vanilla.linksaw.com/app/app.js"), env);
   assert.equal(asset.status, 200);
@@ -71,21 +61,17 @@ test("home route without a trailing slash has one canonical redirect", async () 
   assert.equal(response.headers.get("Location"), "https://linksaw.com/home/");
 });
 
-test("signed-in root visits enter the app unless the website override is present", async () => {
-  const user = { id: "user", email: "user@example.com" };
+test("homepage stays available without querying the session database", async () => {
+  let databaseWasRead = false;
   const env = {
-    DB: { prepare() { return { bind() { return { first: async () => user }; } }; } },
-    ASSETS: { async fetch() { return new Response('<a id="primary-cta" class="login" href="/login"><img class="google-sign-in-button" src="/google-sign-in-light-pill-2x.png" width="180" height="40" alt="Sign in with Google"></a>', { headers: { "Content-Type": "text/html" } }); } },
+    DB: { prepare() { databaseWasRead = true; throw new Error("database unavailable"); } },
+    ASSETS: { async fetch() { return new Response("homepage", { status: 200 }); } },
   };
   const headers = { Cookie: `linksaw_session=${"a".repeat(64)}` };
-  const redirect = await handle(new Request("https://linksaw.com/", { headers }), env);
-  assert.equal(redirect.headers.get("Location"), "https://linksaw.com/home/");
-  const website = await handle(new Request("https://linksaw.com/?website=1", { headers }), env);
-  const html = await website.text();
-  assert.equal(website.status, 200);
-  assert.match(html, /href="\/home\/"/);
-  assert.match(html, />Open Linksaw</);
-  assert.doesNotMatch(html, /Sign in with Google/);
+  const response = await handle(new Request("https://linksaw.com/", { headers }), env);
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), "homepage");
+  assert.equal(databaseWasRead, false);
 });
 
 test("signed-out homepage is served directly as a static asset", async () => {
@@ -287,7 +273,7 @@ test("title-only public shares do not repeat the title as content", async () => 
   assert.doesNotMatch(html, /textContent\|\|document\.querySelector\("\.title"\)/);
 });
 
-test('private deep links serve the authenticated app and preserve the visible URL', async () => {
+test('private deep links serve the app shell and preserve the visible URL', async () => {
   const id = '12345678-1234-1234-1234-123456789abc';
   const assets = [];
   const env = {
@@ -295,15 +281,10 @@ test('private deep links serve the authenticated app and preserve the visible UR
     ASSETS: { async fetch(request) { assets.push(request.url); return new Response('app'); } },
   };
   for (const path of [`/home/s/${id}`, '/home/new']) {
-    const signedOut = await handle(new Request(`https://linksaw.com${path}`), env);
-    assert.equal(signedOut.status, 302);
-    assert.equal(signedOut.headers.get('Location'), 'https://linksaw.com/login');
-    const signedIn = await handle(new Request(`https://linksaw.com${path}`, {
-      headers: { Cookie: `linksaw_session=${'a'.repeat(64)}` },
-    }), env);
-    assert.equal(signedIn.status, 200);
+    const response = await handle(new Request(`https://linksaw.com${path}`), env);
+    assert.equal(response.status, 200);
   }
-  assert.deepEqual(assets, ['https://linksaw.com/react/index.html', 'https://linksaw.com/react/index.html']);
+  assert.deepEqual(assets, ['https://linksaw.com/react-shell.txt', 'https://linksaw.com/react-shell.txt']);
 });
 
 test('legacy app links redirect to canonical home routes', async () => {
