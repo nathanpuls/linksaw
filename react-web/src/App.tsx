@@ -7,7 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState,
 } from "react";
 import { flushSync } from "react-dom";
-import { linksawApi, ApiError, snippetEventsUrl } from "./api";
+import { linksawApi, ApiError, isMockMode, snippetEventsUrl } from "./api";
 import { compactMarkdownHtml, derivedLabel, markdownHtml, searchExcerpt, searchScore, snippetLabel, snippetText, snippetUrl } from "./content";
 import { sourceOffsetFromRenderedPoint } from "../../web/app/markdown.js";
 import type { Snippet, Theme, Toast, User, View } from "./types";
@@ -143,7 +143,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!user || typeof WebSocket === "undefined") return;
+    if (!user || isMockMode || typeof WebSocket === "undefined") return;
     let active = true; let socket: WebSocket | null = null; let retryTimer: number | undefined; let retryDelay = 1000;
     const connect = () => {
       if (!active || document.hidden || socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;

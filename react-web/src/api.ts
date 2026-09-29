@@ -1,6 +1,8 @@
 import type { Snippet, User } from "./types";
+import { createMockApi } from "./mock-api";
 
 const base = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? "/api" : "");
+export const isMockMode = import.meta.env.VITE_MOCK_DATA === "true";
 
 export type SnippetChange = { sequence: number; snippetId: string; action: "upsert" | "delete"; snippet: Snippet | null };
 
@@ -27,7 +29,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   return data as T;
 }
 
-export const linksawApi = {
+const realLinksawApi = {
   session: () => Promise.all([
     api<{ user: User }>("/me"),
     api<{ snippets: Snippet[]; cursor?: number }>("/snippets"),
@@ -49,6 +51,9 @@ export const linksawApi = {
   deleteAccount: () => api<{ ok: boolean }>("/me", { method: "DELETE", body: JSON.stringify({ confirmation: "delete" }) }),
   logout: () => api<{ ok: boolean }>("/auth/logout", { method: "POST" }),
 };
+
+export type LinksawApi = typeof realLinksawApi;
+export const linksawApi: LinksawApi = isMockMode ? createMockApi() : realLinksawApi;
 
 export function snippetEventsUrl() {
   const url = new URL(base || location.origin, location.origin);
