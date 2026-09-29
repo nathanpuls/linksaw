@@ -1,4 +1,6 @@
-# React preview
+# React preview and production
+
+React is the production web client at `https://linksaw.com/home`. The former vanilla client is frozen at `https://vanilla.linksaw.com/home` and shares production data only for comparison. New product and interface development belongs in React.
 
 The React migration lives in `react-web/`. It is intentionally separate from the production files in `web/app/`.
 

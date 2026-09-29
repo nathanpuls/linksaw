@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { handle } from "./index.mjs";
+import { handle, SnippetSync } from "./index.mjs";
 import { sha256Base64Url } from "./lib.mjs";
 
-test("signed-in home route resolves the app directory index without changing the visible route", async () => {
+test("signed-in production home resolves the React index without changing the visible route", async () => {
   let assetUrl = "";
   const env = {
     DB: {
@@ -30,7 +30,39 @@ test("signed-in home route resolves the app directory index without changing the
   const response = await handle(request, env);
 
   assert.equal(response.status, 200);
-  assert.equal(assetUrl, "https://linksaw.com/app/");
+  assert.equal(assetUrl, "https://linksaw.com/react/index.html");
+});
+
+test("vanilla host serves the frozen app with the shared production session", async () => {
+  const assets = [];
+  const env = {
+    DB: { prepare() { return { bind() { return { first: async () => ({ id: "user", email: "user@example.com" }) }; } }; } },
+    ASSETS: { async fetch(request) { assets.push(request.url); return new Response("vanilla", { status: 200 }); } },
+  };
+  const headers = { Cookie: `linksaw_session=${"a".repeat(64)}` };
+  const root = await handle(new Request("https://vanilla.linksaw.com/", { headers }), env);
+  assert.equal(root.headers.get("Location"), "https://vanilla.linksaw.com/home/");
+  const home = await handle(new Request("https://vanilla.linksaw.com/home/", { headers }), env);
+  assert.equal(home.status, 200);
+  const asset = await handle(new Request("https://vanilla.linksaw.com/app/app.js"), env);
+  assert.equal(asset.status, 200);
+  assert.deepEqual(assets, ["https://linksaw.com/app/", "https://linksaw.com/app/app.js"]);
+});
+
+test("vanilla sign-in returns to vanilla after using the production OAuth flow", async () => {
+  let requestId = "";
+  const env = {
+    GOOGLE_CLIENT_ID: "client-id",
+    GOOGLE_CLIENT_SECRET: "client-secret",
+    PUBLIC_BASE_URL: "https://snippets-api.linksaw.com",
+    DB: { prepare() { return { bind(id) { requestId = id; return { run: async () => ({}) }; } }; } },
+  };
+  const login = await handle(new Request("https://vanilla.linksaw.com/login"), { DB: {}, PUBLIC_BASE_URL: "https://snippets-api.linksaw.com" });
+  assert.equal(login.headers.get("Location"), "https://snippets-api.linksaw.com/auth/web/start?client=vanilla");
+  const start = await handle(new Request(login.headers.get("Location")), env);
+  assert.equal(start.status, 302);
+  assert.match(requestId, /^web_vanilla_/);
+  assert.equal(new URL(start.headers.get("Location")).searchParams.get("state"), requestId);
 });
 
 test("home route without a trailing slash has one canonical redirect", async () => {
@@ -271,7 +303,7 @@ test('private deep links serve the authenticated app and preserve the visible UR
     }), env);
     assert.equal(signedIn.status, 200);
   }
-  assert.deepEqual(assets, ['https://linksaw.com/app/', 'https://linksaw.com/app/']);
+  assert.deepEqual(assets, ['https://linksaw.com/react/index.html', 'https://linksaw.com/react/index.html']);
 });
 
 test('legacy app links redirect to canonical home routes', async () => {
@@ -312,6 +344,10 @@ test('authenticated users can read and update their autocomplete trigger', async
   assert.equal(shortcutResponse.status, 200);
   assert.deepEqual(await shortcutResponse.json(), { autocompleteTrigger: 'keys:Shift+Meta+V' });
   assert.equal(saved, 'keys:Shift+Meta+V');
+  const vanillaResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', {
+    method: 'PUT', headers: { Cookie: `linksaw_session=${'a'.repeat(64)}`, Origin: 'https://vanilla.linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: ';;' }),
+  }), env);
+  assert.equal(vanillaResponse.status, 200);
   const tooLongResponse = await handle(new Request('https://snippets-api.linksaw.com/preferences', {
     method: 'PUT', headers: { ...auth, Origin: 'https://linksaw.com', 'Content-Type': 'application/json' }, body: JSON.stringify({ autocompleteTrigger: 'four' }),
   }), env);
@@ -569,4 +605,36 @@ test('change feed returns only changes after the client cursor', async () => {
     [8, 'upsert', 'Changed'],
     [9, 'delete', null],
   ]);
+});
+
+test('per-user sync object caches full libraries and invalidates them after writes', async () => {
+  const values = new Map();
+  let libraryReads = 0;
+  const state = {
+    storage: {
+      get: async key => values.get(key),
+      put: async (key, value) => values.set(key, value),
+      delete: async key => values.delete(key),
+    },
+    getWebSockets: () => [],
+  };
+  const env = { DB: { prepare(sql) {
+    return { bind() {
+      if (sql.includes('FROM snippets LEFT JOIN snippet_shares')) return { all: async () => { libraryReads += 1; return { results: [
+        { id: 'snippet', title: 'Cached', body: 'Text', created_at: 1, updated_at: 2, version: 0, share_token: null, can_undo: 0, can_redo: 0 },
+      ] }; } };
+      if (sql.startsWith('SELECT sequence FROM snippet_changes')) return { first: async () => ({ sequence: 4 }) };
+      throw new Error(`Unexpected SQL: ${sql}`);
+    } };
+  } } };
+  const sync = new SnippetSync(state, env);
+  const request = new Request('https://linksaw-sync/library', { headers: { 'X-Linksaw-User': 'user' } });
+
+  assert.equal((await (await sync.fetch(request)).json()).cursor, 4);
+  assert.equal((await (await sync.fetch(request)).json()).snippets[0].title, 'Cached');
+  assert.equal(libraryReads, 1);
+
+  await sync.fetch(new Request('https://linksaw-sync/change', { method: 'POST' }));
+  await sync.fetch(request);
+  assert.equal(libraryReads, 2);
 });

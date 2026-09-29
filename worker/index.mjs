@@ -1,7 +1,7 @@
 import { authUrl, cookieValue, escapeHtml, nowSeconds, randomToken, sha256Base64Url, shareToken, validSnippet, webSessionCookie } from "./lib.mjs";
 import { markdownToSafeHtml } from "../web/app/markdown.js";
 
-const allowedOrigins = new Set(["https://linksaw.com", "https://react-preview.linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:4173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
+const allowedOrigins = new Set(["https://linksaw.com", "https://vanilla.linksaw.com", "https://react-preview.linksaw.com", "http://localhost:5173", "http://127.0.0.1:5173", "http://127.0.0.1:4173", "http://127.0.0.1:1420", "tauri://localhost", "http://tauri.localhost"]);
 const DELETED_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 const profileSchemaReady = new WeakMap();
 const apiKeySchemaReady = new WeakMap();
@@ -84,6 +84,28 @@ async function bodyJson(request) {
   try { return await request.json(); } catch { return null; }
 }
 
+function sessionCacheRequest(tokenHash) {
+  return new Request(`https://linksaw-session-cache.invalid/${tokenHash}`);
+}
+
+async function cachedSessionUser(tokenHash) {
+  if (typeof caches === "undefined" || !caches.default) return null;
+  const response = await caches.default.match(sessionCacheRequest(tokenHash));
+  return response ? response.json() : null;
+}
+
+async function cacheSessionUser(tokenHash, user) {
+  if (typeof caches === "undefined" || !caches.default || !user) return;
+  await caches.default.put(sessionCacheRequest(tokenHash), Response.json(user, {
+    headers: { "Cache-Control": "max-age=300" },
+  }));
+}
+
+async function clearCachedSession(tokenHash) {
+  if (typeof caches === "undefined" || !caches.default) return;
+  await caches.default.delete(sessionCacheRequest(tokenHash));
+}
+
 async function currentSession(request, env) {
   await ensureProfileSchema(env);
   if (env.LOCAL_PREVIEW_AUTH === "true") {
@@ -95,7 +117,8 @@ async function currentSession(request, env) {
   const token = bearer?.[1] || (/^[A-Za-z0-9_-]{40,}$/.test(cookie) ? cookie : "");
   if (!token) return null;
   const tokenHash = await sha256Base64Url(token);
-  let user;
+  let user = await cachedSessionUser(tokenHash);
+  if (user) return { user, tokenHash, viaCookie: !bearer };
   if (bearer?.[1].startsWith("lsw_")) {
     await ensureApiKeySchema(env);
     user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM api_keys JOIN users ON users.id = api_keys.user_id LEFT JOIN user_profiles ON user_profiles.user_id = users.id WHERE api_keys.token_hash = ?")
@@ -111,6 +134,7 @@ async function currentSession(request, env) {
     user = await env.DB.prepare("SELECT users.id, users.email, users.display_name, user_profiles.avatar_url FROM sessions JOIN users ON users.id = sessions.user_id LEFT JOIN user_profiles ON user_profiles.user_id = users.id WHERE sessions.token_hash = ? AND sessions.expires_at > ?")
       .bind(tokenHash, nowSeconds()).first();
   }
+  if (user) await cacheSessionUser(tokenHash, user);
   return user ? { user, tokenHash, viaCookie: !bearer } : null;
 }
 
@@ -166,6 +190,18 @@ async function publishSnippetChange(env, userId) {
   } catch (error) {
     console.error("Could not publish snippet change", error);
   }
+}
+
+async function cachedLibrary(env, userId) {
+  if (!env.SNIPPET_SYNC) {
+    const [snippets, cursor] = await Promise.all([listSnippets(env, userId), latestChangeSequence(env, userId)]);
+    return { snippets, cursor };
+  }
+  const response = await env.SNIPPET_SYNC.getByName(userId).fetch("https://linksaw-sync/library", {
+    headers: { "X-Linksaw-User": userId },
+  });
+  if (!response.ok) throw new Error(`Library cache failed with ${response.status}`);
+  return response.json();
 }
 
 async function deletedSnippet(env, userId, snippetId) {
@@ -276,7 +312,10 @@ export async function handle(request, env) {
   const configuredHost = new URL(configuredOrigin).hostname;
   const cookieDomain = env.SESSION_COOKIE_DOMAIN === "host-only" ? "" : (env.SESSION_COOKIE_DOMAIN || "linksaw.com");
   const cookieName = env.SESSION_COOKIE_NAME || "linksaw_session";
-  const isWebHost = url.hostname === configuredHost;
+  const isVanillaHost = env.REACT_PREVIEW !== "true" && url.hostname === "vanilla.linksaw.com";
+  const isWebHost = url.hostname === configuredHost || isVanillaHost;
+  const cookieOrigins = new Set([configuredOrigin]);
+  if (env.REACT_PREVIEW !== "true") cookieOrigins.add("https://vanilla.linksaw.com");
   const appAssetPaths = new Set([
     "/app/app.css", "/app/app.js", "/app/linkify.js", "/app/markdown.js", "/app/transfers.js", "/app/lucide-menu-icons.js",
     "/app/vendor/lucide/copy.js", "/app/vendor/lucide/create-element.js", "/app/vendor/lucide/default-attributes.js",
@@ -302,6 +341,26 @@ export async function handle(request, env) {
     }
     if (url.pathname.startsWith("/assets/") || ["/favicon.png", "/icon-192.png", "/icon-512.png", "/site.webmanifest"].includes(url.pathname)) {
       return env.ASSETS.fetch(request);
+    }
+  }
+
+  if (isVanillaHost && request.method === "GET") {
+    const vanillaOrigin = "https://vanilla.linksaw.com";
+    if (url.pathname === "/") return Response.redirect(`${vanillaOrigin}/home/`, 302);
+    if (url.pathname === "/home") return Response.redirect(`${vanillaOrigin}/home/${url.search}`, 308);
+    if (url.pathname === "/login" || url.pathname === "/login/") {
+      const session = await currentSession(request, env);
+      if (session) return Response.redirect(`${vanillaOrigin}/home/`, 302);
+      return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start?client=vanilla`, 302);
+    }
+    if (url.pathname === "/home/" || url.pathname.startsWith("/home/")) {
+      const session = await currentSession(request, env);
+      if (!session) return Response.redirect(`${vanillaOrigin}/login`, 302);
+      return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
+    }
+    if (url.pathname.startsWith("/app/") || appAssetPaths.has(url.pathname)
+      || ["/favicon.ico", "/icon.png", "/apple-touch-icon.png", "/favicon.png", "/site.webmanifest"].includes(url.pathname)) {
+      return env.ASSETS.fetch(new Request(`https://linksaw.com${url.pathname}`, request));
     }
   }
 
@@ -331,30 +390,34 @@ export async function handle(request, env) {
     return env.ASSETS.fetch(request);
   }
   if (isWebHost && request.method === "GET" && appAssetPaths.has(url.pathname)) return env.ASSETS.fetch(request);
+  if (!isVanillaHost && isWebHost && request.method === "GET"
+    && (url.pathname.startsWith("/assets/") || ["/favicon.png", "/icon-192.png", "/icon-512.png", "/site.webmanifest"].includes(url.pathname))) {
+    return env.ASSETS.fetch(request);
+  }
   if (isWebHost && request.method === "GET" && (url.pathname === "/login" || url.pathname === "/login/")) {
     const session = await currentSession(request, env);
     if (session) return Response.redirect(`${configuredOrigin}/home/`, 302);
     return Response.redirect(`${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/web/start`, 302);
   }
-  if (isWebHost && request.method === "GET" && url.pathname === "/home") {
+  if (!isVanillaHost && isWebHost && request.method === "GET" && url.pathname === "/home") {
     return Response.redirect(`https://linksaw.com/home/${url.search}`, 308);
   }
-  if (isWebHost && request.method === "GET" && (url.pathname === "/app" || url.pathname.startsWith("/app/"))) {
+  if (!isVanillaHost && isWebHost && request.method === "GET" && (url.pathname === "/app" || url.pathname.startsWith("/app/"))) {
     const suffix = url.pathname === "/app" || url.pathname === "/app/" ? "/" : url.pathname.slice(4);
     const oldSnippet = suffix.match(/^\/snippets\/([a-f0-9-]{36})\/?$/)?.[1];
     const destination = oldSnippet ? `/home/?snippet=${oldSnippet}` : `/home${suffix}${url.search}`;
     return Response.redirect(`https://linksaw.com${destination}`, 308);
   }
-  if (isWebHost && request.method === "GET" && (/^\/home\/s\/[a-f0-9-]{36}\/?$/.test(url.pathname) || url.pathname === "/home/new")) {
+  if (!isVanillaHost && isWebHost && request.method === "GET" && (/^\/home\/s\/[a-f0-9-]{36}\/?$/.test(url.pathname) || url.pathname === "/home/new")) {
     const session = await currentSession(request, env);
     if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
     // Resolve the app's directory index while preserving the deep link in the browser.
-    return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
+    return env.ASSETS.fetch(new Request("https://linksaw.com/react/index.html", request));
   }
-  if (isWebHost && request.method === "GET" && url.pathname === "/home/") {
+  if (!isVanillaHost && isWebHost && request.method === "GET" && url.pathname === "/home/") {
     const session = await currentSession(request, env);
     if (!session) return Response.redirect(`${configuredOrigin}/login`, 302);
-    return env.ASSETS.fetch(new Request("https://linksaw.com/app/", request));
+    return env.ASSETS.fetch(new Request("https://linksaw.com/react/index.html", request));
   }
   const publicShare = isWebHost ? url.pathname.match(/^\/s\/([A-Za-z0-9_-]{16})\/?$/) : null;
   if (publicShare && request.method === "GET") {
@@ -367,7 +430,7 @@ export async function handle(request, env) {
   if (url.pathname === "/health" && request.method === "GET") return json(request, { ok: true });
   if (url.pathname === "/auth/web/start" && request.method === "GET") {
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.PUBLIC_BASE_URL) return fail(request, "Google sign-in is not configured", 503);
-    const id = `web_${randomToken()}`;
+    const id = `${url.searchParams.get("client") === "vanilla" ? "web_vanilla_" : "web_"}${randomToken()}`;
     await env.DB.prepare("INSERT INTO login_requests(id, code_challenge, created_at) VALUES (?, ?, ?)").bind(id, await sha256Base64Url(randomToken()), nowSeconds()).run();
     const redirect = `${env.PUBLIC_BASE_URL.replace(/\/$/, "")}/auth/callback`;
     return Response.redirect(authUrl(env.GOOGLE_CLIENT_ID, redirect, id), 302);
@@ -412,7 +475,8 @@ export async function handle(request, env) {
         env.DB.prepare("UPDATE login_requests SET user_id = ?, consumed_at = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, timestamp, state),
         env.DB.prepare("INSERT INTO sessions(token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)").bind(await sha256Base64Url(token), profile.sub, timestamp, timestamp + 30 * 86400),
       ]);
-      return new Response(null, { status: 302, headers: { Location: `${configuredOrigin}/home/`, "Set-Cookie": webSessionCookie(token, 30 * 86400, cookieDomain, cookieName), "Cache-Control": "no-store" } });
+      const destination = state.startsWith("web_vanilla_") ? "https://vanilla.linksaw.com/home/" : `${configuredOrigin}/home/`;
+      return new Response(null, { status: 302, headers: { Location: destination, "Set-Cookie": webSessionCookie(token, 30 * 86400, cookieDomain, cookieName), "Cache-Control": "no-store" } });
     }
     await env.DB.prepare("UPDATE login_requests SET user_id = ? WHERE id = ? AND consumed_at IS NULL").bind(profile.sub, state).run();
     return new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in · Linksaw</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;color:#171717;background:#fafafa}main{text-align:center;padding:32px}h1{font-size:28px;font-weight:500}p{color:#747474;line-height:1.6}.mark{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 24px}</style><main><img class="mark" src="https://linksaw.com/icon.png" alt="Linksaw"><h1>You're signed in</h1><p>Linksaw will open automatically.<br>You can close this tab.</p></main></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; img-src https://linksaw.com; style-src 'unsafe-inline'" } });
@@ -437,7 +501,7 @@ export async function handle(request, env) {
 
   const session = await currentSession(request, env);
   if (!session) return fail(request, "Sign in required", 401);
-  if (session.viaCookie && !["GET", "HEAD"].includes(request.method) && request.headers.get("Origin") !== configuredOrigin) {
+  if (session.viaCookie && !["GET", "HEAD"].includes(request.method) && !cookieOrigins.has(request.headers.get("Origin"))) {
     return fail(request, "Request origin is not allowed", 403);
   }
   const user = session.user;
@@ -480,15 +544,16 @@ export async function handle(request, env) {
       env.DB.prepare("DELETE FROM login_requests WHERE user_id = ?").bind(user.id),
       env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
     ]);
+    await clearCachedSession(session.tokenHash);
     return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain, cookieName) } : {});
   }
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(session.tokenHash).run();
+    await clearCachedSession(session.tokenHash);
     return json(request, { ok: true }, 200, session.viaCookie ? { "Set-Cookie": webSessionCookie("", 0, cookieDomain, cookieName) } : {});
   }
   if (url.pathname === "/snippets" && request.method === "GET") {
-    const [snippets, cursor] = await Promise.all([listSnippets(env, user.id), latestChangeSequence(env, user.id)]);
-    return json(request, { snippets, cursor });
+    return json(request, await cachedLibrary(env, user.id));
   }
   if (url.pathname === "/snippet-changes" && request.method === "GET") {
     const rawAfter = url.searchParams.get("after") || "0";
@@ -661,16 +726,30 @@ export async function handle(request, env) {
 }
 
 export class SnippetSync {
-  constructor(state) {
+  constructor(state, env) {
     this.state = state;
+    this.env = env;
   }
 
   async fetch(request) {
     if (request.method === "POST") {
+      await this.state.storage.delete("library");
       for (const socket of this.state.getWebSockets()) {
         try { socket.send("change"); } catch { /* The runtime removes disconnected sockets. */ }
       }
       return new Response(null, { status: 204 });
+    }
+    const url = new URL(request.url);
+    if (request.method === "GET" && url.pathname === "/library") {
+      const userId = request.headers.get("X-Linksaw-User") || "";
+      if (!userId) return new Response("Missing user", { status: 400 });
+      let library = await this.state.storage.get("library");
+      if (!library) {
+        const [snippets, cursor] = await Promise.all([listSnippets(this.env, userId), latestChangeSequence(this.env, userId)]);
+        library = { snippets, cursor };
+        await this.state.storage.put("library", library);
+      }
+      return Response.json(library);
     }
     if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
       return new Response("WebSocket upgrade required", { status: 426 });

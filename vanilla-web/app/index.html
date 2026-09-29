@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#ffffff">
+  <title>Linksaw</title>
+  <script>if (new URLSearchParams(location.search).get("view") || new URLSearchParams(location.search).get("snippet") || new URLSearchParams(location.search).has("new") || location.pathname !== "/home/") document.documentElement.classList.add("route-pending");</script>
+  <style>html.route-pending body { visibility: hidden; }</style>
+  <link rel="icon" href="/app/favicon.png?v=20260923-1" type="image/png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/app/site.webmanifest">
+  <link rel="stylesheet" href="/app/app.css?v=20260927-17">
+</head>
+<body>
+  <main id="app" class="app" aria-busy="true">
+    <section class="list-pane" aria-label="Snippet library">
+      <header class="toolbar">
+        <button id="mobile-search-trigger" class="mobile-search-trigger" type="button" aria-label="Search snippets">
+          <span id="mobile-search-trigger-icon" aria-hidden="true"></span>
+          <span>Search</span>
+        </button>
+        <div class="search-wrap">
+          <label class="sr-only" for="search">Search snippets</label>
+          <button id="search-icon" class="search-icon" type="button" tabindex="-1" aria-label="Focus search" data-tooltip="Focus search"></button>
+          <input id="search" type="search" placeholder="Search" autocomplete="off" autofocus>
+          <button id="clear-search" class="search-clear" type="button" aria-label="Clear search" data-tooltip="Clear search" data-shortcut="Esc" hidden></button>
+        </div>
+        <button id="add" class="icon-button" type="button" aria-label="New snippet" data-tooltip="New snippet"></button>
+      </header>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <section id="results" class="results" role="list" aria-label="Snippets" tabindex="-1"></section>
+      <footer class="sidebar-footer">
+        <a class="identity-logo-link" href="https://linksaw.com" aria-label="Linksaw home" data-tooltip="Linksaw home">
+          <img class="identity-logo" src="/app/favicon.png?v=20260923-1" alt="">
+        </a>
+        <button id="settings" class="identity-button" type="button" aria-label="Open Settings">
+          <img id="account-avatar" class="identity-avatar" alt="" referrerpolicy="no-referrer" hidden>
+          <span id="account-avatar-fallback" class="identity-avatar identity-avatar-fallback" aria-hidden="true"></span>
+          <span id="account-name" class="identity-name"></span>
+        </button>
+      </footer>
+    </section>
+
+    <section id="preview" class="viewer-pane" aria-label="Snippet viewer">
+      <div id="viewer-empty" class="viewer-empty" aria-hidden="true"></div>
+      <article id="viewer-content" class="viewer-content" hidden>
+        <header class="viewer-header">
+          <button id="close-preview" class="icon-button viewer-back" type="button" aria-label="Back to snippets" data-tooltip="Back to snippets" data-shortcut="Esc"></button>
+          <button id="reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
+          <button id="preview-title" class="preview-title" type="button" aria-label="Edit title"></button>
+          <div class="viewer-actions">
+            <button id="preview-copy" class="icon-button" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
+            <button id="preview-share" class="icon-button" type="button" aria-label="Share" data-tooltip="Share"></button>
+            <button id="preview-edit" class="icon-button" type="button" aria-label="Edit" data-tooltip="Edit"></button>
+            <button id="preview-delete" class="icon-button viewer-delete" type="button" aria-label="Delete" data-tooltip="Delete"></button>
+          </div>
+        </header>
+        <div class="viewer-scroll" role="region" aria-label="Snippet content" tabindex="-1"><div id="preview-body" class="preview-body markdown-body" role="region" tabindex="0" aria-label="Edit snippet content"></div></div>
+      </article>
+    </section>
+  </main>
+
+  <section id="editor" class="surface" aria-labelledby="editor-heading" hidden>
+    <form id="editor-form" class="surface-inner" autocomplete="off">
+      <header class="surface-header editor-header">
+        <h1 id="editor-heading" class="sr-only">Edit snippet</h1>
+        <button id="editor-reader-toggle" class="icon-button reader-toggle" type="button" aria-label="Hide list" data-tooltip="Hide sidebar"></button>
+        <button id="editor-name" class="editor-name-action" type="button" aria-label="Rename" data-tooltip="Rename"></button>
+        <label class="sr-only" for="editor-name-input">Title</label>
+        <input id="editor-name-input" class="editor-name-input" type="text" maxlength="160" autocomplete="off" placeholder="Title" hidden>
+        <p id="mobile-editor-status" class="editor-status mobile-editor-status" role="status" aria-live="polite" hidden><span id="mobile-editor-status-text"></span><button id="mobile-editor-retry" class="editor-retry" type="button" hidden>Retry</button></p>
+        <div class="editor-actions">
+          <button id="editor-copy" class="icon-button mobile-editor-action" type="button" aria-label="Copy snippet" data-tooltip="Copy"></button>
+          <button id="editor-share" class="icon-button mobile-editor-action" type="button" aria-label="Share" data-tooltip="Share"></button>
+          <button id="editor-undo" class="icon-button" type="button" aria-label="Undo" data-tooltip="Undo" disabled></button>
+          <button id="editor-redo" class="icon-button" type="button" aria-label="Redo" data-tooltip="Redo" disabled></button>
+          <button id="mobile-delete" class="icon-button delete-action mobile-delete" type="button" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
+        </div>
+        <button id="close-editor" class="icon-button" type="button" tabindex="-1" aria-label="Close editor" data-tooltip="Close editor" data-shortcut="Esc"></button>
+      </header>
+      <label class="sr-only" for="snippet-body">Snippet text</label>
+      <div id="mobile-snippet-view" class="content-input mobile-snippet-view markdown-body" role="button" tabindex="0" aria-label="Edit snippet text" hidden></div>
+      <textarea id="snippet-body" class="content-input" autocomplete="off"></textarea>
+      <footer class="surface-footer">
+        <button id="delete" class="icon-button delete-action" type="button" tabindex="-1" aria-label="Delete snippet" data-tooltip="Delete snippet" hidden></button>
+        <button id="unshare" class="text-button danger" type="button" tabindex="-1" hidden>Unshare</button>
+        <p id="editor-status" class="editor-status" role="status" aria-live="polite"><span id="editor-status-text"></span><button id="editor-retry" class="editor-retry" type="button" hidden>Retry</button></p>
+      </footer>
+    </form>
+  </section>
+
+  <section id="settings-panel" class="surface" aria-labelledby="settings-title" hidden>
+    <div class="settings-inner">
+      <header class="surface-header settings-header">
+        <h1 id="settings-title">Settings</h1>
+        <div class="settings-header-actions">
+          <button id="sign-out" class="settings-sign-out" type="button">Sign out</button>
+          <button id="close-settings" class="icon-button" type="button" aria-label="Close Settings" data-tooltip="Close Settings" data-shortcut="Esc"></button>
+        </div>
+      </header>
+      <div class="settings-content">
+        <section class="settings-section appearance-settings">
+          <h2>Appearance</h2>
+          <label for="appearance" class="field-label">Theme</label>
+          <select id="appearance"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+        </section>
+        <section class="settings-section shortcuts">
+          <h2>Shortcuts</h2>
+          <dl>
+            <div><dt>⌘/Ctrl N</dt><dd>New snippet</dd></div>
+            <div><dt>↑ ↓</dt><dd>Select a snippet</dd></div>
+            <div><dt>Return</dt><dd>View selected snippet</dd></div>
+            <div><dt>⌘/Ctrl Return</dt><dd>Open selected website</dd></div>
+            <div><dt id="toggle-sidebar-shortcut">⌘\</dt><dd>Toggle sidebar</dd></div>
+            <div><dt>→</dt><dd>Focus the viewer</dd></div>
+            <div><dt>⌘/Ctrl E</dt><dd>Edit selected snippet</dd></div>
+            <div><dt>⌘/Ctrl S</dt><dd>Save now</dd></div>
+            <div><dt>⌘/Ctrl Z</dt><dd>Undo</dd></div>
+            <div><dt>⌘⇧Z / Ctrl Y</dt><dd>Redo</dd></div>
+            <div><dt>⌘/Ctrl C</dt><dd>Copy selected snippet</dd></div>
+            <div><dt>⌘/Ctrl 1–9</dt><dd>Select a visible snippet</dd></div>
+            <div><dt>Esc</dt><dd>Go back</dd></div>
+            <div><dt>/</dt><dd>Focus search</dd></div>
+          </dl>
+        </section>
+        <section class="settings-section extension-settings">
+          <h2>Chrome extension</h2>
+          <label for="autocomplete-trigger" class="field-label">Autocomplete trigger</label>
+          <div class="trigger-row">
+            <input id="autocomplete-trigger" class="trigger-input" type="text" autocomplete="off" spellcheck="false" aria-describedby="trigger-help" readonly>
+            <button id="save-trigger" class="text-button" type="button">Save</button>
+          </div>
+          <p id="trigger-help" class="field-help">Press a one-, two-, or three-key shortcut to open Linksaw in an editable field.</p>
+          <p id="trigger-status" class="field-help" role="status" aria-live="polite"></p>
+        </section>
+        <section id="import-export" class="settings-section transfer-settings" tabindex="-1">
+          <h2>Import and export</h2>
+          <div class="transfer-actions">
+            <button id="paste-import" class="transfer-button" type="button">Paste data</button>
+            <button id="import-csv" class="transfer-button" type="button">Import CSV</button>
+            <button id="import-json" class="transfer-button" type="button">Import JSON</button>
+            <button id="export-csv" class="transfer-button" type="button">Export CSV</button>
+            <button id="export-json" class="transfer-button" type="button">Export JSON</button>
+          </div>
+          <div class="transfer-mobile-actions">
+            <button id="paste-import-mobile" class="transfer-button" type="button">Paste data</button>
+            <label class="sr-only" for="import-format">Import format</label>
+            <select id="import-format" class="transfer-select">
+              <option value="" selected>Import</option>
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+            <label class="sr-only" for="export-format">Export format</label>
+            <select id="export-format" class="transfer-select">
+              <option value="" selected>Export</option>
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+          <input id="import-csv-file" type="file" accept=".csv,text/csv" hidden>
+          <input id="import-json-file" type="file" accept=".json,application/json" hidden>
+          <p id="transfer-status" class="field-help" role="status" aria-live="polite"></p>
+        </section>
+        <section class="settings-section account-block">
+          <h2>Account</h2>
+          <p id="account"></p>
+          <a class="settings-website-link" href="/?website=1">Linksaw website</a>
+        </section>
+        <section id="recently-deleted" class="settings-section recently-deleted-settings">
+          <button id="open-recently-deleted" class="settings-folder" type="button"><span>Recently deleted</span><span aria-hidden="true">›</span></button>
+        </section>
+        <section class="settings-section delete-account-block" aria-labelledby="danger-zone-title">
+          <h2 id="danger-zone-title">Danger zone</h2>
+          <p>Permanently delete your account and every snippet associated with it. This cannot be undone.</p>
+          <button id="delete-account" class="text-button danger-button" type="button">Delete account</button>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section id="deleted-panel" class="surface" aria-labelledby="deleted-panel-title" hidden>
+    <div class="settings-inner deleted-panel-inner">
+      <header class="surface-header">
+        <button id="close-deleted" class="icon-button" type="button" aria-label="Back to Settings" data-tooltip="Back to Settings"></button>
+        <h1 id="deleted-panel-title">Recently deleted</h1>
+      </header>
+      <div class="deleted-panel-content">
+        <p class="field-help">Deleted snippets remain available for 30 days.</p>
+        <div id="deleted-snippet-list" class="deleted-snippet-list" role="list"></div>
+        <p id="deleted-snippet-status" class="field-help" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <dialog id="snippet-action-menu" class="snippet-action-menu" aria-label="Snippet actions" tabindex="-1">
+    <div class="snippet-action-list" role="menu">
+      <button id="snippet-action-open" type="button" role="menuitem"><span id="snippet-action-open-icon" class="snippet-action-icon" aria-hidden="true"></span><span>Open</span></button>
+      <button id="snippet-action-copy" type="button" role="menuitem"><span id="snippet-action-copy-icon" class="snippet-action-icon" aria-hidden="true"></span><span>Copy</span></button>
+      <button id="snippet-action-share" type="button" role="menuitem"><span id="snippet-action-share-icon" class="snippet-action-icon" aria-hidden="true"></span><span>Share</span></button>
+      <button id="snippet-action-edit" type="button" role="menuitem"><span id="snippet-action-edit-icon" class="snippet-action-icon" aria-hidden="true"></span><span>Edit</span></button>
+      <button id="snippet-action-delete" type="button" role="menuitem"><span id="snippet-action-delete-icon" class="snippet-action-icon" aria-hidden="true"></span><span>Delete</span></button>
+    </div>
+  </dialog>
+
+  <dialog id="action-confirm-dialog" class="confirm-dialog" aria-labelledby="action-confirm-title" aria-describedby="action-confirm-message">
+    <form method="dialog">
+      <h2 id="action-confirm-title"></h2>
+      <p id="action-confirm-message"></p>
+      <div class="dialog-actions">
+        <button id="action-confirm-cancel" class="text-button" type="submit" value="cancel">Cancel</button>
+        <button id="action-confirm-button" class="confirm-action" type="submit" value="confirm">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="paste-import-dialog" class="confirm-dialog paste-import-dialog" aria-labelledby="paste-import-title">
+    <form id="paste-import-form">
+      <h2 id="paste-import-title">Paste import data</h2>
+      <label class="field-label" for="paste-import-data">JSON, CSV, or tab-separated data</label>
+      <textarea id="paste-import-data" class="paste-import-data" spellcheck="false" autocomplete="off"></textarea>
+      <div class="paste-import-options">
+        <label class="field-label" for="paste-import-format">Format</label>
+        <select id="paste-import-format">
+          <option value="auto">Detect automatically</option>
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+          <option value="tsv">Tab-separated</option>
+        </select>
+      </div>
+      <p id="paste-import-status" class="field-help paste-import-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions">
+        <button id="cancel-paste-import" class="text-button" type="button">Cancel</button>
+        <button id="preview-paste-import" class="text-button" type="button">Review</button>
+        <button id="confirm-paste-import" class="confirm-action" type="submit" disabled>Import</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="delete-account-dialog" class="confirm-dialog" aria-labelledby="delete-account-title">
+    <form id="delete-account-form">
+      <h2 id="delete-account-title">Confirm account deletion</h2>
+      <p>This permanently deletes your snippets, shared links, preferences, and account.</p>
+      <label class="field-label" for="delete-account-confirmation">Type <strong>delete</strong> to confirm.</label>
+      <input id="delete-account-confirmation" class="confirm-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false">
+      <p id="delete-account-status" class="dialog-status" role="status" aria-live="polite"></p>
+      <div class="dialog-actions">
+        <button id="cancel-delete-account" class="text-button" type="button">Cancel</button>
+        <button id="confirm-delete-account" class="delete-button" type="submit" disabled>Confirm Delete</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span id="toast-message">Copied</span>
+    <button id="toast-action" class="toast-action" type="button" hidden></button>
+  </div>
+  <div id="linksaw-tooltip" class="custom-tooltip" role="tooltip" hidden><span id="tooltip-label"></span><kbd id="tooltip-shortcut" hidden></kbd></div>
+  <div id="copy-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script type="module" src="/app/app.js?v=20260927-12"></script>
+</body>
+</html>

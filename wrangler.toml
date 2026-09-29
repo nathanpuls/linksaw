@@ -8,6 +8,10 @@ pattern = "snippets-api.linksaw.com"
 custom_domain = true
 
 [[routes]]
+pattern = "vanilla.linksaw.com"
+custom_domain = true
+
+[[routes]]
 pattern = "linksaw.com/app*"
 zone_name = "linksaw.com"
 
@@ -52,6 +56,26 @@ pattern = "linksaw.com/google-sign-in-light-pill-2x.png"
 zone_name = "linksaw.com"
 
 [[routes]]
+pattern = "linksaw.com/assets/*"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/favicon.png"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/icon-192.png"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/icon-512.png"
+zone_name = "linksaw.com"
+
+[[routes]]
+pattern = "linksaw.com/site.webmanifest"
+zone_name = "linksaw.com"
+
+[[routes]]
 pattern = "linksaw.com/robots.txt"
 zone_name = "linksaw.com"
 
@@ -60,7 +84,7 @@ pattern = "linksaw.com/sitemap.xml"
 zone_name = "linksaw.com"
 
 [assets]
-directory = "./web"
+directory = "./production-web"
 binding = "ASSETS"
 run_worker_first = true
 
