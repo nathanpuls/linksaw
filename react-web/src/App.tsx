@@ -144,20 +144,25 @@ export function App() {
 
   useEffect(() => {
     if (!user || isMockMode || typeof WebSocket === "undefined") return;
-    let active = true; let socket: WebSocket | null = null; let retryTimer: number | undefined; let retryDelay = 1000;
+    let active = true; let socket: WebSocket | null = null; let retryTimer: number | undefined; let stableTimer: number | undefined; let retryDelay = 1000;
     const connect = () => {
-      if (!active || document.hidden || socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;
+      if (!active || document.hidden || navigator.onLine === false || socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) return;
       socket = new WebSocket(snippetEventsUrl());
-      socket.addEventListener("open", () => { retryDelay = 1000; void pullChanges(); });
+      socket.addEventListener("open", () => {
+        clearTimeout(stableTimer);
+        stableTimer = window.setTimeout(() => { retryDelay = 1000; }, 60_000);
+        void pullChanges();
+      });
       socket.addEventListener("message", () => { void pullChanges(); });
       socket.addEventListener("close", () => {
-        socket = null; if (!active || document.hidden) return;
-        retryTimer = window.setTimeout(connect, retryDelay); retryDelay = Math.min(30_000, retryDelay * 2);
+        clearTimeout(stableTimer); socket = null; if (!active || document.hidden || navigator.onLine === false) return;
+        const delay = retryDelay + Math.floor(Math.random() * retryDelay * 0.25);
+        retryTimer = window.setTimeout(connect, delay); retryDelay = Math.min(300_000, retryDelay * 2);
       });
     };
-    const resume = () => { if (!document.hidden) { void pullChanges(); connect(); } else socket?.close(1000, "hidden"); };
+    const resume = () => { if (!document.hidden && navigator.onLine !== false) { clearTimeout(retryTimer); void pullChanges(); connect(); } else socket?.close(1000, "inactive"); };
     connect(); addEventListener("online", resume); document.addEventListener("visibilitychange", resume);
-    return () => { active = false; clearTimeout(retryTimer); removeEventListener("online", resume); document.removeEventListener("visibilitychange", resume); socket?.close(1000, "closed"); };
+    return () => { active = false; clearTimeout(retryTimer); clearTimeout(stableTimer); removeEventListener("online", resume); document.removeEventListener("visibilitychange", resume); socket?.close(1000, "closed"); };
   }, [pullChanges, user?.id]);
 
   const showLibrary = useCallback((snippetId: string | null = null, push = true) => {
